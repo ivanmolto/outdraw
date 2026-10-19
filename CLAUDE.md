@@ -54,7 +54,9 @@ starting any task. Each task there has a prompt, a definition of done and tests.
 
 ## Model and ranking
 
-- LLM: Gemini 3.1 Flash-Lite through Strands' Gemini provider (`GEMINI_MODEL` env).
+- LLM: Claude Haiku 5.5 (`claude-haiku-5-5`) through Strands' Anthropic provider
+  (`ANTHROPIC_MODEL` env). Thinking counts against `max_tokens`, and Haiku 5.5 rejects
+  non-default `temperature`/`top_p`/`top_k`: control it with `effort`, not sampling.
 - The LLM orchestrates, parses constraints, explains and drafts. It NEVER ranks. Ranking is
   the deterministic scoring function in `/agent/draw/ranking/score.py`, with weights
   exported for the UI. If a change would let the model influence order, it is wrong.
@@ -67,6 +69,9 @@ starting any task. Each task there has a prompt, a definition of done and tests.
 - Postgres (Neon or Supabase) with pgvector; Redis (Upstash) for rate limits and budgets.
 - Secrets never in code or git: `.env.local` (gitignored) locally, Vercel/Railway env vars
   in prod. Keys are server-side only; never `NEXT_PUBLIC_`.
+- A gitleaks pre-commit hook lives in `.githooks/`; enable it once per clone with
+  `brew install gitleaks && git config core.hooksPath .githooks`. Never bypass it with
+  `--no-verify`.
 - `QLOO_API_KEY` is set via env or `qloo setup --qloo`, never the `--api-key` flag.
 - Never run `qloo explore` in a folder containing secrets.
 - Responsible use: never send names, emails, device IDs or location histories to Qloo.
@@ -77,7 +82,7 @@ starting any task. Each task there has a prompt, a definition of done and tests.
 
 - Small modules, typed interfaces, tests next to code.
 - Python: `uv`, pytest, ruff, mypy strict. TypeScript: vitest, eslint, strict mode.
-- Unit tests run offline. Qloo and Gemini are mocked with synthetic envelopes in
+- Unit tests run offline. Qloo and Claude are mocked with synthetic envelopes in
   `/agent/tests/fixtures/qloo/<workflow>/*.json`: same structure as the real responses
   (all six statuses, real field names) but fake IDs, names and scores, so status branches
   can be tested. Real recordings stay out of git (gitignored `agent/recordings/` and the
