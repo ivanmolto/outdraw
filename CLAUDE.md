@@ -77,9 +77,11 @@ starting any task. Each task there has a prompt, a definition of done and tests.
 
 - Small modules, typed interfaces, tests next to code.
 - Python: `uv`, pytest, ruff, mypy strict. TypeScript: vitest, eslint, strict mode.
-- Unit tests run offline. Qloo and Gemini are mocked with recorded envelopes in
-  `/agent/tests/fixtures/qloo/<workflow>/*.json`; each fixture is a full envelope so status
-  branches can be tested.
+- Unit tests run offline. Qloo and Gemini are mocked with synthetic envelopes in
+  `/agent/tests/fixtures/qloo/<workflow>/*.json`: same structure as the real responses
+  (all six statuses, real field names) but fake IDs, names and scores, so status branches
+  can be tested. Real recordings stay out of git (gitignored `agent/recordings/` and the
+  private `qloo_calls` table) because Qloo's terms forbid its response data in a public repo.
 - Integration tests are marked `@pytest.mark.integration` /
   `describe.skipIf(!process.env.RUN_INTEGRATION)` and need real keys.
 - CI runs lint, type-check and unit tests on every push; generated schema files must not
