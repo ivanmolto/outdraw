@@ -1,0 +1,53 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "find_tags",
+  "status": "ok",
+  "interpretation": {
+    "query": "Synthetic Concept 3",
+    "semantic": false
+  },
+  "results": [],
+  "result_count": 0,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/tags",
+    "documentation": "https://docs.qloo.com/reference/get-tags",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/tags",
+        "query": {
+          "filter.query": "Synthetic Concept 3",
+          "feature.semantic_search": false,
+          "take": 5
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "find_tags",
+    "job": "find_tags",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 5
+    },
+    "assumptions": [],
+    "unresolved": [],
+    "target": {
+      "concept": "Synthetic Concept 3"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-f01e01b1-65db-5df0-9bf2-ed24a201c2bc",
+    "duration_ms": 520
+  },
+  "harness_exit_code": 0
+}

@@ -1,0 +1,11 @@
+{
+  "workflow": "recommend",
+  "input": {
+    "target_type": "place",
+    "signals": [
+      "746CD02C-8299-5FBF-9C15-615CBD354946"
+    ],
+    "limit": 10,
+    "filter_location": "Synthetic Region 1"
+  }
+}

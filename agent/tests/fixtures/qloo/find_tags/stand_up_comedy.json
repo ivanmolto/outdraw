@@ -1,0 +1,86 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "find_tags",
+  "status": "ok",
+  "interpretation": {
+    "query": "Synthetic Concept 16",
+    "semantic": true
+  },
+  "results": [
+    {
+      "id": "urn:tag:synthetic:genre:091",
+      "name": "Synthetic Tag 59",
+      "type": "urn:tag:genre:qloo",
+      "popularity": 0.9751
+    },
+    {
+      "id": "urn:tag:synthetic:keyword:090",
+      "name": "Synthetic Tag 59",
+      "type": "urn:tag:keyword:media",
+      "popularity": 0.9249
+    },
+    {
+      "id": "urn:tag:synthetic:occupation:092",
+      "name": "Synthetic Tag 60",
+      "type": "urn:tag:occupation:qloo",
+      "popularity": 0.8833
+    },
+    {
+      "id": "urn:tag:synthetic:keyword:093",
+      "name": "Synthetic Tag 60",
+      "type": "urn:tag:keyword:media",
+      "popularity": 0.8329
+    },
+    {
+      "id": "urn:tag:synthetic:occupation:094",
+      "name": "Synthetic Tag 61",
+      "type": "urn:tag:occupation:wikidata",
+      "popularity": 0.7955
+    }
+  ],
+  "result_count": 5,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/tags",
+    "documentation": "https://docs.qloo.com/reference/get-tags",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/tags",
+        "query": {
+          "filter.query": "Synthetic Concept 16",
+          "feature.semantic_search": true,
+          "take": 5
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "find_tags",
+    "job": "find_tags",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 5
+    },
+    "assumptions": [
+      "semantic=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "concept": "Synthetic Concept 16"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-72bffc01-844e-5dbd-a5f6-db9a392ca983",
+    "duration_ms": 849
+  },
+  "harness_exit_code": 0
+}

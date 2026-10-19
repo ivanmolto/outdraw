@@ -1,0 +1,25 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "operation": "find_tags",
+  "status": "error",
+  "summary": "The harness did not return an envelope (exit 2).",
+  "results": [],
+  "result_count": 0,
+  "error": {
+    "code": "TOOL_INPUT",
+    "layer": "harness",
+    "retryable": false,
+    "recovery": "Correct the reported tool arguments and submit the operation once more."
+  },
+  "harness_exit_code": 2,
+  "raw": {
+    "error": {
+      "code": "TOOL_INPUT",
+      "layer": "tool_input",
+      "retryable": false,
+      "recovery": "Correct the reported tool arguments and submit the operation once more."
+    },
+    "operation": "find_tags",
+    "correlation_id": "exec-4a1f8cc5-5489-5af7-b6c6-0a9e70c8fcd0"
+  }
+}

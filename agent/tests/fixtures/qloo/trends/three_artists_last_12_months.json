@@ -1,0 +1,439 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "trends",
+  "status": "ok",
+  "interpretation": {
+    "entity_type": "urn:entity:artist",
+    "start_date": "2025-10-20",
+    "end_date": "2026-10-20"
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "name": "Synthetic Entity 3",
+          "type": "urn:entity:artist",
+          "popularity": 0.9221,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
+          "name": "Synthetic Entity 18",
+          "type": "urn:entity:artist",
+          "popularity": 0.8791,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "series": [
+    {
+      "entity": {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "name": "Synthetic Entity 1",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      },
+      "points": [
+        {
+          "date": "2026-10-19",
+          "population_percentile": 0.9615,
+          "population_rank": "975",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-10-12",
+          "population_percentile": 0.9342,
+          "population_rank": "924",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-10-05",
+          "population_percentile": 0.8874,
+          "population_rank": "884",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-28",
+          "population_percentile": 0.836,
+          "population_rank": "834",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-21",
+          "population_percentile": 0.7822,
+          "population_rank": "787",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-14",
+          "population_percentile": 0.7418,
+          "population_rank": "749",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-07",
+          "population_percentile": 0.6925,
+          "population_rank": "708",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-31",
+          "population_percentile": 0.6503,
+          "population_rank": "658",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-24",
+          "population_percentile": 0.6018,
+          "population_rank": "615",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-17",
+          "population_percentile": 0.5675,
+          "population_rank": "557",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        }
+      ]
+    },
+    {
+      "entity": {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "entityId": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "name": "Synthetic Entity 3",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      },
+      "points": [
+        {
+          "date": "2026-10-19",
+          "population_percentile": 0.971,
+          "population_rank": "973",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-10-12",
+          "population_percentile": 0.934,
+          "population_rank": "925",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-10-05",
+          "population_percentile": 0.888,
+          "population_rank": "889",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-28",
+          "population_percentile": 0.8424,
+          "population_rank": "825",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-21",
+          "population_percentile": 0.7805,
+          "population_rank": "781",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-14",
+          "population_percentile": 0.7364,
+          "population_rank": "742",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-07",
+          "population_percentile": 0.6907,
+          "population_rank": "700",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-31",
+          "population_percentile": 0.6618,
+          "population_rank": "650",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-24",
+          "population_percentile": 0.6111,
+          "population_rank": "611",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-17",
+          "population_percentile": 0.5612,
+          "population_rank": "563",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        }
+      ]
+    },
+    {
+      "entity": {
+        "input": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
+        "entityId": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
+        "name": "Synthetic Entity 18",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      },
+      "points": [
+        {
+          "date": "2026-10-19",
+          "population_percentile": 0.9675,
+          "population_rank": "964",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-10-12",
+          "population_percentile": 0.9247,
+          "population_rank": "915",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-10-05",
+          "population_percentile": 0.8879,
+          "population_rank": "888",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-28",
+          "population_percentile": 0.8317,
+          "population_rank": "835",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-21",
+          "population_percentile": 0.798,
+          "population_rank": "781",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-14",
+          "population_percentile": 0.7444,
+          "population_rank": "753",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-09-07",
+          "population_percentile": 0.6916,
+          "population_rank": "703",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-31",
+          "population_percentile": 0.659,
+          "population_rank": "653",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-24",
+          "population_percentile": 0.6073,
+          "population_rank": "619",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        },
+        {
+          "date": "2026-08-17",
+          "population_percentile": 0.5633,
+          "population_rank": "563",
+          "population_rank_velocity": 0,
+          "velocity_fold_change": 0,
+          "population_percent_delta": 0
+        }
+      ]
+    }
+  ],
+  "result_count": 3,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/trending",
+    "documentation": "https://docs.qloo.com/reference/get-trending",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/trending",
+        "query": {
+          "filter.type": "urn:entity:artist",
+          "filter.start_date": "2025-10-20",
+          "filter.end_date": "2026-10-20",
+          "signal.interests.entities": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "take": 10
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/v2/trending",
+        "query": {
+          "filter.type": "urn:entity:artist",
+          "filter.start_date": "2025-10-20",
+          "filter.end_date": "2026-10-20",
+          "signal.interests.entities": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "take": 10
+        }
+      },
+      {
+        "method": "GET",
+        "path": "/v2/trending",
+        "query": {
+          "filter.type": "urn:entity:artist",
+          "filter.start_date": "2025-10-20",
+          "filter.end_date": "2026-10-20",
+          "signal.interests.entities": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
+          "take": 10
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "trends",
+    "job": "trends",
+    "signals": {},
+    "filters": {
+      "startDate": "2025-10-20",
+      "endDate": "2026-10-20"
+    },
+    "operators": {},
+    "output": {
+      "limit": 10
+    },
+    "assumptions": [],
+    "unresolved": [],
+    "target": {
+      "type": "artist",
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "6D60277B-0305-5B5B-B597-1584169BE993",
+        "0C62B8C4-9B54-52EE-A51F-858EFEF488EF"
+      ]
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-1ddb1d01-9293-58ef-9da3-a4648a5cb85a",
+    "duration_ms": 4763
+  },
+  "results": [],
+  "harness_exit_code": 0
+}

@@ -1,0 +1,7 @@
+{
+  "workflow": "find_tags",
+  "input": {
+    "query": "Synthetic Concept 7",
+    "limit": 1
+  }
+}

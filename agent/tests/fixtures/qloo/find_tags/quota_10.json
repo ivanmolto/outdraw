@@ -1,0 +1,62 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "find_tags",
+  "status": "ok",
+  "interpretation": {
+    "query": "Synthetic Concept 11",
+    "semantic": true
+  },
+  "results": [
+    {
+      "id": "urn:tag:synthetic:genre:084",
+      "name": "Synthetic Concept 11",
+      "type": "urn:tag:genre:qloo",
+      "popularity": 0.9751
+    }
+  ],
+  "result_count": 1,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/tags",
+    "documentation": "https://docs.qloo.com/reference/get-tags",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/tags",
+        "query": {
+          "filter.query": "Synthetic Concept 11",
+          "feature.semantic_search": true,
+          "take": 1
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "find_tags",
+    "job": "find_tags",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 1
+    },
+    "assumptions": [
+      "semantic=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "concept": "Synthetic Concept 11"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-9c88c337-3489-5ed9-83db-1fad2db7bea2",
+    "duration_ms": 1680
+  },
+  "harness_exit_code": 0
+}

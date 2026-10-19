@@ -1,0 +1,11 @@
+{
+  "workflow": "recommend",
+  "input": {
+    "target_type": "place",
+    "signal_tags": [
+      "urn:tag:synthetic:cuisine:067"
+    ],
+    "filter_location": "Synthetic Region 1",
+    "limit": 10
+  }
+}

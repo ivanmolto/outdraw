@@ -1,0 +1,86 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "find_tags",
+  "status": "ok",
+  "interpretation": {
+    "query": "Synthetic Concept 2",
+    "semantic": true
+  },
+  "results": [
+    {
+      "id": "urn:tag:synthetic:cuisine:067",
+      "name": "Synthetic Concept 2",
+      "type": "urn:tag:cuisine:qloo",
+      "popularity": 0.9751
+    },
+    {
+      "id": "urn:tag:synthetic:amenity:069",
+      "name": "Synthetic Concept 2",
+      "type": "urn:tag:amenity:qloo",
+      "popularity": 0.9249
+    },
+    {
+      "id": "urn:tag:synthetic:cuisine:071",
+      "name": "Synthetic Tag 54",
+      "type": "urn:tag:cuisine:qloo",
+      "popularity": 0.8833
+    },
+    {
+      "id": "urn:tag:synthetic:setting:070",
+      "name": "Synthetic Concept 2",
+      "type": "urn:tag:setting:qloo",
+      "popularity": 0.8329
+    },
+    {
+      "id": "urn:tag:synthetic:ambience:068",
+      "name": "Synthetic Tag 55",
+      "type": "urn:tag:ambience:qloo",
+      "popularity": 0.7955
+    }
+  ],
+  "result_count": 5,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/tags",
+    "documentation": "https://docs.qloo.com/reference/get-tags",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/tags",
+        "query": {
+          "filter.query": "Synthetic Concept 2",
+          "feature.semantic_search": true,
+          "take": 5
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "find_tags",
+    "job": "find_tags",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 5
+    },
+    "assumptions": [
+      "semantic=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "concept": "Synthetic Concept 2"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-8b66b569-80cf-53d4-a6b4-32b46979449c",
+    "duration_ms": 489
+  },
+  "harness_exit_code": 0
+}

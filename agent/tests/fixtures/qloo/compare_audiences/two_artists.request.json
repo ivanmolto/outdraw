@@ -1,0 +1,12 @@
+{
+  "workflow": "compare_audiences",
+  "input": {
+    "group_a": [
+      "746CD02C-8299-5FBF-9C15-615CBD354946"
+    ],
+    "group_b": [
+      "6D60277B-0305-5B5B-B597-1584169BE993"
+    ],
+    "limit": 10
+  }
+}

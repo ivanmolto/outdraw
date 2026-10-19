@@ -1,0 +1,9 @@
+{
+  "workflow": "where_popular",
+  "input": {
+    "entity": "746CD02C-8299-5FBF-9C15-615CBD354946",
+    "entity_type": "artist",
+    "within": "Synthetic Region 1",
+    "limit": 10
+  }
+}

@@ -1,0 +1,445 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "recommend",
+  "status": "ok",
+  "interpretation": {
+    "target_type": "urn:entity:artist",
+    "signals": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "name": "Synthetic Entity 1",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      },
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "entityId": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "name": "Synthetic Entity 3",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      }
+    ],
+    "signal_tags": [],
+    "include_tags": [],
+    "exclude_tags": []
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "name": "Synthetic Entity 3",
+          "type": "urn:entity:artist",
+          "popularity": 0.9221,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "entity_id": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
+      "name": "Synthetic Entity 18",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.9751,
+      "affinity": 0.9641,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9633
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9174
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "5C9ACEAE-1091-539C-9B96-948709DA555F",
+      "name": "Synthetic Entity 19",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.9249,
+      "affinity": 0.9252,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9659
+          },
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9233
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "97E436A5-A111-52AF-B478-0D359D974A33",
+      "name": "Synthetic Entity 20",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.8833,
+      "affinity": 0.8707,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9703
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9301
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "CBAA6918-261F-55AB-A47C-27035338EC60",
+      "name": "Synthetic Entity 21",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.8329,
+      "affinity": 0.8282,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9745
+          },
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.923
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "F4E77500-5EE8-5EE5-B058-98BD78DE58F6",
+      "name": "Synthetic Entity 22",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.7955,
+      "affinity": 0.7936,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9733
+          },
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9341
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "AF7EB799-415E-5446-988D-09563F792936",
+      "name": "Synthetic Entity 23",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.7431,
+      "affinity": 0.7479,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9687
+          },
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9186
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "2194DE40-DA10-5FF1-8AEC-C251B52815FA",
+      "name": "Synthetic Entity 24",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.6967,
+      "affinity": 0.7019,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9747
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9275
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "2A15277D-4C38-50EF-86C6-259DA8BB5E03",
+      "name": "Synthetic Entity 25",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.6569,
+      "affinity": 0.6469,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9684
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9337
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "C9163CA6-0F02-585F-824D-377B5DD54111",
+      "name": "Synthetic Entity 26",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.6032,
+      "affinity": 0.6169,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9621
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9224
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "16CEB501-2061-59D3-924D-113DE490FFBB",
+      "name": "Synthetic Entity 27",
+      "type": "urn:entity",
+      "subtype": "urn:entity:artist",
+      "popularity": 0.5673,
+      "affinity": 0.5706,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.977
+          },
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.92
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    }
+  ],
+  "result_count": 10,
+  "explainability": {
+    "signal.interests.entities": {
+      "effect_on_top3_recs": [
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9603
+        },
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9322
+        }
+      ],
+      "effect_on_top5_recs": [
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9649
+        },
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9304
+        }
+      ],
+      "effect_on_top10_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9655
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9184
+        }
+      ],
+      "effect_on_all_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9658
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9219
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/insights-api-deep-dive",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:entity:artist",
+          "take": 10,
+          "signal.interests.entities": [
+            "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "6D60277B-0305-5B5B-B597-1584169BE993"
+          ],
+          "feature.explainability": true
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "recommend",
+    "job": "recommend",
+    "signals": {
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "6D60277B-0305-5B5B-B597-1584169BE993"
+      ]
+    },
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 10,
+      "explain": true
+    },
+    "assumptions": [
+      "explain=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "artist"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-9e610871-4754-544d-8fbd-aa97059f4f2a",
+    "duration_ms": 3796
+  },
+  "harness_exit_code": 0
+}

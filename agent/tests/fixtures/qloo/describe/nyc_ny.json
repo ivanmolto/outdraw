@@ -1,0 +1,94 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "describe",
+  "status": "needs_input",
+  "summary": "Choose the intended Qloo entity.",
+  "resolution": {
+    "issues": [
+      {
+        "input": "Synthetic Entity 9",
+        "kind": "ambiguous",
+        "input_kind": "entity",
+        "field": "entity",
+        "candidates": [
+          {
+            "id": "DBEFDDC4-DC73-572E-B7E0-DAC82874B00F",
+            "name": "Synthetic Entity 10",
+            "type": "urn:entity:place",
+            "popularity": 0.9673,
+            "description": "synthetic text",
+            "address": "synthetic text"
+          },
+          {
+            "id": "845C5A17-3731-5A67-A652-FC98F76CFD4C",
+            "name": "Synthetic Entity 11",
+            "type": "urn:entity:place",
+            "popularity": 0.928,
+            "description": "synthetic text",
+            "address": "synthetic text"
+          },
+          {
+            "id": "A2B8EAA6-2D9C-566D-A640-FAA7288A7202",
+            "name": "Synthetic Entity 12",
+            "type": "urn:entity:place",
+            "popularity": 0.8895,
+            "description": "synthetic text",
+            "address": "synthetic text"
+          },
+          {
+            "id": "88F32D02-B24A-584F-BBE3-CF9B170A0748",
+            "name": "Synthetic Entity 13",
+            "type": "urn:entity:place",
+            "popularity": 0.8311,
+            "description": "synthetic text",
+            "address": "synthetic text"
+          },
+          {
+            "id": "149DF3D1-333C-5CC2-889F-5D25A3CD11CE",
+            "name": "Synthetic Entity 14",
+            "type": "urn:entity:place",
+            "popularity": 0.7992,
+            "description": "synthetic text",
+            "address": "synthetic text"
+          }
+        ],
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/search",
+          "strategy": "exact_name_context_or_choice",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [],
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "describe",
+    "job": "describe",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {},
+    "assumptions": [],
+    "unresolved": [],
+    "target": {
+      "entities": [
+        "Synthetic Entity 9"
+      ]
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-4c54b441-6f97-5de7-9fdc-cacada29fe2b",
+    "duration_ms": 714
+  },
+  "result_count": 0,
+  "harness_exit_code": 0
+}

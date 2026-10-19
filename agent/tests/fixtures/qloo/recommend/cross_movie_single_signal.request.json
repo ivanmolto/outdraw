@@ -1,0 +1,10 @@
+{
+  "workflow": "recommend",
+  "input": {
+    "target_type": "movie",
+    "signals": [
+      "746CD02C-8299-5FBF-9C15-615CBD354946"
+    ],
+    "limit": 10
+  }
+}

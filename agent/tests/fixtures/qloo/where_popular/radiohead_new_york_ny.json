@@ -1,0 +1,242 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "where_popular",
+  "status": "ok",
+  "interpretation": {
+    "entity": {
+      "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "name": "Synthetic Entity 1",
+      "type": "urn:entity:artist",
+      "match": "identifier"
+    },
+    "within": "Synthetic Region 1"
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "location": {
+        "latitude": 0.9614,
+        "longitude": 0.9791,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.97,
+        "affinity_rank": 0.9622,
+        "popularity": 0.9612,
+        "entity_artist_affinity_rank": 0.9758,
+        "entity_artist_affinity": 1
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.9303,
+        "longitude": 0.915,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.9241,
+        "affinity_rank": 0.919,
+        "popularity": 0.9309,
+        "entity_artist_affinity_rank": 0.9243,
+        "entity_artist_affinity": 0.9302
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.8704,
+        "longitude": 0.8785,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.886,
+        "affinity_rank": 0.8819,
+        "popularity": 0.878,
+        "entity_artist_affinity_rank": 0.8836,
+        "entity_artist_affinity": 0.8858
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.8434,
+        "longitude": 0.8307,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.8307,
+        "affinity_rank": 0.8356,
+        "popularity": 0.8431,
+        "entity_artist_affinity_rank": 0.8287,
+        "entity_artist_affinity": 0.8265
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.7908,
+        "longitude": 0.7956,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.7862,
+        "affinity_rank": 0.7854,
+        "popularity": 0.7879,
+        "entity_artist_affinity_rank": 0.7825,
+        "entity_artist_affinity": 0.7957
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.7492,
+        "longitude": 0.7398,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.7488,
+        "affinity_rank": 0.7456,
+        "popularity": 0.7501,
+        "entity_artist_affinity_rank": 0.7426,
+        "entity_artist_affinity": 0.7362
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.7016,
+        "longitude": 0.7092,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.7074,
+        "affinity_rank": 0.7076,
+        "popularity": 0.693,
+        "entity_artist_affinity_rank": 0.6906,
+        "entity_artist_affinity": 0.6953
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.6616,
+        "longitude": 0.6557,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.6554,
+        "affinity_rank": 0.6571,
+        "popularity": 0.648,
+        "entity_artist_affinity_rank": 0.6639,
+        "entity_artist_affinity": 0.6518
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.6026,
+        "longitude": 0.617,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.6001,
+        "affinity_rank": 0.6029,
+        "popularity": 0.617,
+        "entity_artist_affinity_rank": 0.6023,
+        "entity_artist_affinity": 0.6128
+      }
+    },
+    {
+      "location": {
+        "latitude": 0.5614,
+        "longitude": 0.5684,
+        "geohash": "s0000000"
+      },
+      "query": {
+        "affinity": 0.5581,
+        "affinity_rank": 0.5678,
+        "popularity": 0.5682,
+        "entity_artist_affinity_rank": 0.5743,
+        "entity_artist_affinity": 0.5562
+      }
+    }
+  ],
+  "result_count": 10,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/heatmaps-use-case",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:heatmap",
+          "signal.interests.entities": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "filter.location.query": "Synthetic Region 1",
+          "take": 10
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "where_popular",
+    "job": "where_popular",
+    "signals": {},
+    "filters": {
+      "location": "Synthetic Region 1"
+    },
+    "operators": {},
+    "output": {
+      "limit": 10
+    },
+    "assumptions": [],
+    "unresolved": [],
+    "target": {
+      "type": "artist",
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946"
+      ]
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-ad9e396f-32fe-55d0-a4b5-bd50f4764a2d",
+    "duration_ms": 1542
+  },
+  "harness_exit_code": 0
+}

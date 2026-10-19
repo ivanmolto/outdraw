@@ -1,0 +1,141 @@
+{
+  "_synthetic": "derived from recommend/artists_two_signals: status forced so the branch can be tested",
+  "schema_version": "1.0-preview.1",
+  "operation": "recommend",
+  "status": "empty",
+  "interpretation": {
+    "target_type": "urn:entity:artist",
+    "signals": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "name": "Synthetic Entity 1",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      },
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "entityId": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "name": "Synthetic Entity 3",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      }
+    ],
+    "signal_tags": [],
+    "include_tags": [],
+    "exclude_tags": []
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "name": "Synthetic Entity 3",
+          "type": "urn:entity:artist",
+          "popularity": 0.9221,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [],
+  "result_count": 0,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/insights-api-deep-dive",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:entity:artist",
+          "take": 10,
+          "signal.interests.entities": [
+            "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "6D60277B-0305-5B5B-B597-1584169BE993"
+          ],
+          "feature.explainability": true
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "recommend",
+    "job": "recommend",
+    "signals": {
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "6D60277B-0305-5B5B-B597-1584169BE993"
+      ]
+    },
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 10,
+      "explain": true
+    },
+    "assumptions": [
+      "explain=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "artist"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-9e610871-4754-544d-8fbd-aa97059f4f2a",
+    "duration_ms": 3796
+  },
+  "harness_exit_code": 0,
+  "summary": "No results matched the supplied signals. Refine the input."
+}

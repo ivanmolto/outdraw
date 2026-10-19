@@ -1,0 +1,9 @@
+{
+  "workflow": "recommend",
+  "input": {
+    "target_type": "place",
+    "signal_location": "Synthetic Region 1",
+    "limit": 10,
+    "filter_location": "Synthetic Region 1"
+  }
+}

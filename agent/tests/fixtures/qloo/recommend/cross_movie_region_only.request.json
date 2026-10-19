@@ -1,0 +1,8 @@
+{
+  "workflow": "recommend",
+  "input": {
+    "target_type": "movie",
+    "signal_location": "Synthetic Region 1",
+    "limit": 10
+  }
+}

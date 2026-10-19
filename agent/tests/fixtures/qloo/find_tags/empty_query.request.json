@@ -1,0 +1,6 @@
+{
+  "workflow": "find_tags",
+  "input": {
+    "query": ""
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "_synthetic": "derived from find_tags/empty_query: status forced so the branch can be tested",
+  "operation": "find_tags",
+  "status": "error",
+  "summary": "Qloo rate limit reached.",
+  "results": [],
+  "result_count": 0,
+  "error": {
+    "code": "QLOO_RATE_LIMIT",
+    "layer": "qloo",
+    "retryable": true,
+    "recovery": "Wait for the rate-limit window to pass, then retry the operation."
+  },
+  "harness_exit_code": 2
+}

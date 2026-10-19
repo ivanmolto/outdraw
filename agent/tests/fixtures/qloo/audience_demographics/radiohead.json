@@ -1,0 +1,117 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "audience_demographics",
+  "status": "ok",
+  "interpretation": {
+    "entity": {
+      "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "name": "Synthetic Entity 1",
+      "type": "urn:entity:artist",
+      "match": "identifier"
+    }
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "query": {
+        "age": {
+          "24_and_younger": 0.9618,
+          "25_to_29": 0.9653,
+          "30_to_34": 0.9782,
+          "35_to_44": 0.9771,
+          "45_to_54": 0.9776,
+          "55_and_older": 0.9787
+        },
+        "gender": {
+          "male": 0.9654,
+          "female": 0.9706
+        }
+      }
+    }
+  ],
+  "result_count": 1,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/demographics-use-case",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:demographics",
+          "signal.interests.entities": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "take": 10
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "audience_demographics",
+    "job": "audience_demographics",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 10
+    },
+    "assumptions": [
+      "limit=10"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "artist",
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946"
+      ]
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-ac999b49-70c2-5ef0-99cb-6f60685b567b",
+    "duration_ms": 917
+  },
+  "harness_exit_code": 0
+}

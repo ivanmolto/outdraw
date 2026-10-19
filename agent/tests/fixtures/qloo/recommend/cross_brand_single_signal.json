@@ -1,0 +1,369 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "recommend",
+  "status": "ok",
+  "interpretation": {
+    "target_type": "urn:entity:brand",
+    "signals": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "name": "Synthetic Entity 1",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      }
+    ],
+    "signal_tags": [],
+    "include_tags": [],
+    "exclude_tags": []
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "entity_id": "644030C9-2B52-57ED-B14C-E46F0E7DB475",
+      "name": "Synthetic Entity 42",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.9751,
+      "affinity": 0.9641,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9633
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "FAB788E3-6920-557D-8742-48B13E745863",
+      "name": "Synthetic Entity 43",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.9249,
+      "affinity": 0.9252,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9659
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "BC620AE5-9573-5A4D-B396-E52A6B0A5C4B",
+      "name": "Synthetic Entity 44",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.8833,
+      "affinity": 0.8707,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9703
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "6094B989-C2A9-5560-B489-EA797C92159F",
+      "name": "Synthetic Entity 45",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.8329,
+      "affinity": 0.8282,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9745
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "788EBA71-E833-5D21-8284-CE1D41DFF73E",
+      "name": "Fj\u00e4llr\u00e4ven",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.7955,
+      "affinity": 0.7936,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9733
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "0526630A-8301-5DC1-8CD2-A3170D3B1E01",
+      "name": "Synthetic Entity 46",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.7431,
+      "affinity": 0.7479,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9687
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "605641AB-CBA5-5D33-B09A-39AD65AB1202",
+      "name": "Synthetic Entity 47",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.6967,
+      "affinity": 0.7019,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9747
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "E91809ED-860C-503E-A093-5616B9C46990",
+      "name": "Synthetic Entity 48",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.6569,
+      "affinity": 0.6469,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9684
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "322A32F2-3831-552B-8A5A-CB5A03D08C40",
+      "name": "Synthetic Entity 49",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.6032,
+      "affinity": 0.6169,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9621
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "2DC6A010-F725-5E04-A87A-4DFA64936A77",
+      "name": "Synthetic Entity 50",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.5673,
+      "affinity": 0.5706,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.977
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    }
+  ],
+  "result_count": 10,
+  "explainability": {
+    "signal.interests.entities": {
+      "effect_on_top3_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9603
+        }
+      ],
+      "effect_on_top5_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9649
+        }
+      ],
+      "effect_on_top10_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9655
+        }
+      ],
+      "effect_on_all_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9658
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/insights-api-deep-dive",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:entity:brand",
+          "take": 10,
+          "signal.interests.entities": [
+            "746CD02C-8299-5FBF-9C15-615CBD354946"
+          ],
+          "feature.explainability": true
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "recommend",
+    "job": "recommend",
+    "signals": {
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946"
+      ]
+    },
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 10,
+      "explain": true
+    },
+    "assumptions": [
+      "explain=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "brand"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-2d2c97e9-293a-5537-80fd-3bf2e00175da",
+    "duration_ms": 890
+  },
+  "harness_exit_code": 0
+}

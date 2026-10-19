@@ -1,0 +1,14 @@
+{
+  "workflow": "trends",
+  "input": {
+    "entities": [
+      "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "6D60277B-0305-5B5B-B597-1584169BE993",
+      "0C62B8C4-9B54-52EE-A51F-858EFEF488EF"
+    ],
+    "entity_type": "artist",
+    "start_date": "2025-10-20",
+    "end_date": "2026-10-20",
+    "limit": 10
+  }
+}

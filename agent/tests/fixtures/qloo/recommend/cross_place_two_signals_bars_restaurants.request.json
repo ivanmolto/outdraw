@@ -1,0 +1,17 @@
+{
+  "workflow": "recommend",
+  "input": {
+    "target_type": "place",
+    "signals": [
+      "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "6D60277B-0305-5B5B-B597-1584169BE993"
+    ],
+    "limit": 10,
+    "filter_location": "Synthetic Region 1",
+    "include_tags": [
+      "Synthetic Entity 129",
+      "Synthetic Entity 130"
+    ],
+    "include_tags_operator": "union"
+  }
+}

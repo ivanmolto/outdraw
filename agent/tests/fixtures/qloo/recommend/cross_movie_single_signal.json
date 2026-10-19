@@ -1,0 +1,399 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "recommend",
+  "status": "ok",
+  "interpretation": {
+    "target_type": "urn:entity:movie",
+    "signals": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "name": "Synthetic Entity 1",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      }
+    ],
+    "signal_tags": [],
+    "include_tags": [],
+    "exclude_tags": []
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "entity_id": "22061A99-6FF0-5973-AE25-3634BEC359FA",
+      "name": "Synthetic Entity 65",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.9751,
+      "affinity": 0.9641,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9633
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2006,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 109,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "43867E2D-8EB7-50CC-A92A-789BC5616193",
+      "name": "Synthetic Entity 66",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.9249,
+      "affinity": 0.9252,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9659
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 1999,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 113,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "2C31DCB9-058E-5222-B147-193DA722600B",
+      "name": "Synthetic Entity 67",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.8833,
+      "affinity": 0.8707,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9703
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2009,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 97,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "6BD08FD7-6787-5EB2-8355-B602D8D7AE60",
+      "name": "Synthetic Entity 68",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.8329,
+      "affinity": 0.8282,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9745
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2002,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 115,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "41885DA3-74F1-539E-BD25-D15626C61342",
+      "name": "Synthetic Entity 69",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.7955,
+      "affinity": 0.7936,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9733
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2008,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 124,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "878E3BF5-3905-55CA-96D6-E06D0E6BDB74",
+      "name": "Synthetic Entity 70",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.7431,
+      "affinity": 0.7479,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9687
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2006,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 100,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "38FD2C36-A62D-5EFA-9D26-173AAFC27544",
+      "name": "Synthetic Entity 71",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.6967,
+      "affinity": 0.7019,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9747
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2001,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 113,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "040BC409-7F2C-57C1-B22F-DA7FDD329ED0",
+      "name": "Pi",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.6569,
+      "affinity": 0.6469,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9684
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 1998,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 84,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "46E5C105-5D19-5E55-BE97-A5051AD9D33F",
+      "name": "Synthetic Entity 72",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.6032,
+      "affinity": 0.6169,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9621
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2003,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 102,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "B5FAAAC9-4ECA-5738-88A6-ED2E20BFC64E",
+      "name": "Synthetic Entity 73",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.5673,
+      "affinity": 0.5706,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.977
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2004,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 77,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    }
+  ],
+  "result_count": 10,
+  "explainability": {
+    "signal.interests.entities": {
+      "effect_on_top3_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9603
+        }
+      ],
+      "effect_on_top5_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9649
+        }
+      ],
+      "effect_on_top10_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9655
+        }
+      ],
+      "effect_on_all_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9658
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/insights-api-deep-dive",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:entity:movie",
+          "take": 10,
+          "signal.interests.entities": [
+            "746CD02C-8299-5FBF-9C15-615CBD354946"
+          ],
+          "feature.explainability": true
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "recommend",
+    "job": "recommend",
+    "signals": {
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946"
+      ]
+    },
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 10,
+      "explain": true
+    },
+    "assumptions": [
+      "explain=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "movie"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-19729ac3-9baf-55bf-b1db-b3e685de04c6",
+    "duration_ms": 2352
+  },
+  "harness_exit_code": 0
+}

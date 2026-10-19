@@ -1,0 +1,54 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "describe",
+  "status": "needs_input",
+  "summary": "Choose the intended Qloo entity.",
+  "resolution": {
+    "issues": [
+      {
+        "input": "C673FE23-85F6-5879-9C7C-FBE1482DB4B2",
+        "kind": "not_found",
+        "input_kind": "entity",
+        "field": "entity",
+        "scope": "urn:entity:artist",
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [],
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "describe",
+    "job": "describe",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {},
+    "assumptions": [],
+    "unresolved": [],
+    "target": {
+      "type": "artist",
+      "entities": [
+        "C673FE23-85F6-5879-9C7C-FBE1482DB4B2"
+      ]
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-47908186-f8fb-5031-8065-2de8b8022ba6",
+    "duration_ms": 480
+  },
+  "result_count": 0,
+  "harness_exit_code": 0
+}

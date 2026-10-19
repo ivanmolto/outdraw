@@ -1,0 +1,86 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "find_tags",
+  "status": "ok",
+  "interpretation": {
+    "query": "Synthetic Concept 1",
+    "semantic": true
+  },
+  "results": [
+    {
+      "id": "urn:tag:synthetic:genre:062",
+      "name": "Synthetic Concept 1",
+      "type": "urn:tag:genre:music",
+      "popularity": 0.9751
+    },
+    {
+      "id": "urn:tag:synthetic:genre:059",
+      "name": "Synthetic Concept 1",
+      "type": "urn:tag:genre:qloo",
+      "popularity": 0.9249
+    },
+    {
+      "id": "urn:tag:synthetic:music:060",
+      "name": "Synthetic Tag 29",
+      "type": "urn:tag:music:qloo",
+      "popularity": 0.8833
+    },
+    {
+      "id": "urn:tag:synthetic:genre:049",
+      "name": "Synthetic Tag 29",
+      "type": "urn:tag:genre:music",
+      "popularity": 0.8329
+    },
+    {
+      "id": "urn:tag:synthetic:subgenre:061",
+      "name": "Synthetic Concept 1",
+      "type": "urn:tag:subgenre:qloo",
+      "popularity": 0.7955
+    }
+  ],
+  "result_count": 5,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/tags",
+    "documentation": "https://docs.qloo.com/reference/get-tags",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/tags",
+        "query": {
+          "filter.query": "Synthetic Concept 1",
+          "feature.semantic_search": true,
+          "take": 5
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "find_tags",
+    "job": "find_tags",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 5
+    },
+    "assumptions": [
+      "semantic=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "concept": "Synthetic Concept 1"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-6dde96f7-63ae-5de5-854f-8142d6cc80a3",
+    "duration_ms": 638
+  },
+  "harness_exit_code": 0
+}

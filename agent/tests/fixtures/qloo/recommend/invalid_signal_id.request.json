@@ -1,0 +1,10 @@
+{
+  "workflow": "recommend",
+  "input": {
+    "target_type": "artist",
+    "signals": [
+      "C673FE23-85F6-5879-9C7C-FBE1482DB4B2"
+    ],
+    "limit": 5
+  }
+}

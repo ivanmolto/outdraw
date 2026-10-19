@@ -1,0 +1,640 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "recommend",
+  "status": "ok",
+  "interpretation": {
+    "target_type": "urn:entity:place",
+    "signals": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "name": "Synthetic Entity 1",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      },
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "entityId": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "name": "Synthetic Entity 3",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      }
+    ],
+    "signal_tags": [],
+    "filter_location": "Synthetic Region 1",
+    "include_tags": [
+      {
+        "input": "urn:tag:synthetic:category:097",
+        "tagId": "urn:tag:synthetic:category:097",
+        "name": "urn:tag:synthetic:category:097",
+        "match": "identifier"
+      },
+      {
+        "input": "urn:tag:synthetic:amenity:102",
+        "tagId": "urn:tag:synthetic:amenity:102",
+        "name": "urn:tag:synthetic:amenity:102",
+        "match": "identifier"
+      }
+    ],
+    "include_tags_operator": "union",
+    "exclude_tags": []
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "name": "Synthetic Entity 3",
+          "type": "urn:entity:artist",
+          "popularity": 0.9221,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "urn:tag:synthetic:category:097",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "urn:tag:synthetic:category:097",
+          "name": "urn:tag:synthetic:category:097"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "local:tag-urn",
+          "strategy": "supplied_identifier",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "urn:tag:synthetic:amenity:102",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "urn:tag:synthetic:amenity:102",
+          "name": "urn:tag:synthetic:amenity:102"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "local:tag-urn",
+          "strategy": "supplied_identifier",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "entity_id": "7DD1E097-D7B8-597A-B35A-B22B984062AC",
+      "name": "Synthetic Entity 37",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.9751,
+      "affinity": 0.9641,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9633
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9174
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": "synthetic text",
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 0.9688
+      }
+    },
+    {
+      "entity_id": "2325FCFE-52AF-5AF9-A2DC-71959A898867",
+      "name": "Synthetic Entity 131",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.9249,
+      "affinity": 0.9252,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9659
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9233
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": "synthetic text",
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": 3,
+        "business_rating": 0.9211
+      }
+    },
+    {
+      "entity_id": "C84D6670-7771-5DD0-951C-68B075F5C051",
+      "name": "Synthetic Entity 133",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.8833,
+      "affinity": 0.8707,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9703
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9301
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": "synthetic text",
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 0.8756
+      }
+    },
+    {
+      "entity_id": "F2C4E59D-94DB-551D-8808-8797342CF43E",
+      "name": "Synthetic Entity 134",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.8329,
+      "affinity": 0.8282,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9745
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.923
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": "synthetic text",
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 0.8418
+      }
+    },
+    {
+      "entity_id": "095D3B58-8C29-5F32-A18F-76ED5415D46F",
+      "name": "Synthetic Entity 135",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.7955,
+      "affinity": 0.7936,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9733
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9341
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": null,
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 0.7842
+      }
+    },
+    {
+      "entity_id": "400CFC2D-3333-5680-B4A0-3506F4B19BC4",
+      "name": "Synthetic Entity 136",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.7431,
+      "affinity": 0.7479,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9687
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9186
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": "synthetic text",
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 4
+      }
+    },
+    {
+      "entity_id": "CF49F51A-0890-56C8-B18C-F0DF766EA1D7",
+      "name": "Synthetic Entity 137",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.6967,
+      "affinity": 0.7019,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9747
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9275
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": "synthetic text",
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 0.7097
+      }
+    },
+    {
+      "entity_id": "28235E9F-7A51-5EC4-B184-176D032AB550",
+      "name": "Synthetic Entity 139",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.6569,
+      "affinity": 0.6469,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9684
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9337
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": null,
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 0.6525
+      }
+    },
+    {
+      "entity_id": "8766895F-4B3F-5607-9CE1-CD4A147FC57B",
+      "name": "Synthetic Entity 140",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.6032,
+      "affinity": 0.6169,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9621
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9224
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": "synthetic text",
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 0.6015
+      }
+    },
+    {
+      "entity_id": "B85A7C51-0740-5C45-830C-126F60FA9A05",
+      "name": "Synthetic Entity 142",
+      "type": "urn:entity",
+      "subtype": "urn:entity:place",
+      "popularity": 0.5673,
+      "affinity": 0.5706,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.977
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.92
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        },
+        "geocode": {
+          "city": "synthetic text",
+          "name": "synthetic text",
+          "metro": "synthetic text",
+          "country": "synthetic text",
+          "country_code": "synthetic text",
+          "admin1_region": "synthetic text",
+          "admin2_region": "synthetic text"
+        },
+        "address": "synthetic text",
+        "price_level": null,
+        "business_rating": 0.5654
+      }
+    }
+  ],
+  "result_count": 10,
+  "explainability": {
+    "signal.interests.entities": {
+      "effect_on_top3_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9603
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9322
+        }
+      ],
+      "effect_on_top5_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9649
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9304
+        }
+      ],
+      "effect_on_top10_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9655
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9184
+        }
+      ],
+      "effect_on_all_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9658
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9219
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/insights-api-deep-dive",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:entity:place",
+          "take": 10,
+          "signal.interests.entities": [
+            "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "6D60277B-0305-5B5B-B597-1584169BE993"
+          ],
+          "filter.location.query": "Synthetic Region 1",
+          "filter.tags": [
+            "urn:tag:synthetic:category:097",
+            "urn:tag:synthetic:amenity:102"
+          ],
+          "operator.filter.tags": "union",
+          "feature.explainability": true
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "recommend",
+    "job": "recommend",
+    "signals": {
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "6D60277B-0305-5B5B-B597-1584169BE993"
+      ]
+    },
+    "filters": {
+      "includeTags": [
+        "urn:tag:synthetic:category:097",
+        "urn:tag:synthetic:amenity:102"
+      ],
+      "location": "Synthetic Region 1"
+    },
+    "operators": {
+      "includeTags": "union"
+    },
+    "output": {
+      "limit": 10,
+      "explain": true
+    },
+    "assumptions": [
+      "explain=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "place"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-7aedaa4f-ee83-5645-8e7d-f33d490872eb",
+    "duration_ms": 1766
+  },
+  "harness_exit_code": 0
+}

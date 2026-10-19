@@ -1,0 +1,294 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "recommend",
+  "status": "ok",
+  "interpretation": {
+    "target_type": "urn:entity:movie",
+    "signals": [],
+    "signal_tags": [
+      {
+        "input": "urn:tag:synthetic:genre:066",
+        "tagId": "urn:tag:synthetic:genre:066",
+        "name": "urn:tag:synthetic:genre:066",
+        "match": "identifier"
+      }
+    ],
+    "signal_tags_operator": "intersection",
+    "signal_location": "Synthetic Region 1",
+    "include_tags": [],
+    "exclude_tags": []
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "urn:tag:synthetic:genre:066",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "urn:tag:synthetic:genre:066",
+          "name": "urn:tag:synthetic:genre:066"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "local:tag-urn",
+          "strategy": "supplied_identifier",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "results": [
+    {
+      "entity_id": "14808F95-ADCD-5A6D-90CD-47FF34F44034",
+      "name": "Synthetic Entity 56",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.9751,
+      "affinity": 0.9641,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2019,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 55,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "F0A282A8-69BA-586E-A9A2-77188982CC65",
+      "name": "Synthetic Entity 57",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.9249,
+      "affinity": 0.9252,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2021,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 143,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "7FBEB131-4191-5A8C-9FD4-E2C1C5020AC8",
+      "name": "Synthetic Entity 58",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.8833,
+      "affinity": 0.8707,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2018,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 134,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "C7902B17-9D0F-59D2-A52B-1043DB511341",
+      "name": "Synthetic Entity 59",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.8329,
+      "affinity": 0.8282,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2024,
+        "release_date": "synthetic text",
+        "content_rating": null,
+        "duration": 84,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "8303C8CE-42D1-5094-BDC2-5BDE7208CB9D",
+      "name": "Synthetic Entity 60",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.7955,
+      "affinity": 0.7936,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2021,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 109,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "AD6EAB3A-2FB4-51E2-AD54-08D40B983D07",
+      "name": "Synthetic Entity 61",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.7431,
+      "affinity": 0.7479,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2020,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 136,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "7B5CAA62-8061-5446-BD74-5D8D4DD5E69F",
+      "name": "Synthetic Entity 58: Wakanda Forever",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.6967,
+      "affinity": 0.7019,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2022,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 161,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "A480C612-3A38-59C3-89E9-E33439C95A95",
+      "name": "Synthetic Entity 62",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.6569,
+      "affinity": 0.6469,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2018,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 133,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "A15EAFE0-89A5-5126-A380-11564AAAC976",
+      "name": "Synthetic Entity 63",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.6032,
+      "affinity": 0.6169,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2018,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 120,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "F4BD14C6-A650-588C-9648-A47994261071",
+      "name": "Synthetic Entity 64",
+      "type": "urn:entity",
+      "subtype": "urn:entity:movie",
+      "popularity": 0.5673,
+      "affinity": 0.5706,
+      "properties": {
+        "description": "synthetic text",
+        "release_year": 2023,
+        "release_date": "synthetic text",
+        "content_rating": "synthetic text",
+        "duration": 141,
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    }
+  ],
+  "result_count": 10,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/insights-api-deep-dive",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:entity:movie",
+          "take": 10,
+          "signal.interests.tags": [
+            "urn:tag:synthetic:genre:066"
+          ],
+          "operator.signal.interests.tags": "intersection",
+          "signal.location.query": "Synthetic Region 1",
+          "feature.explainability": true
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "recommend",
+    "job": "recommend",
+    "signals": {
+      "tags": [
+        "urn:tag:synthetic:genre:066"
+      ],
+      "location": "Synthetic Region 1"
+    },
+    "filters": {},
+    "operators": {
+      "signalTags": "intersection"
+    },
+    "output": {
+      "limit": 10,
+      "explain": true
+    },
+    "assumptions": [
+      "explain=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "movie"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-37a4f7f5-68e2-5d76-b52c-25d186f7ab8c",
+    "duration_ms": 1440
+  },
+  "harness_exit_code": 0
+}

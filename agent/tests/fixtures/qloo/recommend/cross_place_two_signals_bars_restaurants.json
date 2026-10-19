@@ -1,0 +1,193 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "recommend",
+  "status": "needs_input",
+  "summary": "Choose or correct the unresolved Qloo inputs.",
+  "resolution": {
+    "issues": [
+      {
+        "input": "Synthetic Entity 129",
+        "kind": "ambiguous",
+        "input_kind": "tag",
+        "field": "include_tags",
+        "scope": "urn:entity:place",
+        "purpose": "include_filter",
+        "candidates": [
+          {
+            "id": "urn:tag:synthetic:category:097",
+            "name": "Synthetic Entity 129",
+            "type": "urn:tag:category:place",
+            "rank": 0.9649,
+            "popularity": 0.9673,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          },
+          {
+            "id": "urn:tag:synthetic:cuisine:098",
+            "name": "Synthetic Entity 129",
+            "type": "urn:tag:cuisine:qloo",
+            "rank": 0.9174,
+            "popularity": 0.928,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          },
+          {
+            "id": "urn:tag:synthetic:genre:100",
+            "name": "Synthetic Entity 129",
+            "type": "urn:tag:genre:place",
+            "rank": 0.8747,
+            "popularity": 0.8895,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          },
+          {
+            "id": "urn:tag:synthetic:activity_type:104",
+            "name": "Synthetic Entity 129",
+            "type": "urn:tag:activity_type:qloo",
+            "rank": 0.8315,
+            "popularity": 0.8311,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          },
+          {
+            "id": "urn:tag:synthetic:view:099",
+            "name": "Synthetic Entity 129",
+            "type": "urn:tag:view:qloo",
+            "rank": 0.7904,
+            "popularity": 0.7992,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          }
+        ],
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/v2/tags",
+          "strategy": "semantic_search_local_parent_scope_exact_name_or_choice",
+          "remote": true,
+          "uses_model": false
+        },
+        "warnings": []
+      },
+      {
+        "input": "Synthetic Entity 130",
+        "kind": "ambiguous",
+        "input_kind": "tag",
+        "field": "include_tags",
+        "scope": "urn:entity:place",
+        "purpose": "include_filter",
+        "candidates": [
+          {
+            "id": "urn:tag:synthetic:amenity:102",
+            "name": "Synthetic Entity 130",
+            "type": "urn:tag:amenity:qloo",
+            "rank": 0.9725,
+            "popularity": 0.9786,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          },
+          {
+            "id": "urn:tag:synthetic:genre:096",
+            "name": "Synthetic Entity 130",
+            "type": "urn:tag:genre:place",
+            "rank": 0.9243,
+            "popularity": 0.9224,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          },
+          {
+            "id": "urn:tag:synthetic:dining_option:095",
+            "name": "Synthetic Entity 130",
+            "type": "urn:tag:dining_option:qloo",
+            "rank": 0.871,
+            "popularity": 0.8888,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          },
+          {
+            "id": "urn:tag:synthetic:amenities:101",
+            "name": "Synthetic Entity 130",
+            "type": "urn:tag:amenities:place",
+            "rank": 0.8338,
+            "popularity": 0.8379,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          },
+          {
+            "id": "urn:tag:synthetic:cuisine:103",
+            "name": "Synthetic Entity 130",
+            "type": "urn:tag:cuisine:qloo",
+            "rank": 0.7872,
+            "popularity": 0.7896,
+            "parent_types": [
+              "urn:entity:place"
+            ]
+          }
+        ],
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/v2/tags",
+          "strategy": "semantic_search_local_parent_scope_exact_name_or_choice",
+          "remote": true,
+          "uses_model": false
+        },
+        "warnings": []
+      }
+    ]
+  },
+  "results": [],
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "recommend",
+    "job": "recommend",
+    "signals": {
+      "entities": [
+        "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "6D60277B-0305-5B5B-B597-1584169BE993"
+      ]
+    },
+    "filters": {
+      "includeTags": [
+        "Synthetic Entity 129",
+        "Synthetic Entity 130"
+      ],
+      "location": "Synthetic Region 1"
+    },
+    "operators": {
+      "includeTags": "union"
+    },
+    "output": {
+      "limit": 10,
+      "explain": true
+    },
+    "assumptions": [
+      "explain=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "place"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-079aeaa3-779b-5524-a002-f7280b53c554",
+    "duration_ms": 625
+  },
+  "result_count": 0,
+  "harness_exit_code": 0
+}

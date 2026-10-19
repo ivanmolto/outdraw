@@ -1,0 +1,138 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "schema_version": "1.0-preview.1",
+  "operation": "describe",
+  "status": "ok",
+  "interpretation": {
+    "entity": {
+      "input": "Synthetic Entity 1",
+      "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "name": "Synthetic Entity 1",
+      "type": "urn:entity:artist",
+      "match": "exact"
+    }
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "Synthetic Entity 1",
+        "status": "resolved",
+        "match": "exact",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/search",
+          "strategy": "exact_name_context_or_choice",
+          "remote": true,
+          "uses_model": false
+        },
+        "alternatives": [
+          {
+            "id": "4F26DE81-D46B-52D7-AD6F-E5B12284A7F1",
+            "name": "Synthetic Entity 15",
+            "type": "urn:entity:artist",
+            "popularity": 0.9633,
+            "description": "synthetic text"
+          },
+          {
+            "id": "EBE686B5-5D7D-5829-B675-9F812F38C77E",
+            "name": "Synthetic Entity 16",
+            "type": "urn:entity:artist",
+            "popularity": 0.9271,
+            "description": "synthetic text"
+          },
+          {
+            "id": "C0EE6FA4-7AC9-58DD-A374-79787A4B88A8",
+            "name": "Synthetic Entity 17",
+            "type": "urn:entity:artist",
+            "popularity": 0.8836,
+            "description": "synthetic text"
+          },
+          {
+            "id": "2FE50181-3B30-5B4D-830B-5930BCA083DD",
+            "name": "Thom Yorke and Johnny Greenwood (Synthetic Entity 1)",
+            "type": "urn:entity:artist",
+            "popularity": 0.8257,
+            "description": "synthetic text"
+          }
+        ]
+      }
+    ]
+  },
+  "results": [
+    {
+      "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "name": "Synthetic Entity 1",
+      "popularity": 0.9751,
+      "properties": {
+        "short_description": "synthetic text",
+        "duration": {},
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    }
+  ],
+  "result_count": 1,
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/entities",
+    "documentation": "https://docs.qloo.com/reference/get-entities",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/entities",
+        "query": {
+          "entity_ids": [
+            "746CD02C-8299-5FBF-9C15-615CBD354946"
+          ]
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "describe",
+    "job": "describe",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {},
+    "assumptions": [],
+    "unresolved": [],
+    "target": {
+      "type": "artist",
+      "entities": [
+        "Synthetic Entity 1"
+      ]
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-fe1bb3d0-e299-5127-a21e-3695d6f99cc0",
+    "duration_ms": 756
+  },
+  "harness_exit_code": 0
+}

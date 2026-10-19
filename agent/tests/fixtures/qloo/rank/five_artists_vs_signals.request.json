@@ -1,0 +1,17 @@
+{
+  "workflow": "rank",
+  "input": {
+    "options": [
+      "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
+      "5C9ACEAE-1091-539C-9B96-948709DA555F",
+      "97E436A5-A111-52AF-B478-0D359D974A33",
+      "CBAA6918-261F-55AB-A47C-27035338EC60",
+      "F4E77500-5EE8-5EE5-B058-98BD78DE58F6"
+    ],
+    "option_type": "artist",
+    "signals": [
+      "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "6D60277B-0305-5B5B-B597-1584169BE993"
+    ]
+  }
+}
