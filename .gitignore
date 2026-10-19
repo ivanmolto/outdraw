@@ -1,1 +1,34 @@
 docs/
+
+# secrets
+.env*
+!.env.example
+*.pem
+
+# node
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+.vercel/
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# qloo response data (Qloo terms: never in the public repo)
+agent/recordings/
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/
+.claude/settings.local.json
