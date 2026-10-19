@@ -43,8 +43,14 @@ starting any task. Each task there has a prompt, a definition of done and tests.
   No other module may shell out to `qloo` or import an MCP client.
 - When spawning `qloo mcp`, pass the full process environment to the child; otherwise the
   server never sees the key and fails with `QLOO_AUTH`.
-- All four harness surfaces share one quota. Make the smallest request that answers the
+- All four harness surfaces share one quota: 10,000 requests per key per month, resetting
+  on the 1st, and 5 requests per second. Make the smallest request that answers the
   question, cache, and keep per-run call budgets (profile ≤ 6, signals ≤ 33, briefs ≤ 5).
+  Any batch job (precompute, evaluations) must print its estimated call count and stop for
+  confirmation before spending quota, and must leave a reserve for judging through Oct 31
+  (the quota resets Nov 1; judging ends Nov 16).
+- Qloo response data must never be in the public repo (Qloo's terms). Private server-side
+  caching and precomputed results on our own server are fine.
 
 ## Model and ranking
 
