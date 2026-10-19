@@ -1,0 +1,12 @@
+{
+  "name": "outdraw-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pins the Qloo harness used by the agent container. Qloo is reached only through `qloo exec` and `qloo mcp`; see docs/decisions/001-qloo-workflows.md before changing the version.",
+  "dependencies": {
+    "@qloo/qloo-harness": "0.1.26"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}

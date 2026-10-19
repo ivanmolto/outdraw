@@ -1,0 +1,31 @@
+[project]
+name = "draw"
+version = "0.1.0"
+description = "Outdraw agent service: Qloo-backed booking intelligence for live-music venues."
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: needs real keys (skipped unless RUN_INTEGRATION=1)",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "N", "W"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+files = ["scripts", "tests"]
