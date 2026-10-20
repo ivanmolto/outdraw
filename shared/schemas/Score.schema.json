@@ -17,13 +17,38 @@
     },
     "top_reason": {
       "type": "string"
+    },
+    "neutral": {
+      "type": "array",
+      "description": "Sub-scores that fell back to the neutral 0.5 because Qloo gave no usable signal.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "crowd_affinity",
+          "past_fit",
+          "local_heat",
+          "novelty",
+          "size_fit",
+          "momentum"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "evidence": {
+      "type": "array",
+      "description": "One ref per sub-score backed by a Qloo call: item_ref is the sub-score name.",
+      "items": {
+        "$ref": "EvidenceRef.schema.json"
+      }
     }
   },
   "required": [
     "total",
     "breakdown",
     "weights",
-    "top_reason"
+    "top_reason",
+    "neutral",
+    "evidence"
   ],
   "additionalProperties": false,
   "$defs": {

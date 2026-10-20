@@ -92,6 +92,8 @@ VALID: dict[type[BaseModel], dict[str, Any]] = {
         "breakdown": {**BREAKDOWN, "momentum": 0.3},
         "weights": WEIGHTS,
         "top_reason": "Strong overlap with the room's crowd.",
+        "neutral": ["local_heat"],
+        "evidence": [{"item_ref": "crowd_affinity", "call_id": EVIDENCE["call_id"]}],
     },
     schemas.EvidenceTrail: {
         "inputs": [{"ref": "venue", "label": "Synthetic Room, 300 cap"}],
@@ -131,6 +133,7 @@ INVALID: list[tuple[type[BaseModel], str, Any]] = [
     (schemas.Constraints, "max_candidates", 0),
     (schemas.Candidate, "popularity", -0.1),
     (schemas.Score, "breakdown.novelty", 2),
+    (schemas.Score, "neutral", ["affinity"]),
     (schemas.EvidenceTrail, "source_labels.affinities[0]", "llm"),
     (schemas.EvidenceTrail, "qloo_calls.0.workflow", "search"),
     (schemas.BookingBrief, "why_it_fits", []),

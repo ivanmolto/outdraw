@@ -317,6 +317,14 @@ export interface Score {
   breakdown: ScoreBreakdown;
   weights: ScoreWeights;
   top_reason: string;
+  /**
+   * Sub-scores that fell back to the neutral 0.5 because Qloo gave no usable signal.
+   */
+  neutral: ("crowd_affinity" | "past_fit" | "local_heat" | "novelty" | "size_fit" | "momentum")[];
+  /**
+   * One ref per sub-score backed by a Qloo call: item_ref is the sub-score name.
+   */
+  evidence: EvidenceRef[];
 }
 /**
  * What a venue tells Outdraw about itself.

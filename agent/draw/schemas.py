@@ -268,6 +268,20 @@ class Score(BaseModel):
     breakdown: ScoreBreakdown
     weights: ScoreWeights
     top_reason: str
+    neutral: Annotated[
+        list[
+            Literal["crowd_affinity", "past_fit", "local_heat", "novelty", "size_fit", "momentum"]
+        ],
+        Field(
+            description="Sub-scores that fell back to the neutral 0.5 because Qloo gave no usable signal."
+        ),
+    ]
+    evidence: Annotated[
+        list[EvidenceRef],
+        Field(
+            description="One ref per sub-score backed by a Qloo call: item_ref is the sub-score name."
+        ),
+    ]
 
 
 class VenueInput(BaseModel):

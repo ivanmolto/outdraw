@@ -101,6 +101,8 @@ const candidate = {
   breakdown: { ...breakdown, momentum: 0.3 },
   weights,
   top_reason: "Strong overlap with the room's crowd.",
+  neutral: ["local_heat"],
+  evidence: [{ item_ref: "crowd_affinity", call_id: evidence.call_id }],
 }) satisfies Score;
 
 ({
