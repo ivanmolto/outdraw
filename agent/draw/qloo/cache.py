@@ -18,7 +18,8 @@ import asyncpg
 
 from draw.qloo.config import CACHE_TTL_S
 
-# Owned by the T14 migration once it exists; `PostgresCache.ensure_schema` is idempotent.
+# Owned by migration 0001, which repeats this DDL; `PostgresCache.ensure_schema` stays as an
+# idempotent fallback for databases that have not been migrated.
 QLOO_CACHE_DDL = """
 CREATE TABLE IF NOT EXISTS qloo_cache (
     key        TEXT PRIMARY KEY,

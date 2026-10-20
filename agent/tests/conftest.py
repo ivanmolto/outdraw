@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import importlib.util
 import json
+import os
 from collections.abc import Callable
 from pathlib import Path
 from types import ModuleType
@@ -13,6 +14,10 @@ from typing import Any
 import pytest
 
 from draw.qloo import exec_client
+
+# testcontainers (tests/db): Ryuk, its reaper sidecar, cannot mount Docker Desktop's socket on
+# macOS. The container fixtures remove their containers themselves. Read at import time.
+os.environ.setdefault("TESTCONTAINERS_RYUK_DISABLED", "true")
 
 AGENT_DIR = Path(__file__).resolve().parents[1]
 FIXTURES_DIR = AGENT_DIR / "tests" / "fixtures" / "qloo"

@@ -27,6 +27,9 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY draw ./draw
+# Migrations run as Railway's pre-deploy command: `alembic upgrade head`.
+COPY alembic.ini ./
+COPY migrations ./migrations
 
 ENV PATH="/app/node_modules/.bin:/app/.venv/bin:${PATH}"
 

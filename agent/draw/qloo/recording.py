@@ -17,7 +17,8 @@ import asyncpg
 
 REDACTED = "<redacted>"
 
-# Owned by the T14 migration once it exists; `ensure_schema` is idempotent.
+# Owned by migration 0001, which repeats this DDL; `ensure_schema` stays as an idempotent
+# fallback for databases that have not been migrated.
 QLOO_CALLS_DDL = """
 CREATE TABLE IF NOT EXISTS qloo_calls (
     call_id    TEXT PRIMARY KEY,

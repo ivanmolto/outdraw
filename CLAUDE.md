@@ -104,7 +104,7 @@ cd web && npm test && npm run lint && npm run typecheck
 # agent
 cd agent && uv run uvicorn draw.main:app --reload
 cd agent && uv run pytest && uv run ruff check . && uv run mypy .
-cd agent && uv run alembic upgrade head
+cd agent && make migrate                            # alembic upgrade head, DATABASE_URL from ../.env.local
 cd agent && uv run python scripts/precompute.py     # seed venues, QLOO_RECORD=1
 
 # qloo harness (inside /agent, after npm ci)
