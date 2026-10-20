@@ -87,12 +87,13 @@ class QlooEmpty(QlooGatewayError):  # noqa: N818
 
 
 class BudgetExceeded(QlooGatewayError):  # noqa: N818
-    """The daily Qloo call cap is spent; nothing was spawned."""
+    """A daily cap is spent: Qloo calls (nothing was spawned) or LLM tokens (T13)."""
 
-    def __init__(self, used: int, cap: int) -> None:
-        super().__init__(f"Qloo daily budget exceeded: {used}/{cap}")
+    def __init__(self, used: int, cap: int, what: str = "Qloo") -> None:
+        super().__init__(f"{what} daily budget exceeded: {used}/{cap}")
         self.used = used
         self.cap = cap
+        self.what = what
 
 
 # --- normalisation --------------------------------------------------------------------
