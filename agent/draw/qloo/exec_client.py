@@ -27,7 +27,7 @@ import time
 import uuid
 from asyncio import create_subprocess_exec
 from asyncio.subprocess import PIPE
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Any, Literal
 
@@ -98,12 +98,16 @@ class QlooExec:
         recorder: Recorder | None = None,
         retry_wait: wait_base | None = None,
         run_id: str | None = None,
+        observer: Callable[[QlooResult], None] | None = None,
     ) -> None:
         self.config = config or QlooConfig()
         self.cache: CacheBackend = cache if cache is not None else MemoryCache()
         self.counter: DailyCounter = counter if counter is not None else NullCounter()
         self.recorder = recorder
         self.run_id = run_id
+        # Sees every result (cache hits and non-ok statuses included) before the status
+        # branch raises: the agent's run store uses it to list the calls behind a score.
+        self.observer = observer
         self._wait: wait_base = retry_wait or wait_exponential_jitter(multiplier=0.5, max=8.0)
         self._semaphore = asyncio.Semaphore(self.config.concurrency)
         self._pool: asyncpg.Pool | None = None
@@ -282,6 +286,8 @@ class QlooExec:
                 cache_hit=cache_hit,
                 run_id=self.run_id,
             )
+        if self.observer is not None:
+            self.observer(result)
         self._raise_for_status(result)
         return result
 
