@@ -14,7 +14,7 @@ starting any task. Each task there has a prompt, a definition of done and tests.
 - `/agent` — Python 3.12, FastAPI, Strands Agents SDK, deployed on Railway in a container
   that also has Node 22.19+ and the pinned Qloo harness.
 - `/shared` — JSON Schemas shared by both; generated TypeScript types live in
-  `/web/src/types`, generated Pydantic models in `/agent/draw/schemas.py`. Regenerate with
+  `/web/types`, generated Pydantic models in `/agent/draw/schemas.py`. Regenerate with
   the scripts in each package; never hand-edit generated files.
 - `/docs` — briefing, task list, decisions (`docs/decisions/*.md`), ops, walkthrough.
 

@@ -1,0 +1,19 @@
+{
+  "name": "outdraw",
+  "private": true,
+  "description": "Outdraw monorepo: /web (Next.js) and /agent (FastAPI + Qloo harness).",
+  "scripts": {
+    "dev": "concurrently -k -n web,agent -c yellow,cyan \"npm:dev:web\" \"npm:dev:agent\"",
+    "dev:web": "npm --prefix web run dev",
+    "dev:agent": "cd agent && uv run uvicorn draw.main:app --reload --port 8000",
+    "test": "npm --prefix web test && cd agent && uv run pytest",
+    "lint": "npm --prefix web run lint && cd agent && uv run ruff check .",
+    "typecheck": "npm --prefix web run typecheck && cd agent && uv run mypy ."
+  },
+  "devDependencies": {
+    "concurrently": "9.2.1"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  }
+}
