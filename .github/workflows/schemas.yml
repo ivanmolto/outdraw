@@ -1,0 +1,51 @@
+name: schemas
+
+on:
+  push:
+    paths:
+      - "shared/schemas/**"
+      - "web/types/schemas.ts"
+      - "web/scripts/gen-types.mjs"
+      - "web/package*.json"
+      - "agent/draw/schemas.py"
+      - "agent/scripts/gen_schemas.py"
+      - "agent/pyproject.toml"
+      - "agent/uv.lock"
+      - ".github/workflows/schemas.yml"
+  pull_request:
+    paths:
+      - "shared/schemas/**"
+      - "web/types/schemas.ts"
+      - "web/scripts/gen-types.mjs"
+      - "web/package*.json"
+      - "agent/draw/schemas.py"
+      - "agent/scripts/gen_schemas.py"
+      - "agent/pyproject.toml"
+      - "agent/uv.lock"
+      - ".github/workflows/schemas.yml"
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.19"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: agent/uv.lock
+
+      - name: Install generators
+        run: |
+          npm --prefix web ci
+          cd agent && uv sync --frozen
+
+      - name: Regenerate and fail on drift
+        run: npm run check:schemas
