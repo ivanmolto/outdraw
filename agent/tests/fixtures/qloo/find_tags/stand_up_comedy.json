@@ -9,31 +9,31 @@
   },
   "results": [
     {
-      "id": "urn:tag:synthetic:genre:111",
+      "id": "urn:tag:synthetic:genre:112",
       "name": "Synthetic Tag 68",
       "type": "urn:tag:genre:qloo",
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:keyword:110",
+      "id": "urn:tag:synthetic:keyword:113",
       "name": "Synthetic Tag 68",
       "type": "urn:tag:keyword:media",
       "popularity": 0.9249
     },
     {
-      "id": "urn:tag:synthetic:occupation:109",
+      "id": "urn:tag:synthetic:occupation:110",
       "name": "Synthetic Tag 69",
       "type": "urn:tag:occupation:qloo",
       "popularity": 0.8833
     },
     {
-      "id": "urn:tag:synthetic:keyword:113",
+      "id": "urn:tag:synthetic:keyword:109",
       "name": "Synthetic Tag 69",
       "type": "urn:tag:keyword:media",
       "popularity": 0.8329
     },
     {
-      "id": "urn:tag:synthetic:occupation:112",
+      "id": "urn:tag:synthetic:occupation:111",
       "name": "Synthetic Tag 70",
       "type": "urn:tag:occupation:wikidata",
       "popularity": 0.7955

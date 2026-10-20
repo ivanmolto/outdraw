@@ -10,7 +10,7 @@
     "filter_location": "Synthetic Region 2",
     "include_tags": [
       "urn:tag:synthetic:category:069",
-      "urn:tag:synthetic:product_service:074"
+      "urn:tag:synthetic:product_service:076"
     ],
     "include_tags_operator": "union",
     "limit": 10

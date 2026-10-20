@@ -3,7 +3,7 @@
   "input": {
     "target_type": "place",
     "signal_tags": [
-      "urn:tag:synthetic:cuisine:090"
+      "urn:tag:synthetic:cuisine:086"
     ],
     "filter_location": "Synthetic Region 1",
     "limit": 10

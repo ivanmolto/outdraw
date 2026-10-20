@@ -31,9 +31,9 @@
         "match": "identifier"
       },
       {
-        "input": "urn:tag:synthetic:amenity:073",
-        "tagId": "urn:tag:synthetic:amenity:073",
-        "name": "urn:tag:synthetic:amenity:073",
+        "input": "urn:tag:synthetic:amenity:077",
+        "tagId": "urn:tag:synthetic:amenity:077",
+        "name": "urn:tag:synthetic:amenity:077",
         "match": "identifier"
       }
     ],
@@ -114,12 +114,12 @@
         }
       },
       {
-        "input": "urn:tag:synthetic:amenity:073",
+        "input": "urn:tag:synthetic:amenity:077",
         "status": "resolved",
         "match": "identifier",
         "selected": {
-          "id": "urn:tag:synthetic:amenity:073",
-          "name": "urn:tag:synthetic:amenity:073"
+          "id": "urn:tag:synthetic:amenity:077",
+          "name": "urn:tag:synthetic:amenity:077"
         },
         "provenance": {
           "contract_version": "1.0-preview.1",
@@ -136,7 +136,7 @@
   "results": [
     {
       "entity_id": "7DD1E097-D7B8-597A-B35A-B22B984062AC",
-      "name": "Synthetic Entity 42",
+      "name": "Synthetic Entity 73",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.9751,
@@ -175,7 +175,7 @@
     },
     {
       "entity_id": "2325FCFE-52AF-5AF9-A2DC-71959A898867",
-      "name": "Synthetic Entity 134",
+      "name": "Synthetic Entity 165",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.9249,
@@ -214,7 +214,7 @@
     },
     {
       "entity_id": "C84D6670-7771-5DD0-951C-68B075F5C051",
-      "name": "Synthetic Entity 136",
+      "name": "Synthetic Entity 167",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.8833,
@@ -253,7 +253,7 @@
     },
     {
       "entity_id": "F2C4E59D-94DB-551D-8808-8797342CF43E",
-      "name": "Synthetic Entity 137",
+      "name": "Synthetic Entity 168",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.8329,
@@ -292,7 +292,7 @@
     },
     {
       "entity_id": "095D3B58-8C29-5F32-A18F-76ED5415D46F",
-      "name": "Synthetic Entity 138",
+      "name": "Synthetic Entity 169",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.7955,
@@ -331,7 +331,7 @@
     },
     {
       "entity_id": "400CFC2D-3333-5680-B4A0-3506F4B19BC4",
-      "name": "Synthetic Entity 139",
+      "name": "Synthetic Entity 170",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.7431,
@@ -370,7 +370,7 @@
     },
     {
       "entity_id": "CF49F51A-0890-56C8-B18C-F0DF766EA1D7",
-      "name": "Synthetic Entity 140",
+      "name": "Synthetic Entity 171",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.6967,
@@ -409,7 +409,7 @@
     },
     {
       "entity_id": "28235E9F-7A51-5EC4-B184-176D032AB550",
-      "name": "Synthetic Entity 142",
+      "name": "Synthetic Entity 173",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.6569,
@@ -448,7 +448,7 @@
     },
     {
       "entity_id": "8766895F-4B3F-5607-9CE1-CD4A147FC57B",
-      "name": "Synthetic Entity 143",
+      "name": "Synthetic Entity 174",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.6032,
@@ -487,7 +487,7 @@
     },
     {
       "entity_id": "B85A7C51-0740-5C45-830C-126F60FA9A05",
-      "name": "Synthetic Entity 145",
+      "name": "Synthetic Entity 176",
       "type": "urn:entity",
       "subtype": "urn:entity:place",
       "popularity": 0.5673,
@@ -588,7 +588,7 @@
           "filter.location.query": "Synthetic Region 1",
           "filter.tags": [
             "urn:tag:synthetic:category:069",
-            "urn:tag:synthetic:amenity:073"
+            "urn:tag:synthetic:amenity:077"
           ],
           "operator.filter.tags": "union",
           "feature.explainability": true
@@ -611,7 +611,7 @@
     "filters": {
       "includeTags": [
         "urn:tag:synthetic:category:069",
-        "urn:tag:synthetic:amenity:073"
+        "urn:tag:synthetic:amenity:077"
       ],
       "location": "Synthetic Region 1"
     },

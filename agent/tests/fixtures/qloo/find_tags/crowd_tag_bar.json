@@ -9,19 +9,19 @@
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:cuisine:070",
+      "id": "urn:tag:synthetic:cuisine:071",
       "name": "Synthetic Tag 60",
       "type": "urn:tag:cuisine:qloo",
       "popularity": 0.9249
     },
     {
-      "id": "urn:tag:synthetic:keyword:071",
+      "id": "urn:tag:synthetic:keyword:068",
       "name": "Synthetic Tag 60",
       "type": "urn:tag:keyword:qloo",
       "popularity": 0.8833
     },
     {
-      "id": "urn:tag:synthetic:genre:068",
+      "id": "urn:tag:synthetic:genre:070",
       "name": "Synthetic Tag 60",
       "type": "urn:tag:genre:place",
       "popularity": 0.8329
