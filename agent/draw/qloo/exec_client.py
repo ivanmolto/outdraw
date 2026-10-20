@@ -160,6 +160,8 @@ class QlooExec:
         filter_location: str | None = None,
         include_tags: Sequence[str] | None = None,
         include_tags_operator: Literal["union", "intersection"] | None = None,
+        exclude_tags: Sequence[str] | None = None,
+        exclude_tags_operator: Literal["union", "intersection"] | None = None,
         limit: int = 10,
     ) -> QlooResult:
         return await self.exec(
@@ -172,6 +174,8 @@ class QlooExec:
                 filter_location=filter_location,
                 include_tags=list(include_tags) if include_tags else None,
                 include_tags_operator=include_tags_operator,
+                exclude_tags=list(exclude_tags) if exclude_tags else None,
+                exclude_tags_operator=exclude_tags_operator,
                 limit=limit,
             ),
         )
