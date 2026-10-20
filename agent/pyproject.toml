@@ -21,6 +21,7 @@ dev = [
     "datamodel-code-generator==0.86.0",
     "asyncpg-stubs>=0.30",
     "pytest-asyncio>=0.24",
+    "hypothesis>=6.100",
 ]
 
 [tool.pytest.ini_options]
