@@ -104,7 +104,7 @@ class QlooExec:
         self.counter: DailyCounter = counter if counter is not None else NullCounter()
         self.recorder = recorder
         self.run_id = run_id
-        self._wait: wait_base = retry_wait or wait_exponential_jitter(initial=0.5, max=8.0)
+        self._wait: wait_base = retry_wait or wait_exponential_jitter(multiplier=0.5, max=8.0)
         self._semaphore = asyncio.Semaphore(self.config.concurrency)
         self._pool: asyncpg.Pool | None = None
 
