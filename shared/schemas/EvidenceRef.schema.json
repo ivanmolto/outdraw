@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outdraw.live/schemas/EvidenceRef.schema.json",
+  "title": "EvidenceRef",
+  "description": "Pointer from a derived item back to the Qloo call that produced it.",
+  "type": "object",
+  "properties": {
+    "item_ref": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Which item this evidence supports, e.g. 'genres[0]' or an entity ID."
+    },
+    "call_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "call_id of the Qloo call (uuid) recorded by the gateway."
+    }
+  },
+  "required": [
+    "item_ref",
+    "call_id"
+  ],
+  "additionalProperties": false
+}

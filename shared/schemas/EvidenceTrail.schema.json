@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outdraw.live/schemas/EvidenceTrail.schema.json",
+  "title": "EvidenceTrail",
+  "description": "Everything behind one candidate's score, for the UI's evidence panel.",
+  "type": "object",
+  "properties": {
+    "inputs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/TrailInput"
+      }
+    },
+    "qloo_calls": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/QlooCallRecord"
+      }
+    },
+    "affinities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Affinity"
+      }
+    },
+    "sub_scores": {
+      "$ref": "Score.schema.json#/$defs/ScoreBreakdown"
+    },
+    "weights": {
+      "$ref": "Score.schema.json#/$defs/ScoreWeights"
+    },
+    "total": {
+      "type": "number",
+      "minimum": 0
+    },
+    "source_labels": {
+      "type": "object",
+      "description": "Per item ref: whether it is Qloo data or Outdraw's interpretation.",
+      "additionalProperties": {
+        "$ref": "#/$defs/SourceLabel"
+      }
+    }
+  },
+  "required": [
+    "inputs",
+    "qloo_calls",
+    "affinities",
+    "sub_scores",
+    "weights",
+    "total",
+    "source_labels"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "TrailInput": {
+      "title": "TrailInput",
+      "description": "An input that fed the score.",
+      "type": "object",
+      "properties": {
+        "ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "label"
+      ],
+      "additionalProperties": false
+    },
+    "QlooWorkflow": {
+      "title": "QlooWorkflow",
+      "type": "string",
+      "enum": [
+        "find_tags",
+        "describe",
+        "recommend",
+        "rank",
+        "where_popular",
+        "compare_audiences",
+        "audience_demographics",
+        "trends"
+      ]
+    },
+    "QlooCallRecord": {
+      "title": "QlooCallRecord",
+      "description": "One Qloo harness call (no raw request or response).",
+      "type": "object",
+      "properties": {
+        "call_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "workflow": {
+          "$ref": "#/$defs/QlooWorkflow"
+        },
+        "params_summary": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "QlooEnvelope.schema.json#/$defs/QlooStatus"
+        },
+        "cache_hit": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "call_id",
+        "workflow",
+        "params_summary",
+        "status",
+        "cache_hit"
+      ],
+      "additionalProperties": false
+    },
+    "Affinity": {
+      "title": "Affinity",
+      "description": "An affinity value Qloo returned.",
+      "type": "object",
+      "properties": {
+        "entity": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "number"
+        },
+        "call_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "entity",
+        "value",
+        "call_id"
+      ],
+      "additionalProperties": false
+    },
+    "SourceLabel": {
+      "title": "SourceLabel",
+      "type": "string",
+      "enum": [
+        "qloo",
+        "draw"
+      ]
+    }
+  }
+}

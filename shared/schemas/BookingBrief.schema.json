@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outdraw.live/schemas/BookingBrief.schema.json",
+  "title": "BookingBrief",
+  "description": "Drafted brief for booking one candidate.",
+  "type": "object",
+  "properties": {
+    "why_it_fits": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/FitReason"
+      },
+      "minItems": 1
+    },
+    "night_format": {
+      "type": "string"
+    },
+    "support_act": {
+      "type": "string"
+    },
+    "partners": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "outreach_email": {
+      "$ref": "#/$defs/OutreachEmail"
+    }
+  },
+  "required": [
+    "why_it_fits",
+    "night_format",
+    "partners",
+    "outreach_email"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "FitReason": {
+      "title": "FitReason",
+      "description": "One reason, tied to evidence.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "text",
+        "evidence_ref"
+      ],
+      "additionalProperties": false
+    },
+    "OutreachEmail": {
+      "title": "OutreachEmail",
+      "description": "Draft email to the act's agent.",
+      "type": "object",
+      "properties": {
+        "subject": {
+          "type": "string",
+          "minLength": 1
+        },
+        "body": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "subject",
+        "body"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

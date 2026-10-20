@@ -7,7 +7,8 @@ will turn out for, using Qloo's taste graph. Built for the Qloo Agentic Hackatho
 
 - `web/` — Next.js 16 (App Router, TypeScript, Tailwind v4), deployed on Vercel.
 - `agent/` — Python 3.12 FastAPI service with the pinned Qloo harness, deployed on Railway.
-- `shared/` — JSON Schemas shared by both (coming in T04).
+- `shared/schemas/` — JSON Schemas (draft 2020-12) shared by both; source of truth for
+  `web/types/schemas.ts` and `agent/draw/schemas.py`.
 
 ## Requirements
 
@@ -36,6 +37,18 @@ npm run dev          # web on :3000, agent on :8000
 
 ```bash
 npm run lint && npm run typecheck && npm test
+```
+
+## Schemas
+
+Edit `shared/schemas/*.schema.json`, then regenerate both outputs (never hand-edit them).
+The generators merge every file's `$defs` into one bundle, so a `$defs` name must be unique
+across all schema files (they fail loudly on a collision). Refer across files with
+`Other.schema.json#/$defs/Name`.
+
+```bash
+npm run gen:schemas      # web/types/schemas.ts + agent/draw/schemas.py
+npm run check:schemas    # what CI runs: regenerate and fail on drift
 ```
 
 ## Agent image

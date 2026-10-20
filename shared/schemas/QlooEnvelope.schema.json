@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outdraw.live/schemas/QlooEnvelope.schema.json",
+  "title": "QlooEnvelope",
+  "description": "Result envelope returned by every Qloo harness workflow. Extra harness fields are kept.",
+  "type": "object",
+  "properties": {
+    "status": {
+      "$ref": "#/$defs/QlooStatus"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Human-readable summary; the harness omits it on most ok envelopes."
+    },
+    "results": {
+      "description": "Usually a list; compare_audiences returns an object {tags, a, b, matchEntities}.",
+      "anyOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": true
+        }
+      ]
+    },
+    "result_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "error": {
+      "$ref": "#/$defs/QlooError"
+    }
+  },
+  "required": [
+    "status",
+    "results",
+    "result_count"
+  ],
+  "additionalProperties": true,
+  "$defs": {
+    "QlooStatus": {
+      "title": "QlooStatus",
+      "type": "string",
+      "enum": [
+        "ok",
+        "empty",
+        "needs_input",
+        "partial",
+        "degraded",
+        "error"
+      ]
+    },
+    "QlooError": {
+      "title": "QlooError",
+      "description": "Present when status is error.",
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "recovery": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "retryable",
+        "recovery"
+      ],
+      "additionalProperties": true
+    }
+  }
+}

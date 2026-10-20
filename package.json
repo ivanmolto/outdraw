@@ -8,7 +8,9 @@
     "dev:agent": "cd agent && uv run uvicorn draw.main:app --reload --port 8000",
     "test": "npm --prefix web test && cd agent && uv run pytest",
     "lint": "npm --prefix web run lint && cd agent && uv run ruff check .",
-    "typecheck": "npm --prefix web run typecheck && cd agent && uv run mypy ."
+    "typecheck": "npm --prefix web run typecheck && cd agent && uv run mypy .",
+    "gen:schemas": "npm --prefix web run gen:types && cd agent && uv run python scripts/gen_schemas.py",
+    "check:schemas": "npm run gen:schemas && git diff --exit-code -- web/types/schemas.ts agent/draw/schemas.py && test -z \"$(git status --porcelain -- web/types/schemas.ts agent/draw/schemas.py)\""
   },
   "devDependencies": {
     "concurrently": "9.2.1"

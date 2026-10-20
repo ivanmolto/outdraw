@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outdraw.live/schemas/VenueInput.schema.json",
+  "title": "VenueInput",
+  "description": "What a venue tells Outdraw about itself.",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "city": {
+      "type": "string",
+      "minLength": 1
+    },
+    "country": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lat": {
+      "type": "number",
+      "minimum": -90,
+      "maximum": 90
+    },
+    "lng": {
+      "type": "number",
+      "minimum": -180,
+      "maximum": 180
+    },
+    "capacity": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "past_shows": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/PastShow"
+      }
+    }
+  },
+  "required": [
+    "name",
+    "city",
+    "country",
+    "capacity",
+    "past_shows"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "PastShow": {
+      "title": "PastShow",
+      "description": "One show the venue has already hosted.",
+      "type": "object",
+      "properties": {
+        "act": {
+          "type": "string",
+          "minLength": 1
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "tickets_sold": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "capacity": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ticket_price": {
+          "type": "number",
+          "minimum": 0
+        },
+        "gross": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "act",
+        "date"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

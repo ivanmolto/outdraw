@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outdraw.live/schemas/Score.schema.json",
+  "title": "Score",
+  "description": "Deterministic score from draw/ranking/score.py; the LLM never ranks.",
+  "type": "object",
+  "properties": {
+    "total": {
+      "type": "number",
+      "minimum": 0
+    },
+    "breakdown": {
+      "$ref": "#/$defs/ScoreBreakdown"
+    },
+    "weights": {
+      "$ref": "#/$defs/ScoreWeights"
+    },
+    "top_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "total",
+    "breakdown",
+    "weights",
+    "top_reason"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "ScoreBreakdown": {
+      "title": "ScoreBreakdown",
+      "description": "Sub-scores in [0, 1].",
+      "type": "object",
+      "properties": {
+        "crowd_affinity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "past_fit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "local_heat": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "novelty": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "size_fit": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "momentum": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "crowd_affinity",
+        "past_fit",
+        "local_heat",
+        "novelty",
+        "size_fit"
+      ],
+      "additionalProperties": false
+    },
+    "ScoreWeights": {
+      "title": "ScoreWeights",
+      "description": "Weight applied to each sub-score.",
+      "type": "object",
+      "properties": {
+        "crowd_affinity": {
+          "type": "number",
+          "minimum": 0
+        },
+        "past_fit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "local_heat": {
+          "type": "number",
+          "minimum": 0
+        },
+        "novelty": {
+          "type": "number",
+          "minimum": 0
+        },
+        "size_fit": {
+          "type": "number",
+          "minimum": 0
+        },
+        "momentum": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "crowd_affinity",
+        "past_fit",
+        "local_heat",
+        "novelty",
+        "size_fit"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

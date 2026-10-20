@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outdraw.live/schemas/ResolvedEntity.schema.json",
+  "title": "ResolvedEntity",
+  "description": "A user's words resolved to a Qloo entity; taste workflows run only once confirmed.",
+  "type": "object",
+  "properties": {
+    "query": {
+      "type": "string",
+      "minLength": 1
+    },
+    "entity_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "canonical_name": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/EntityCandidate"
+      }
+    },
+    "confirmed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "query",
+    "canonical_name",
+    "confidence",
+    "candidates",
+    "confirmed"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "EntityCandidate": {
+      "title": "EntityCandidate",
+      "description": "A possible match surfaced to the user.",
+      "type": "object",
+      "properties": {
+        "entity_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity_id",
+        "name",
+        "type"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
