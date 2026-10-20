@@ -120,6 +120,25 @@ class FakeHarness:
         return [argv[2] for argv in self.argv]
 
 
+Router = Callable[[str, dict[str, Any]], dict[str, Any]]
+
+
+class RouterHarness(FakeHarness):
+    """A fake harness that answers each spawn with `router(workflow, input)`."""
+
+    def __init__(self, router: Router) -> None:
+        super().__init__([])
+        self.router = router
+
+    async def __call__(self, *argv: str, **kwargs: Any) -> FakeProc:
+        payload = json.loads(Path(argv[argv.index("--input-file") + 1]).read_text())
+        self.responses = [(json.dumps(self.router(argv[2], payload)), "", 0)]
+        return await super().__call__(*argv, **kwargs)
+
+    def inputs_for(self, workflow: str) -> list[dict[str, Any]]:
+        return [i for w, i in zip(self.workflows(), self.inputs, strict=True) if w == workflow]
+
+
 @pytest.fixture
 def harness(monkeypatch: pytest.MonkeyPatch) -> Callable[..., FakeHarness]:
     def make(*responses: tuple[str, str, int], delay: float = 0.0) -> FakeHarness:

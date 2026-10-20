@@ -6,11 +6,10 @@ import copy
 import datetime as dt
 import json
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any
 
 import pytest
-from conftest import FIXTURES_DIR, FakeHarness, FakeProc
+from conftest import FIXTURES_DIR, RouterHarness
 
 from draw.qloo import exec_client
 from draw.qloo.config import QlooConfig
@@ -70,25 +69,6 @@ def artists(
 
 def row_ids(envelope: dict[str, Any]) -> list[str]:
     return [r["entity_id"] for r in envelope["results"]]
-
-
-Router = Callable[[str, dict[str, Any]], dict[str, Any]]
-
-
-class RouterHarness(FakeHarness):
-    """A fake harness that answers each spawn with `router(workflow, input)`."""
-
-    def __init__(self, router: Router) -> None:
-        super().__init__([])
-        self.router = router
-
-    async def __call__(self, *argv: str, **kwargs: Any) -> FakeProc:
-        payload = json.loads(Path(argv[argv.index("--input-file") + 1]).read_text())
-        self.responses = [(json.dumps(self.router(argv[2], payload)), "", 0)]
-        return await super().__call__(*argv, **kwargs)
-
-    def recommend_inputs(self) -> list[dict[str, Any]]:
-        return [i for w, i in zip(self.workflows(), self.inputs, strict=True) if w == "recommend"]
 
 
 @pytest.fixture
@@ -171,7 +151,7 @@ async def test_excluded_tags_absent(routed: Callable[..., RouterHarness]) -> Non
     assert all(c.tags == [] for c in result.candidates)
     # The word is resolved once with find_tags; both URNs go to Qloo's exclude filter.
     assert fake.workflows().count("find_tags") == 1
-    (sent,) = fake.recommend_inputs()
+    (sent,) = fake.inputs_for("recommend")
     assert sent["exclude_tags"] == [JAZZ_URN, OTHER_URN]
     assert sent["exclude_tags_operator"] == "union"
     assert "include_tags" not in sent
@@ -180,7 +160,7 @@ async def test_excluded_tags_absent(routed: Callable[..., RouterHarness]) -> Non
 async def test_included_tag_sent_and_attached(routed: Callable[..., RouterHarness]) -> None:
     fake = routed(artists())
     result = await run(constraints(include=[JAZZ_WORD]))
-    (sent,) = fake.recommend_inputs()
+    (sent,) = fake.inputs_for("recommend")
     assert sent["include_tags"] == [JAZZ_URN]
     assert sent["include_tags_operator"] == "union"
     assert sent["signal_location"] == REGION
@@ -266,7 +246,7 @@ async def test_dedupe_across_calls_and_within_one(routed: Callable[..., RouterHa
     assert len(set(ids)) == len(ids)
     two = next(c for c in result.candidates if c.entity_id == "ID-2")
     assert len({e.call_id for e in two.evidence}) == 2  # returned by two calls
-    assert [len(i["signals"]) for i in fake.recommend_inputs()] == [2, 1, 1]
+    assert [len(i["signals"]) for i in fake.inputs_for("recommend")] == [2, 1, 1]
 
 
 async def test_cap_honoured_and_stops_calling(routed: Callable[..., RouterHarness]) -> None:
