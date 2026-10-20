@@ -1,0 +1,38 @@
+name: agent-image
+
+on:
+  push:
+    paths: ["agent/**", ".github/workflows/agent-image.yml"]
+  pull_request:
+    paths: ["agent/**", ".github/workflows/agent-image.yml"]
+
+jobs:
+  build-and-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t outdraw-agent:ci agent
+
+      - name: Run container
+        run: docker run -d --name agent -p 8000:8000 outdraw-agent:ci
+
+      - name: Curl /health and check versions
+        run: |
+          for _ in $(seq 1 30); do
+            if body=$(curl -fsS http://localhost:8000/health); then break; fi
+            sleep 1
+          done
+          echo "$body"
+          pinned=$(jq -r '.dependencies["@qloo/qloo-harness"]' agent/package.json)
+          echo "$body" | jq -e --arg v "$pinned" '
+            .ok == true
+            and .qloo_harness_version == $v
+            and (.node_version | test("^v(2[3-9]|[3-9][0-9]|22\\.(19|[2-9][0-9]))"))
+          '
+
+      - name: Container logs
+        if: always()
+        run: docker logs agent || true
