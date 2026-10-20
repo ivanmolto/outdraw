@@ -9,14 +9,14 @@
       {
         "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
         "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
-        "name": "Synthetic Entity 1",
+        "name": "Synthetic Entity 3",
         "type": "urn:entity:artist",
         "match": "identifier"
       },
       {
         "input": "6D60277B-0305-5B5B-B597-1584169BE993",
         "entityId": "6D60277B-0305-5B5B-B597-1584169BE993",
-        "name": "Synthetic Entity 3",
+        "name": "Synthetic Entity 1",
         "type": "urn:entity:artist",
         "match": "identifier"
       }
@@ -44,7 +44,7 @@
         "match": "identifier",
         "selected": {
           "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
-          "name": "Synthetic Entity 1",
+          "name": "Synthetic Entity 3",
           "type": "urn:entity:artist",
           "popularity": 0.9673,
           "description": "synthetic text"
@@ -65,7 +65,7 @@
         "match": "identifier",
         "selected": {
           "id": "6D60277B-0305-5B5B-B597-1584169BE993",
-          "name": "Synthetic Entity 3",
+          "name": "Synthetic Entity 1",
           "type": "urn:entity:artist",
           "popularity": 0.9221,
           "description": "synthetic text"

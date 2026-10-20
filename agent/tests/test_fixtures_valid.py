@@ -45,5 +45,5 @@ def test_request_sits_next_to_real_envelopes(path: Path) -> None:
 def test_non_ok_statuses_are_covered() -> None:
     seen = {read_json(p)["status"] for p in ENVELOPES}
     assert seen >= {"ok", "needs_input", "error", "empty", "partial", "degraded"}, seen
-    retryable = [p for p in ENVELOPES if read_json(p).get("error", {}).get("retryable") is True]
+    retryable = [p for p in ENVELOPES if (read_json(p).get("error") or {}).get("retryable") is True]
     assert retryable, "no retryable error fixture"

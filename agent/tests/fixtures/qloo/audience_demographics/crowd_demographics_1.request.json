@@ -1,0 +1,7 @@
+{
+  "workflow": "audience_demographics",
+  "input": {
+    "entity": "6D60277B-0305-5B5B-B597-1584169BE993",
+    "entity_type": "artist"
+  }
+}

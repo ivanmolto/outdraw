@@ -1,0 +1,541 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "status": "ok",
+  "results": [
+    {
+      "entity_id": "FAB788E3-6920-557D-8742-48B13E745863",
+      "name": "Synthetic Entity 48",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.9751,
+      "affinity": 0.9641,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9633
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9174
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.8781
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "644030C9-2B52-57ED-B14C-E46F0E7DB475",
+      "name": "Synthetic Entity 47",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.9249,
+      "affinity": 0.9252,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9659
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.9233
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.8873
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "2DC6A010-F725-5E04-A87A-4DFA64936A77",
+      "name": "Synthetic Entity 55",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.8833,
+      "affinity": 0.8707,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9703
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9301
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.8792
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "0526630A-8301-5DC1-8CD2-A3170D3B1E01",
+      "name": "Synthetic Entity 51",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.8329,
+      "affinity": 0.8282,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9745
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.923
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.8716
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "0E730308-47CC-5F70-AD2E-F7455274241A",
+      "name": "Synthetic Entity 59",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.7955,
+      "affinity": 0.7936,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9733
+          },
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9341
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.8824
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "A5850B39-06EA-54E4-926C-DAD8AABDA00B",
+      "name": "Synthetic Entity 155",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.7431,
+      "affinity": 0.7479,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9687
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.9186
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.8782
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "735113EF-DEC1-581B-A264-8EAC042314D6",
+      "name": "Synthetic Entity 156",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.6967,
+      "affinity": 0.7019,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9747
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.9275
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.8857
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "6C618DC4-61C0-5379-8B08-2B7E36554C91",
+      "name": "Synthetic Entity 157",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.6569,
+      "affinity": 0.6469,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9684
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9337
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.888
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "958715AA-6DE2-5E71-B73D-DAA57813CF88",
+      "name": "Synthetic Entity 158",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.6032,
+      "affinity": 0.6169,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.9621
+          },
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.9224
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.886
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    },
+    {
+      "entity_id": "13B2A3F2-9BF7-5C30-8239-A8BEF7664EC5",
+      "name": "Synthetic Entity 159",
+      "type": "urn:entity",
+      "subtype": "urn:entity:brand",
+      "popularity": 0.5673,
+      "affinity": 0.5706,
+      "explainability": {
+        "signal.interests.entities": [
+          {
+            "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "score": 0.977
+          },
+          {
+            "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+            "score": 0.92
+          },
+          {
+            "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+            "score": 0.8746
+          }
+        ]
+      },
+      "properties": {
+        "description": "synthetic text",
+        "short_description": "synthetic text",
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    }
+  ],
+  "result_count": 10,
+  "schema_version": "1.0-preview.1",
+  "operation": "recommend",
+  "interpretation": {
+    "target_type": "urn:entity:brand",
+    "signals": [
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "entityId": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "name": "Synthetic Entity 1",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      },
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "name": "Synthetic Entity 3",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      },
+      {
+        "input": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+        "entityId": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+        "name": "Synthetic Entity 4",
+        "type": "urn:entity:artist",
+        "match": "identifier"
+      }
+    ],
+    "signal_tags": [],
+    "include_tags": [],
+    "exclude_tags": []
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "6D60277B-0305-5B5B-B597-1584169BE993",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "name": "Synthetic Entity 3",
+          "type": "urn:entity:artist",
+          "popularity": 0.9221,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      },
+      {
+        "input": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+        "status": "resolved",
+        "match": "identifier",
+        "selected": {
+          "id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+          "name": "Synthetic Entity 4",
+          "type": "urn:entity:artist",
+          "popularity": 0.8791,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/entities",
+          "strategy": "identifier_lookup",
+          "remote": true,
+          "uses_model": false
+        }
+      }
+    ]
+  },
+  "explainability": {
+    "signal.interests.entities": {
+      "effect_on_top3_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9603
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9322
+        },
+        {
+          "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+          "avg_score": 0.8724
+        }
+      ],
+      "effect_on_top5_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9649
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9304
+        },
+        {
+          "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+          "avg_score": 0.8882
+        }
+      ],
+      "effect_on_top10_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9655
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9184
+        },
+        {
+          "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+          "avg_score": 0.8853
+        }
+      ],
+      "effect_on_all_recs": [
+        {
+          "entity_id": "746CD02C-8299-5FBF-9C15-615CBD354946",
+          "avg_score": 0.9658
+        },
+        {
+          "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "avg_score": 0.9219
+        },
+        {
+          "entity_id": "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81",
+          "avg_score": 0.8888
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/v2/insights",
+    "documentation": "https://docs.qloo.com/reference/insights-api-deep-dive",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/v2/insights",
+        "query": {
+          "filter.type": "urn:entity:brand",
+          "take": 10,
+          "signal.interests.entities": [
+            "6D60277B-0305-5B5B-B597-1584169BE993",
+            "746CD02C-8299-5FBF-9C15-615CBD354946",
+            "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81"
+          ],
+          "feature.explainability": true
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "recommend",
+    "job": "recommend",
+    "signals": {
+      "entities": [
+        "6D60277B-0305-5B5B-B597-1584169BE993",
+        "746CD02C-8299-5FBF-9C15-615CBD354946",
+        "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81"
+      ]
+    },
+    "filters": {},
+    "operators": {},
+    "output": {
+      "limit": 10,
+      "explain": true
+    },
+    "assumptions": [
+      "explain=true"
+    ],
+    "unresolved": [],
+    "target": {
+      "type": "brand"
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-6c97c6c0-9d18-5caa-9f1c-6b2cfe50d57c",
+    "duration_ms": 1411
+  },
+  "harness_exit_code": 0
+}

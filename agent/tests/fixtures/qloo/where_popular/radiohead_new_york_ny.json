@@ -7,7 +7,7 @@
     "entity": {
       "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
       "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
-      "name": "Synthetic Entity 1",
+      "name": "Synthetic Entity 3",
       "type": "urn:entity:artist",
       "match": "identifier"
     },
@@ -32,7 +32,7 @@
         "match": "identifier",
         "selected": {
           "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
-          "name": "Synthetic Entity 1",
+          "name": "Synthetic Entity 3",
           "type": "urn:entity:artist",
           "popularity": 0.9673,
           "description": "synthetic text"

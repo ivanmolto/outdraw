@@ -8,9 +8,9 @@
     "signals": [],
     "signal_tags": [
       {
-        "input": "urn:tag:synthetic:genre:066",
-        "tagId": "urn:tag:synthetic:genre:066",
-        "name": "urn:tag:synthetic:genre:066",
+        "input": "urn:tag:synthetic:genre:085",
+        "tagId": "urn:tag:synthetic:genre:085",
+        "name": "urn:tag:synthetic:genre:085",
         "match": "identifier"
       }
     ],
@@ -33,12 +33,12 @@
     },
     "outcomes": [
       {
-        "input": "urn:tag:synthetic:genre:066",
+        "input": "urn:tag:synthetic:genre:085",
         "status": "resolved",
         "match": "identifier",
         "selected": {
-          "id": "urn:tag:synthetic:genre:066",
-          "name": "urn:tag:synthetic:genre:066"
+          "id": "urn:tag:synthetic:genre:085",
+          "name": "urn:tag:synthetic:genre:085"
         },
         "provenance": {
           "contract_version": "1.0-preview.1",
@@ -55,7 +55,7 @@
   "results": [
     {
       "entity_id": "0D28C1F1-0881-5B68-8E6F-1CA666AC3E18",
-      "name": "Synthetic Entity 32",
+      "name": "Synthetic Entity 37",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.9751,
@@ -70,7 +70,7 @@
     },
     {
       "entity_id": "B48CB7B9-6146-50FE-9F33-AD4574BA9A35",
-      "name": "Synthetic Entity 33",
+      "name": "Synthetic Entity 38",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.9249,
@@ -85,7 +85,7 @@
     },
     {
       "entity_id": "7154EAE4-1BE9-527F-81A9-D3DD1439265D",
-      "name": "Synthetic Entity 34",
+      "name": "Synthetic Entity 39",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.8833,
@@ -100,7 +100,7 @@
     },
     {
       "entity_id": "7D73E837-2392-53FD-9594-8B77EE7FE9CA",
-      "name": "Synthetic Entity 35",
+      "name": "Synthetic Entity 40",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.8329,
@@ -115,7 +115,7 @@
     },
     {
       "entity_id": "C6597C44-338E-5075-A5C9-7716716CD9C5",
-      "name": "Synthetic Entity 36",
+      "name": "Synthetic Entity 41",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.7955,
@@ -130,7 +130,7 @@
     },
     {
       "entity_id": "DD7FC4FA-F70A-5C08-AE6F-F851FDD53751",
-      "name": "Synthetic Entity 37",
+      "name": "Synthetic Entity 42",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.7431,
@@ -145,7 +145,7 @@
     },
     {
       "entity_id": "0458F827-86EE-5B4D-8561-46FBDBEB820A",
-      "name": "Synthetic Entity 38",
+      "name": "Synthetic Entity 43",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.6967,
@@ -160,7 +160,7 @@
     },
     {
       "entity_id": "F3EB70F2-1A2A-584E-8D12-90332809D0C5",
-      "name": "Synthetic Entity 39",
+      "name": "Synthetic Entity 44",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.6569,
@@ -175,7 +175,7 @@
     },
     {
       "entity_id": "C2C8D97B-89D0-570F-848E-C96D6F608168",
-      "name": "Synthetic Entity 40",
+      "name": "Synthetic Entity 45",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.6032,
@@ -190,7 +190,7 @@
     },
     {
       "entity_id": "74134573-B210-5C4F-A63C-103FE848589F",
-      "name": "Synthetic Entity 41",
+      "name": "Synthetic Entity 46",
       "type": "urn:entity",
       "subtype": "urn:entity:brand",
       "popularity": 0.5673,
@@ -217,7 +217,7 @@
           "filter.type": "urn:entity:brand",
           "take": 10,
           "signal.interests.tags": [
-            "urn:tag:synthetic:genre:066"
+            "urn:tag:synthetic:genre:085"
           ],
           "operator.signal.interests.tags": "intersection",
           "signal.location.query": "Synthetic Region 1",
@@ -234,7 +234,7 @@
     "job": "recommend",
     "signals": {
       "tags": [
-        "urn:tag:synthetic:genre:066"
+        "urn:tag:synthetic:genre:085"
       ],
       "location": "Synthetic Region 1"
     },

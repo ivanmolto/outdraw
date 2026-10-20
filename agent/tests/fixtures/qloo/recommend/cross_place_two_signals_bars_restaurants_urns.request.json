@@ -9,8 +9,8 @@
     "limit": 10,
     "filter_location": "Synthetic Region 1",
     "include_tags": [
-      "urn:tag:synthetic:category:097",
-      "urn:tag:synthetic:amenity:102"
+      "urn:tag:synthetic:category:069",
+      "urn:tag:synthetic:amenity:073"
     ],
     "include_tags_operator": "union"
   }

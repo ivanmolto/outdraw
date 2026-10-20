@@ -7,11 +7,11 @@
     "entity": {
       "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
       "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
-      "name": "Synthetic Entity 1",
+      "name": "Synthetic Entity 3",
       "type": "urn:entity:artist",
       "match": "identifier"
     },
-    "within": "Synthetic Tag 1"
+    "within": "Synthetic Tag 2"
   },
   "resolution": {
     "contract_version": "1.0-preview.1",
@@ -32,7 +32,7 @@
         "match": "identifier",
         "selected": {
           "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
-          "name": "Synthetic Entity 1",
+          "name": "Synthetic Entity 3",
           "type": "urn:entity:artist",
           "popularity": 0.9673,
           "description": "synthetic text"
@@ -203,7 +203,7 @@
         "query": {
           "filter.type": "urn:heatmap",
           "signal.interests.entities": "746CD02C-8299-5FBF-9C15-615CBD354946",
-          "filter.location.query": "Synthetic Tag 1",
+          "filter.location.query": "Synthetic Tag 2",
           "take": 10
         }
       }
@@ -217,7 +217,7 @@
     "job": "where_popular",
     "signals": {},
     "filters": {
-      "location": "Synthetic Tag 1"
+      "location": "Synthetic Tag 2"
     },
     "operators": {},
     "output": {

@@ -1,0 +1,138 @@
+{
+  "_synthetic": "structure from a real envelope; ids, names and scores are fake",
+  "status": "ok",
+  "results": [
+    {
+      "entity_id": "6D60277B-0305-5B5B-B597-1584169BE993",
+      "name": "Synthetic Entity 1",
+      "popularity": 0.9751,
+      "properties": {
+        "short_description": "synthetic text",
+        "duration": {},
+        "image": {
+          "url": "synthetic text"
+        }
+      }
+    }
+  ],
+  "result_count": 1,
+  "schema_version": "1.0-preview.1",
+  "operation": "describe",
+  "interpretation": {
+    "entity": {
+      "input": "Synthetic Entity 1",
+      "entityId": "6D60277B-0305-5B5B-B597-1584169BE993",
+      "name": "Synthetic Entity 1",
+      "type": "urn:entity:artist",
+      "match": "exact"
+    }
+  },
+  "resolution": {
+    "contract_version": "1.0-preview.1",
+    "provider": {
+      "contract_version": "1.0-preview.1",
+      "provider_id": "qloo_api",
+      "name": "Synthetic Entity 2",
+      "entity_strategy": "exact_name_context_or_choice",
+      "tag_strategy": "target_scoped_semantic_search_exact_name_or_choice",
+      "remote": true,
+      "uses_model": false,
+      "fallback": "none"
+    },
+    "outcomes": [
+      {
+        "input": "Synthetic Entity 1",
+        "status": "resolved",
+        "match": "exact",
+        "selected": {
+          "id": "6D60277B-0305-5B5B-B597-1584169BE993",
+          "name": "Synthetic Entity 1",
+          "type": "urn:entity:artist",
+          "popularity": 0.9673,
+          "description": "synthetic text"
+        },
+        "provenance": {
+          "contract_version": "1.0-preview.1",
+          "provider_id": "qloo_api",
+          "provider_name": "Qloo native resolution",
+          "endpoint": "/search",
+          "strategy": "exact_name_context_or_choice",
+          "remote": true,
+          "uses_model": false
+        },
+        "alternatives": [
+          {
+            "id": "AA4BCF9E-6DC8-55A7-833C-95867DBE14C9",
+            "name": "Synthetic Entity 10",
+            "type": "urn:entity:artist",
+            "popularity": 0.9633,
+            "description": "synthetic text"
+          },
+          {
+            "id": "AA880AC3-E249-5BCF-B47C-8E565553DE91",
+            "name": "Synthetic Entity 11",
+            "type": "urn:entity:artist",
+            "popularity": 0.9271,
+            "description": "synthetic text"
+          },
+          {
+            "id": "96D7A408-EAFA-524B-AB93-82EEA0A982E0",
+            "name": "Synthetic Entity 12",
+            "type": "urn:entity:artist",
+            "popularity": 0.8836,
+            "description": "synthetic text"
+          },
+          {
+            "id": "60B3C530-A33B-582C-A6DA-54E8CF7D1FEC",
+            "name": "Synthetic Entity 13",
+            "type": "urn:entity:artist",
+            "popularity": 0.8257,
+            "description": "synthetic text"
+          }
+        ]
+      }
+    ]
+  },
+  "provenance": {
+    "source": "Qloo API",
+    "endpoint": "/entities",
+    "documentation": "https://docs.qloo.com/reference/get-entities",
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/entities",
+        "query": {
+          "entity_ids": [
+            "6D60277B-0305-5B5B-B597-1584169BE993"
+          ]
+        }
+      }
+    ],
+    "transport": "direct"
+  },
+  "query_intent": {
+    "schema_version": "1.0-preview.1",
+    "source_contract_version": "1.0.0",
+    "operation": "describe",
+    "job": "describe",
+    "signals": {},
+    "filters": {},
+    "operators": {},
+    "output": {},
+    "assumptions": [],
+    "unresolved": [],
+    "target": {
+      "type": "artist",
+      "entities": [
+        "Synthetic Entity 1"
+      ]
+    }
+  },
+  "execution": {
+    "transport": "direct",
+    "transport_name": "Qloo API",
+    "correlation_id": "exec-2fd8c6a5-d172-56d8-857d-7bc6f6c83a57",
+    "duration_ms": 670
+  },
+  "harness_exit_code": 0
+}

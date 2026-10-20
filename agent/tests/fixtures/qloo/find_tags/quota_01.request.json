@@ -1,7 +1,7 @@
 {
   "workflow": "find_tags",
   "input": {
-    "query": "Synthetic Tag 37",
+    "query": "Synthetic Tag 4",
     "limit": 1
   }
 }

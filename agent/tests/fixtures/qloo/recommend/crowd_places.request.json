@@ -1,0 +1,18 @@
+{
+  "workflow": "recommend",
+  "input": {
+    "target_type": "place",
+    "signals": [
+      "6D60277B-0305-5B5B-B597-1584169BE993",
+      "746CD02C-8299-5FBF-9C15-615CBD354946",
+      "EE4EDBA1-C8A0-5039-B5E2-147F264D4C81"
+    ],
+    "filter_location": "Synthetic Region 2",
+    "include_tags": [
+      "urn:tag:synthetic:category:069",
+      "urn:tag:synthetic:product_service:074"
+    ],
+    "include_tags_operator": "union",
+    "limit": 10
+  }
+}

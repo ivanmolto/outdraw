@@ -1,7 +1,7 @@
 {
   "workflow": "describe",
   "input": {
-    "entity": "Synthetic Entity 3",
+    "entity": "Synthetic Entity 1",
     "type": "artist"
   }
 }

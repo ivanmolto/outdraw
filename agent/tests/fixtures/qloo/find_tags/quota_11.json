@@ -4,13 +4,13 @@
   "operation": "find_tags",
   "status": "ok",
   "interpretation": {
-    "query": "Synthetic Tag 20",
+    "query": "Synthetic Tag 51",
     "semantic": true
   },
   "results": [
     {
-      "id": "urn:tag:synthetic:genre:085",
-      "name": "Synthetic Tag 20",
+      "id": "urn:tag:synthetic:genre:104",
+      "name": "Synthetic Tag 51",
       "type": "urn:tag:genre:qloo",
       "popularity": 0.9751
     }
@@ -25,7 +25,7 @@
         "method": "GET",
         "path": "/v2/tags",
         "query": {
-          "filter.query": "Synthetic Tag 20",
+          "filter.query": "Synthetic Tag 51",
           "feature.semantic_search": true,
           "take": 1
         }
@@ -49,7 +49,7 @@
     ],
     "unresolved": [],
     "target": {
-      "concept": "Synthetic Tag 20"
+      "concept": "Synthetic Tag 51"
     }
   },
   "execution": {

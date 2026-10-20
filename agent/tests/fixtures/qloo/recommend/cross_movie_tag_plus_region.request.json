@@ -3,7 +3,7 @@
   "input": {
     "target_type": "movie",
     "signal_tags": [
-      "urn:tag:synthetic:genre:066"
+      "urn:tag:synthetic:genre:085"
     ],
     "signal_location": "Synthetic Region 1",
     "limit": 10

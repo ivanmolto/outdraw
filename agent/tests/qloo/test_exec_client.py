@@ -122,7 +122,10 @@ async def test_needs_input_raises_with_candidates_and_is_not_retried(
     with pytest.raises(QlooNeedsInput) as info:
         await make_client().describe("Blue Note", type="place")
     assert fake.spawns == 1
-    assert [c["name"] for c in info.value.candidates] == ["Synthetic Entity 4"] * 2
+    expected = [
+        c["name"] for c in json.loads(NEEDS_INPUT[0])["resolution"]["issues"][0]["candidates"]
+    ]
+    assert [c["name"] for c in info.value.candidates] == expected and len(expected) == 2
     assert info.value.issues[0]["kind"] == "ambiguous"
 
 

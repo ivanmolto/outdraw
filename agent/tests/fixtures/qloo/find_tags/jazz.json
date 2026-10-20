@@ -4,37 +4,37 @@
   "operation": "find_tags",
   "status": "ok",
   "interpretation": {
-    "query": "Synthetic Tag 45",
+    "query": "Synthetic Tag 5",
     "semantic": true
   },
   "results": [
     {
-      "id": "urn:tag:synthetic:genre:066",
-      "name": "Synthetic Tag 45",
+      "id": "urn:tag:synthetic:genre:085",
+      "name": "Synthetic Tag 5",
       "type": "urn:tag:genre:qloo",
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:genre:036",
-      "name": "Synthetic Tag 45",
+      "id": "urn:tag:synthetic:genre:034",
+      "name": "Synthetic Tag 5",
       "type": "urn:tag:genre:music",
       "popularity": 0.9249
     },
     {
-      "id": "urn:tag:synthetic:music:063",
-      "name": "Synthetic Tag 45",
+      "id": "urn:tag:synthetic:music:084",
+      "name": "Synthetic Tag 5",
       "type": "urn:tag:music:qloo",
       "popularity": 0.8833
     },
     {
-      "id": "urn:tag:synthetic:genre_category:064",
-      "name": "Synthetic Tag 45",
+      "id": "urn:tag:synthetic:genre_category:082",
+      "name": "Synthetic Tag 5",
       "type": "urn:tag:genre_category:qloo",
       "popularity": 0.8329
     },
     {
-      "id": "urn:tag:synthetic:subgenre:065",
-      "name": "Synthetic Tag 45",
+      "id": "urn:tag:synthetic:subgenre:083",
+      "name": "Synthetic Tag 5",
       "type": "urn:tag:subgenre:qloo",
       "popularity": 0.7955
     }
@@ -49,7 +49,7 @@
         "method": "GET",
         "path": "/v2/tags",
         "query": {
-          "filter.query": "Synthetic Tag 45",
+          "filter.query": "Synthetic Tag 5",
           "feature.semantic_search": true,
           "take": 5
         }
@@ -73,7 +73,7 @@
     ],
     "unresolved": [],
     "target": {
-      "concept": "Synthetic Tag 45"
+      "concept": "Synthetic Tag 5"
     }
   },
   "execution": {

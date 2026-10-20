@@ -9,32 +9,32 @@
   },
   "results": [
     {
-      "id": "urn:tag:synthetic:cuisine:067",
+      "id": "urn:tag:synthetic:cuisine:090",
       "name": "Synthetic Concept 2",
       "type": "urn:tag:cuisine:qloo",
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:amenity:069",
+      "id": "urn:tag:synthetic:amenity:087",
       "name": "Synthetic Concept 2",
       "type": "urn:tag:amenity:qloo",
       "popularity": 0.9249
     },
     {
-      "id": "urn:tag:synthetic:cuisine:071",
-      "name": "Synthetic Tag 54",
+      "id": "urn:tag:synthetic:cuisine:086",
+      "name": "Synthetic Tag 63",
       "type": "urn:tag:cuisine:qloo",
       "popularity": 0.8833
     },
     {
-      "id": "urn:tag:synthetic:setting:070",
+      "id": "urn:tag:synthetic:setting:089",
       "name": "Synthetic Concept 2",
       "type": "urn:tag:setting:qloo",
       "popularity": 0.8329
     },
     {
-      "id": "urn:tag:synthetic:ambience:068",
-      "name": "Synthetic Tag 55",
+      "id": "urn:tag:synthetic:ambience:088",
+      "name": "Synthetic Tag 64",
       "type": "urn:tag:ambience:qloo",
       "popularity": 0.7955
     }

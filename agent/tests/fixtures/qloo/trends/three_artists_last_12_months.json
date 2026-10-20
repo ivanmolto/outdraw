@@ -27,7 +27,7 @@
         "match": "identifier",
         "selected": {
           "id": "746CD02C-8299-5FBF-9C15-615CBD354946",
-          "name": "Synthetic Entity 1",
+          "name": "Synthetic Entity 3",
           "type": "urn:entity:artist",
           "popularity": 0.9673,
           "description": "synthetic text"
@@ -48,7 +48,7 @@
         "match": "identifier",
         "selected": {
           "id": "6D60277B-0305-5B5B-B597-1584169BE993",
-          "name": "Synthetic Entity 3",
+          "name": "Synthetic Entity 1",
           "type": "urn:entity:artist",
           "popularity": 0.9221,
           "description": "synthetic text"
@@ -69,7 +69,7 @@
         "match": "identifier",
         "selected": {
           "id": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
-          "name": "Synthetic Entity 18",
+          "name": "Synthetic Entity 23",
           "type": "urn:entity:artist",
           "popularity": 0.8791,
           "description": "synthetic text"
@@ -91,7 +91,7 @@
       "entity": {
         "input": "746CD02C-8299-5FBF-9C15-615CBD354946",
         "entityId": "746CD02C-8299-5FBF-9C15-615CBD354946",
-        "name": "Synthetic Entity 1",
+        "name": "Synthetic Entity 3",
         "type": "urn:entity:artist",
         "match": "identifier"
       },
@@ -182,7 +182,7 @@
       "entity": {
         "input": "6D60277B-0305-5B5B-B597-1584169BE993",
         "entityId": "6D60277B-0305-5B5B-B597-1584169BE993",
-        "name": "Synthetic Entity 3",
+        "name": "Synthetic Entity 1",
         "type": "urn:entity:artist",
         "match": "identifier"
       },
@@ -273,7 +273,7 @@
       "entity": {
         "input": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
         "entityId": "0C62B8C4-9B54-52EE-A51F-858EFEF488EF",
-        "name": "Synthetic Entity 18",
+        "name": "Synthetic Entity 23",
         "type": "urn:entity:artist",
         "match": "identifier"
       },

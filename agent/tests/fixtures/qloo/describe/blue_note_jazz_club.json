@@ -7,7 +7,7 @@
   "resolution": {
     "issues": [
       {
-        "input": "Synthetic Entity 4",
+        "input": "Synthetic Entity 5",
         "kind": "ambiguous",
         "input_kind": "entity",
         "field": "entity",
@@ -15,7 +15,7 @@
         "candidates": [
           {
             "id": "3C1682D1-D102-5D0C-A19A-E8EF4B89BBE0",
-            "name": "Synthetic Entity 4",
+            "name": "Synthetic Entity 5",
             "type": "urn:entity:place",
             "popularity": 0.9673,
             "description": "synthetic text",
@@ -23,7 +23,7 @@
           },
           {
             "id": "1D021BBA-BC9A-5625-A38B-EC627B3984D8",
-            "name": "Synthetic Entity 4",
+            "name": "Synthetic Entity 5",
             "type": "urn:entity:place",
             "popularity": 0.928,
             "description": "synthetic text",
@@ -60,7 +60,7 @@
     "target": {
       "type": "place",
       "entities": [
-        "Synthetic Entity 4"
+        "Synthetic Entity 5"
       ]
     }
   },

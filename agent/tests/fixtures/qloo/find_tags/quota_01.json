@@ -4,13 +4,13 @@
   "operation": "find_tags",
   "status": "ok",
   "interpretation": {
-    "query": "Synthetic Tag 37",
+    "query": "Synthetic Tag 4",
     "semantic": true
   },
   "results": [
     {
-      "id": "urn:tag:synthetic:genre:030",
-      "name": "Synthetic Tag 37",
+      "id": "urn:tag:synthetic:genre:001",
+      "name": "Synthetic Tag 4",
       "type": "urn:tag:genre:music",
       "popularity": 0.9751
     }
@@ -25,7 +25,7 @@
         "method": "GET",
         "path": "/v2/tags",
         "query": {
-          "filter.query": "Synthetic Tag 37",
+          "filter.query": "Synthetic Tag 4",
           "feature.semantic_search": true,
           "take": 1
         }
@@ -49,7 +49,7 @@
     ],
     "unresolved": [],
     "target": {
-      "concept": "Synthetic Tag 37"
+      "concept": "Synthetic Tag 4"
     }
   },
   "execution": {
