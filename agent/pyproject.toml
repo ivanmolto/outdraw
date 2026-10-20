@@ -4,8 +4,11 @@ version = "0.1.0"
 description = "Outdraw agent service: Qloo-backed booking intelligence for live-music venues."
 requires-python = ">=3.12"
 dependencies = [
+    "asyncpg>=0.30",
     "fastapi>=0.151.0",
     "pydantic>=2.14.1",
+    "redis>=5.2",
+    "tenacity>=9.0",
     "uvicorn[standard]>=0.54.0",
 ]
 
@@ -16,6 +19,8 @@ dev = [
     "mypy>=1.11",
     "httpx2>=2.15.1",
     "datamodel-code-generator==0.86.0",
+    "asyncpg-stubs>=0.30",
+    "pytest-asyncio>=0.24",
 ]
 
 [tool.pytest.ini_options]
@@ -24,6 +29,8 @@ pythonpath = ["."]
 markers = [
     "integration: needs real keys (skipped unless RUN_INTEGRATION=1)",
 ]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 line-length = 100
