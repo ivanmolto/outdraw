@@ -62,6 +62,14 @@
     },
     "data_quality": {
       "$ref": "#/$defs/DataQuality"
+    },
+    "notes": {
+      "type": "array",
+      "description": "Why the profile is less than complete: skipped acts, non-ok envelope summaries.",
+      "items": {
+        "type": "string"
+      },
+      "default": []
     }
   },
   "required": [

@@ -210,6 +210,12 @@ class CrowdProfile(BaseModel):
     ] = None
     evidence: list[EvidenceRef]
     data_quality: DataQuality
+    notes: Annotated[
+        list[str] | None,
+        Field(
+            description="Why the profile is less than complete: skipped acts, non-ok envelope summaries."
+        ),
+    ] = []
 
 
 class QlooCallRecord(BaseModel):

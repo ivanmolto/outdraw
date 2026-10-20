@@ -135,6 +135,10 @@ export interface CrowdProfile {
   };
   evidence: EvidenceRef[];
   data_quality: DataQuality;
+  /**
+   * Why the profile is less than complete: skipped acts, non-ok envelope summaries.
+   */
+  notes?: string[];
 }
 /**
  * Weighted seed entity (e.g. a past act) used for taste calls.
