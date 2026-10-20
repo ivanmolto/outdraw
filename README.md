@@ -1,5 +1,7 @@
 # Outdraw
 
+[![ci](https://github.com/ivanmolto/outdraw/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ivanmolto/outdraw/actions/workflows/ci.yml)
+
 Outdraw ([outdraw.live](https://outdraw.live)) helps live-music venues book acts their crowd
 will turn out for, using Qloo's taste graph. Built for the Qloo Agentic Hackathon.
 
