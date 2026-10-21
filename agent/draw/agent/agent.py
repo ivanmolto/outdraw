@@ -9,6 +9,8 @@ code:
 
 - at most `MAX_STEPS` tool calls per run (the 9th and later are cancelled with a message
   telling the model to answer; a second over-limit batch ends the turn outright);
+- tools run one at a time in the order the model listed them, so a turn with
+  `gather_signals` and `score_and_rank` ranks on the gathered signals;
 - `generate_candidates` runs at most twice (one broadening), so a thin result is reported,
   not chased;
 - a `needs_input` envelope, or tag words the user must pick a candidate for, ends the run
@@ -53,6 +55,7 @@ from strands.hooks import (
 from strands.models import Model
 from strands.models.anthropic import AnthropicModel
 from strands.models.model import CacheConfig
+from strands.tools.executors import SequentialToolExecutor
 from strands.types.content import Message, Messages, SystemContentBlock
 from strands.types.exceptions import EventLoopException, MaxTokensReachedException
 from strands.types.streaming import StreamEvent
@@ -64,7 +67,7 @@ from draw.qloo.budget import LLM_PREFIX, DailyCounter, NullCounter, RedisCounter
 from draw.qloo.envelope import BudgetExceeded
 from draw.qloo.exec_client import QlooExec
 from draw.qloo.mcp_client import QlooMCP
-from draw.schemas import Constraints, DataQuality, ResolvedEntity, VenueInput
+from draw.schemas import Constraints, CrowdProfile, DataQuality, ResolvedEntity, VenueInput
 
 __all__ = [
     "DEFAULT_MODEL",
@@ -118,8 +121,9 @@ Pipeline (each tool call is one step; you have at most {MAX_STEPS} steps):
 find_tags once per word (limit 5) and use the urn:tag:genre:music tag whose name matches \
 the word. A semantic hit with a different name is a candidate, not a match: if no tag \
 matches, leave the word out and say so in notes.
-2. build_crowd_profile(venue_id). If the venue has no Qloo entity it is profiled from its \
-location and past acts; that is expected. Unconfirmed past acts are skipped and noted.
+2. build_crowd_profile(venue_id), unless the prompt gives a profile_id: then use it and \
+skip this step. If the venue has no Qloo entity it is profiled from its location and past \
+acts; that is expected. Unconfirmed past acts are skipped and noted.
 3. generate_candidates(profile_id, constraints_json) with the constraints as a JSON string. \
 If count is 0 or below {SHORTLIST}, broaden once (drop a tag from include_tags, or lower \
 exclude_recent_months) and call it again; never a third time. Then report what you have.
@@ -541,6 +545,7 @@ def _prompt(
     venue_entity: ResolvedEntity | None,
     constraints: Constraints,
     user_message: str,
+    profile_id: str | None = None,
 ) -> str:
     sold_by_act = {s.act.casefold(): s for s in venue.past_shows}
     lines = [
@@ -554,6 +559,8 @@ def _prompt(
         )
         + ".",
     ]
+    if profile_id:
+        lines.append(f"Crowd profile already built: profile_id {profile_id}.")
     if acts:
         lines.append("Past acts (resolved_id: canonical name, confirmed?, sell-through):")
         for resolved_id, act in acts:
@@ -727,12 +734,17 @@ async def run_venue_agent(
     token_cap: int | None = None,
     today: dt.date | None = None,
     store: RunStore | None = None,
+    profile: CrowdProfile | None = None,
+    venue_id: str | None = None,
 ) -> AgentResult:
     """One bounded agent run for `venue` under `constraints`, answering `user_message`.
 
     `acts` are the venue's past acts as the resolve step (T07) left them; `venue_entity` is
-    its Qloo place when known. `qloo` is the gateway both tool sets share: `QlooMCP` in the
-    service (its `tools()` are added to the agent), `QlooExec` in tests without a server.
+    its Qloo place when known. `profile` is the venue's stored crowd profile (the API builds
+    it before any run), which saves the agent the `build_crowd_profile` step; `venue_id`
+    keeps the store's id equal to the caller's. `qloo` is the gateway both tool sets share:
+    `QlooMCP` in the service (its `tools()` are added to the agent), `QlooExec` in tests
+    without a server.
     Raises `BudgetExceeded` before any model call when today's LLM tokens are already at
     the cap; a cap hit during the run comes back as an error result with the trace so far.
     """
@@ -744,7 +756,8 @@ async def run_venue_agent(
         raise BudgetExceeded(used, cap, "LLM token")
 
     store = store or RunStore()
-    venue_id = store.add_venue(venue)
+    venue_id = store.add_venue(venue, venue_id=venue_id)
+    profile_id = store.add_profile(venue_id, profile) if profile is not None else None
     if venue_entity is not None:
         store.set_venue_entity(venue_id, venue_entity)
     seeded = [(store.add_resolved(venue_id, act), act) for act in acts]
@@ -753,6 +766,7 @@ async def run_venue_agent(
     if isinstance(qloo, QlooMCP):
         agent_tools.extend(qloo.tools())
     guard = RunGuard(store)
+    guard.profile_id = profile_id
     metered = MeteredModel(model or build_model(settings), counter)
     agent = Agent(
         model=metered,
@@ -760,8 +774,14 @@ async def run_venue_agent(
         system_prompt=SYSTEM_PROMPT,
         hooks=[guard],
         callback_handler=None,
+        # One tool at a time, in the order the model listed them: with Strands' default
+        # concurrent executor, score_and_rank in the same turn as gather_signals ranked
+        # before the signals arrived.
+        tool_executor=SequentialToolExecutor(),
     )
-    prompt = _prompt(venue, venue_id, seeded, venue_entity, constraints, user_message)
+    prompt = _prompt(
+        venue, venue_id, seeded, venue_entity, constraints, user_message, profile_id=profile_id
+    )
 
     result: StrandsResult | None = None
     error: str | None = None

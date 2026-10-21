@@ -293,6 +293,34 @@ async def test_parallel_tool_calls_count_each(qloo: QlooMCP) -> None:
     assert [t.status for t in result.trace][:9] == ["success"] * 8 + ["cancelled"]
 
 
+async def test_tools_in_one_turn_run_in_order(qloo: QlooMCP) -> None:
+    """gather_signals and score_and_rank in one turn: ranking must see the signals.
+
+    Strands runs a turn's tools concurrently by default, and score_and_rank (no awaits)
+    used to finish before gather_signals (Qloo calls), ranking on neutral signals.
+    """
+
+    def gather_and_rank(results: Results) -> Turn:
+        run_id = latest(results, "run_id")
+        return [("gather_signals", {"run_id": run_id}), ("score_and_rank", {"run_id": run_id})]
+
+    result, _ = await run_pipeline(qloo, generate, gather_and_rank, answer, qloo_first=False)
+    assert result.status == "ok", result
+    assert [t.tool for t in result.trace] == [
+        "build_crowd_profile",
+        "generate_candidates",
+        "gather_signals",
+        "score_and_rank",
+    ]
+    assert result.store is not None and result.run_id is not None
+    run = result.store.run(result.run_id)
+    assert run.signals is not None and run.signals.by_id
+    assert run.ranked is not None
+    with_signals = [r for r in run.ranked if r.candidate.entity_id in run.signals.by_id]
+    assert with_signals and any("past_fit" not in (r.score.neutral or []) for r in with_signals)
+    assert not any("Signals were not gathered" in n for n in result.notes)
+
+
 async def test_broadening_happens_at_most_once(qloo: QlooMCP) -> None:
     result, _ = await run_pipeline(
         qloo, generate, generate, generate, rank, answer, qloo_first=False
