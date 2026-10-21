@@ -351,7 +351,9 @@ class QlooExec:
                 str(input_file),
                 stdout=PIPE,
                 stderr=PIPE,
-                env=os.environ,  # full environment: the harness reads the key from it
+                # The full environment (the harness reads the key from it), as a plain dict:
+                # uvloop, which uvicorn runs on, rejects `os.environ` itself.
+                env=dict(os.environ),
             )
             try:
                 out, err = await asyncio.wait_for(proc.communicate(), self.config.timeout_s)

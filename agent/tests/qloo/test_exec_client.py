@@ -48,7 +48,7 @@ async def test_ok_call_has_call_id_and_spawns_with_full_env(
     assert len(result.call_id) == 36 and result.cache_hit is False
     assert result.workflow == "find_tags" and result.latency_ms >= 0
     assert fake.argv == [["/fake/qloo", "exec", "find_tags", "--input-file", fake.argv[0][4]]]
-    assert fake.env_seen[0] is os.environ
+    assert type(fake.env_seen[0]) is dict and fake.env_seen[0] == dict(os.environ)
     assert fake.inputs == [{"query": "jazz", "limit": 5}]
 
 
@@ -305,3 +305,19 @@ async def test_memory_cache_expires() -> None:
     assert await cache.get("k") == {"status": "ok"}
     now[0] = 11
     assert await cache.get("k") is None and len(cache) == 0
+
+
+def test_real_spawn_under_uvloop(tmp_path: Path) -> None:
+    """uvicorn runs on uvloop, whose subprocess API rejects `os.environ` (it wants a dict)."""
+    import uvloop
+
+    envelope = tmp_path / "envelope.json"
+    envelope.write_text(fixture_text("find_tags", "jazz"), encoding="utf-8")
+    fake_qloo = tmp_path / "qloo"
+    fake_qloo.write_text(f'#!/bin/sh\ncat "{envelope}"\n', encoding="utf-8")
+    fake_qloo.chmod(0o755)
+    client = QlooExec(QlooConfig(qloo_bin=str(fake_qloo)), retry_wait=wait_none())
+
+    with asyncio.Runner(loop_factory=uvloop.new_event_loop) as runner:
+        result = runner.run(client.find_tags("jazz", limit=5))
+    assert result.status == "ok" and result.result_count == 5
