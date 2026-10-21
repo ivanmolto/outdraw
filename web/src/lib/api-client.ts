@@ -36,8 +36,13 @@ const MESSAGES: Record<Reason, string> = {
   unknown: "Something went wrong on our side. Try again.",
 };
 
+/** User-facing text for a `{reason}`; also used by server components on an AgentError. */
+export function reasonText(reason: Reason): string {
+  return MESSAGES[reason];
+}
+
 export function reasonMessage(err: unknown): string {
-  return MESSAGES[err instanceof ApiError ? err.reason : "unavailable"];
+  return reasonText(err instanceof ApiError ? err.reason : "unavailable");
 }
 
 async function post<T>(path: string, body?: unknown): Promise<T> {

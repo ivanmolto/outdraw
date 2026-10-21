@@ -1,0 +1,44 @@
+{
+  "id": "ven_fixture",
+  "venue": {
+    "name": "Synthetic Room",
+    "city": "New York",
+    "country": "US",
+    "capacity": 400,
+    "past_shows": [
+      { "act": "Synthetic Act", "date": "2026-03-14", "tickets_sold": 380, "capacity": 400 }
+    ]
+  },
+  "resolutions": [],
+  "profile": {
+    "venue_id": "ven_fixture",
+    "qloo_venue_id": "urn:entity:synthetic:place:1",
+    "signals": [{ "entity_id": "urn:entity:synthetic:artist:1", "weight": 0.95 }],
+    "genres": [
+      { "entity_id": "urn:tag:genre:music:synthetic-wave", "name": "Synthetic Wave", "affinity": 0.91 },
+      { "entity_id": "urn:tag:genre:music:fixture-rock", "name": "Fixture Rock", "affinity": 0.74 }
+    ],
+    "related_artists": [
+      { "entity_id": "urn:entity:synthetic:artist:3", "name": "Synthetic Artist Three", "affinity": 0.88 },
+      { "entity_id": "urn:entity:synthetic:artist:4", "name": "Synthetic Artist Four" }
+    ],
+    "places": [
+      { "entity_id": "urn:entity:synthetic:place:2", "name": "Synthetic Bar", "affinity": 0.67 }
+    ],
+    "films": [],
+    "brands": [
+      { "entity_id": "urn:entity:synthetic:brand:1", "name": "Synthetic Brand", "affinity": 0.52 }
+    ],
+    "demographics": {
+      "age": { "24_and_younger": 0.42, "25_to_29": 0.61, "55_and_older": 0.18 },
+      "gender": { "male": 0.55, "female": 0.57 },
+      "entities": ["urn:entity:synthetic:artist:1"]
+    },
+    "evidence": [
+      { "item_ref": "genres[0]", "call_id": "00000000-0000-4000-8000-000000000001" },
+      { "item_ref": "demographics", "call_id": "00000000-0000-4000-8000-000000000002" }
+    ],
+    "data_quality": "partial",
+    "notes": ["films: Qloo returned no results for this crowd."]
+  }
+}
