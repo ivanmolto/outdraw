@@ -15,7 +15,10 @@ starting any task. Each task there has a prompt, a definition of done and tests.
   that also has Node 22.19+ and the pinned Qloo harness.
 - `/shared` — JSON Schemas shared by both; generated TypeScript types live in
   `/web/types`, generated Pydantic models in `/agent/draw/schemas.py`. Regenerate with
-  the scripts in each package; never hand-edit generated files.
+  the scripts in each package; never hand-edit generated files. `/shared/openapi.json` is
+  the agent's route contract (`make openapi` in `/agent`), and `/web/types/api.ts` is
+  generated from it (`npm run gen:api`); `web/src/server/agent.ts` derives its response
+  types from there. `npm run gen:api` at the root does both; CI fails if either drifts.
 - `/docs` — briefing, task list, decisions (`docs/decisions/*.md`), ops, walkthrough.
 
 ## Qloo access (the rules that matter most)

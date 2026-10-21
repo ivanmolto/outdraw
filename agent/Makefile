@@ -2,7 +2,10 @@
 ENV_FILE := $(wildcard ../.env.local)
 UV_RUN := uv run $(if $(ENV_FILE),--env-file $(ENV_FILE))
 
-.PHONY: migrate migrate-down migration db-current
+.PHONY: migrate migrate-down migration db-current openapi
+
+openapi:  ## write the route contract to ../shared/openapi.json (no database needed)
+	uv run python scripts/export_openapi.py
 
 migrate:  ## apply all migrations
 	$(UV_RUN) alembic upgrade head

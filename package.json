@@ -10,7 +10,9 @@
     "lint": "npm --prefix web run lint && cd agent && uv run ruff check .",
     "typecheck": "npm --prefix web run typecheck && cd agent && uv run mypy .",
     "gen:schemas": "npm --prefix web run gen:types && cd agent && uv run python scripts/gen_schemas.py",
-    "check:schemas": "npm run gen:schemas && git diff --exit-code -- web/types/schemas.ts agent/draw/schemas.py && test -z \"$(git status --porcelain -- web/types/schemas.ts agent/draw/schemas.py)\""
+    "check:schemas": "npm run gen:schemas && git diff --exit-code -- web/types/schemas.ts agent/draw/schemas.py && test -z \"$(git status --porcelain -- web/types/schemas.ts agent/draw/schemas.py)\"",
+    "gen:api": "cd agent && uv run python scripts/export_openapi.py && npm --prefix ../web run gen:api",
+    "check:api": "npm run gen:api && git diff --exit-code -- shared/openapi.json web/types/api.ts && test -z \"$(git status --porcelain -- shared/openapi.json web/types/api.ts)\""
   },
   "devDependencies": {
     "concurrently": "9.2.1"
