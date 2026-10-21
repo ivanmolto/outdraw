@@ -25,7 +25,7 @@ the Qloo workflow behind it, or the venue's own data for `novelty` and `size_fit
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from typing import Final, Literal
 
 from draw.ranking.candidates import POPULARITY_BANDS
@@ -45,14 +45,17 @@ __all__ = [
     "NEUTRAL",
     "NOVELTY_HORIZON_MONTHS",
     "WEIGHTS",
+    "SourceLabel",
     "SubScore",
     "novelty_of",
     "score_candidate",
     "size_fit_of",
+    "source_labels",
     "top_reason_for",
 ]
 
 SubScore = Literal["crowd_affinity", "past_fit", "local_heat", "novelty", "size_fit", "momentum"]
+SourceLabel = Literal["qloo", "draw"]
 
 WEIGHTS: Final[Mapping[SubScore, float]] = {
     "crowd_affinity": 0.35,
@@ -80,6 +83,16 @@ WORKFLOW_OF: Final[Mapping[SubScore, str | None]] = {
 """Which Qloo workflow backs each sub-score; `None` means Outdraw's own data."""
 
 _TIER_ORDER: Final[tuple[SizeTier, ...]] = ("emerging", "mid", "established")
+
+
+def source_labels(neutral: Iterable[str]) -> dict[SubScore, SourceLabel]:
+    """Per sub-score, whether its number is Qloo data or Outdraw's own interpretation
+    (a neutral fallback counts as Outdraw's, however Qloo-backed the sub-score is)."""
+    fell_back = set(neutral)
+    return {
+        name: "qloo" if WORKFLOW_OF[name] and name not in fell_back else "draw"
+        for name in WEIGHTS
+    }
 
 
 # --- sub-scores -----------------------------------------------------------------------

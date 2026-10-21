@@ -1,6 +1,28 @@
 {
   "components": {
     "schemas": {
+      "AskOut": {
+        "properties": {
+          "candidates": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "candidates"
+        ],
+        "title": "AskOut",
+        "type": "object"
+      },
       "ConfirmBody": {
         "properties": {
           "chosen_entity_id": {
@@ -634,14 +656,12 @@
           "result": {
             "anyOf": [
               {
-                "additionalProperties": true,
-                "type": "object"
+                "$ref": "#/components/schemas/RunResult"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Result"
+            ]
           },
           "run_id": {
             "title": "Run Id",
@@ -677,6 +697,307 @@
           "token_usage"
         ],
         "title": "RunOut",
+        "type": "object"
+      },
+      "RunResult": {
+        "description": "The agent's final JSON as stored: `shortlist` for an ok run, `ask` when a tool\nneeded the user, `error` when the run failed.",
+        "properties": {
+          "ask": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AskOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_quality": {
+            "$ref": "#/components/schemas/DataQuality",
+            "default": "degraded"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          },
+          "shortlist": {
+            "items": {
+              "$ref": "#/components/schemas/ShortlistEntry"
+            },
+            "title": "Shortlist",
+            "type": "array"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
+          },
+          "stop_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Reason"
+          },
+          "weights": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScoreWeights"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "RunResult",
+        "type": "object"
+      },
+      "ScoreBreakdown": {
+        "additionalProperties": false,
+        "properties": {
+          "crowd_affinity": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Crowd Affinity",
+            "type": "number"
+          },
+          "local_heat": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Local Heat",
+            "type": "number"
+          },
+          "momentum": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Momentum"
+          },
+          "novelty": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Novelty",
+            "type": "number"
+          },
+          "past_fit": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Past Fit",
+            "type": "number"
+          },
+          "size_fit": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Size Fit",
+            "type": "number"
+          }
+        },
+        "required": [
+          "crowd_affinity",
+          "past_fit",
+          "local_heat",
+          "novelty",
+          "size_fit"
+        ],
+        "title": "ScoreBreakdown",
+        "type": "object"
+      },
+      "ScoreWeights": {
+        "additionalProperties": false,
+        "properties": {
+          "crowd_affinity": {
+            "minimum": 0.0,
+            "title": "Crowd Affinity",
+            "type": "number"
+          },
+          "local_heat": {
+            "minimum": 0.0,
+            "title": "Local Heat",
+            "type": "number"
+          },
+          "momentum": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Momentum"
+          },
+          "novelty": {
+            "minimum": 0.0,
+            "title": "Novelty",
+            "type": "number"
+          },
+          "past_fit": {
+            "minimum": 0.0,
+            "title": "Past Fit",
+            "type": "number"
+          },
+          "size_fit": {
+            "minimum": 0.0,
+            "title": "Size Fit",
+            "type": "number"
+          }
+        },
+        "required": [
+          "crowd_affinity",
+          "past_fit",
+          "local_heat",
+          "novelty",
+          "size_fit"
+        ],
+        "title": "ScoreWeights",
+        "type": "object"
+      },
+      "ShortlistEntry": {
+        "description": "One ranked act, in `score_and_rank`'s order. The score fields come from the stored\ncandidate; `reason` is the agent's own (templated for the top five, else the model's).",
+        "properties": {
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "neutral": {
+            "items": {
+              "enum": [
+                "crowd_affinity",
+                "past_fit",
+                "local_heat",
+                "novelty",
+                "size_fit",
+                "momentum"
+              ],
+              "type": "string"
+            },
+            "title": "Neutral",
+            "type": "array"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "source_labels": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "enum": [
+                    "qloo",
+                    "draw"
+                  ],
+                  "type": "string"
+                },
+                "propertyNames": {
+                  "enum": [
+                    "crowd_affinity",
+                    "past_fit",
+                    "local_heat",
+                    "novelty",
+                    "size_fit",
+                    "momentum"
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Labels"
+          },
+          "sub_scores": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScoreBreakdown"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "top_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Reason"
+          },
+          "total": {
+            "title": "Total",
+            "type": "number"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "entity_id",
+          "name",
+          "total"
+        ],
+        "title": "ShortlistEntry",
         "type": "object"
       },
       "Signal": {

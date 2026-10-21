@@ -4,7 +4,9 @@ A run needs the venue's stored crowd profile (409 otherwise: the profile step is
 confirm gate sits). The gateway for the run carries the run's id, so every Qloo call it
 makes lands in `qloo_calls` under that id. The stored result is the agent's final JSON
 (`shortlist` from `score_and_rank`, or `ask`); each ranked candidate is stored with its
-score and its evidence trail (`get_evidence`).
+score and its evidence trail (`get_evidence`). Shortlist entries also carry their
+sub-scores, `top_reason`, neutral fallbacks and source labels, and the result the
+`weights`; `RunResult` is the typed view the web reads through the OpenAPI contract.
 """
 
 from __future__ import annotations
@@ -24,7 +26,8 @@ from draw.api.deps import Deps, get_deps
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
 from draw.qloo.exec_client import QlooExec
-from draw.schemas import Constraints, CrowdProfile
+from draw.ranking.score import WEIGHTS, SourceLabel, SubScore, source_labels
+from draw.schemas import Constraints, CrowdProfile, DataQuality, ScoreBreakdown, ScoreWeights
 
 __all__ = ["router"]
 
@@ -40,12 +43,47 @@ class RunBody(BaseModel):
     message: str = Field(default="", max_length=MAX_MESSAGE)
 
 
+class ShortlistEntry(BaseModel):
+    """One ranked act, in `score_and_rank`'s order. The score fields come from the stored
+    candidate; `reason` is the agent's own (templated for the top five, else the model's)."""
+
+    candidate_id: str
+    entity_id: str
+    name: str
+    total: float
+    reason: str | None = None
+    top_reason: str | None = None
+    sub_scores: ScoreBreakdown | None = None
+    neutral: list[SubScore] = Field(default_factory=list)
+    source_labels: dict[SubScore, SourceLabel] | None = None
+
+
+class AskOut(BaseModel):
+    question: str
+    candidates: list[dict[str, Any]]
+
+
+class RunResult(BaseModel):
+    """The agent's final JSON as stored: `shortlist` for an ok run, `ask` when a tool
+    needed the user, `error` when the run failed."""
+
+    shortlist: list[ShortlistEntry] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+    data_quality: DataQuality = "degraded"
+    weights: ScoreWeights | None = None
+    ask: AskOut | None = None
+    error: str | None = None
+    stop_reason: str | None = None
+    steps: int | None = None
+    profile_id: str | None = None
+
+
 class RunOut(BaseModel):
     run_id: str
     venue_id: str
     status: str
     constraints: Constraints
-    result: dict[str, Any] | None
+    result: RunResult | None
     token_usage: dict[str, Any] | None
     created_at: datetime | None = None
 
@@ -73,7 +111,7 @@ def _out(row: RunRow) -> RunOut:
         venue_id=row.venue_id,
         status=row.status,
         constraints=Constraints.model_validate(row.constraints),
-        result=row.result,
+        result=RunResult.model_validate(row.result) if row.result is not None else None,
         token_usage=row.token_usage,
         created_at=row.created_at,
     )
@@ -100,6 +138,28 @@ async def _candidates(result: AgentResult, qloo: QlooExec, run_id: str) -> list[
             )
         )
     return rows
+
+
+def _with_scores(result: dict[str, Any], candidates: list[CandidateRow]) -> dict[str, Any]:
+    """The result with each shortlist entry's `top_reason`, `sub_scores`, `neutral` and
+    `source_labels`, and the run's `weights`, so the shortlist page draws its chips without
+    a call per act (the `ShortlistEntry` shape)."""
+    if "shortlist" not in result:
+        return result
+    scores = {row.entity_id: row.score for row in candidates}
+    shortlist = []
+    for entry in result["shortlist"]:
+        score = scores.get(entry["entity_id"])
+        if score is not None:
+            entry = {
+                **entry,
+                "top_reason": score["top_reason"],
+                "sub_scores": score["breakdown"],
+                "neutral": score["neutral"],
+                "source_labels": source_labels(score["neutral"]),
+            }
+        shortlist.append(entry)
+    return {**result, "shortlist": shortlist, "weights": dict(WEIGHTS)}
 
 
 @router.post("")
@@ -147,7 +207,7 @@ async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
         raise
 
     stored = {
-        **result.to_json(),
+        **_with_scores(result.to_json(), candidates),
         "stop_reason": result.stop_reason,
         "steps": result.steps,
         "profile_id": result.profile_id,

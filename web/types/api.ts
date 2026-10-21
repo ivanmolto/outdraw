@@ -207,6 +207,15 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AskOut */
+        AskOut: {
+            /** Candidates */
+            candidates: {
+                [key: string]: unknown;
+            }[];
+            /** Question */
+            question: string;
+        };
         /** ConfirmBody */
         ConfirmBody: {
             /** Chosen Entity Id */
@@ -427,10 +436,7 @@ export interface components {
             constraints: components["schemas"]["Constraints"];
             /** Created At */
             created_at?: string | null;
-            /** Result */
-            result: {
-                [key: string]: unknown;
-            } | null;
+            result: components["schemas"]["RunResult"] | null;
             /** Run Id */
             run_id: string;
             /** Status */
@@ -441,6 +447,85 @@ export interface components {
             } | null;
             /** Venue Id */
             venue_id: string;
+        };
+        /**
+         * RunResult
+         * @description The agent's final JSON as stored: `shortlist` for an ok run, `ask` when a tool
+         *     needed the user, `error` when the run failed.
+         */
+        RunResult: {
+            ask?: components["schemas"]["AskOut"] | null;
+            /** @default degraded */
+            data_quality: components["schemas"]["DataQuality"];
+            /** Error */
+            error?: string | null;
+            /** Notes */
+            notes?: string[];
+            /** Profile Id */
+            profile_id?: string | null;
+            /** Shortlist */
+            shortlist?: components["schemas"]["ShortlistEntry"][];
+            /** Steps */
+            steps?: number | null;
+            /** Stop Reason */
+            stop_reason?: string | null;
+            weights?: components["schemas"]["ScoreWeights"] | null;
+        };
+        /** ScoreBreakdown */
+        ScoreBreakdown: {
+            /** Crowd Affinity */
+            crowd_affinity: number;
+            /** Local Heat */
+            local_heat: number;
+            /** Momentum */
+            momentum?: number | null;
+            /** Novelty */
+            novelty: number;
+            /** Past Fit */
+            past_fit: number;
+            /** Size Fit */
+            size_fit: number;
+        };
+        /** ScoreWeights */
+        ScoreWeights: {
+            /** Crowd Affinity */
+            crowd_affinity: number;
+            /** Local Heat */
+            local_heat: number;
+            /** Momentum */
+            momentum?: number | null;
+            /** Novelty */
+            novelty: number;
+            /** Past Fit */
+            past_fit: number;
+            /** Size Fit */
+            size_fit: number;
+        };
+        /**
+         * ShortlistEntry
+         * @description One ranked act, in `score_and_rank`'s order. The score fields come from the stored
+         *     candidate; `reason` is the agent's own (templated for the top five, else the model's).
+         */
+        ShortlistEntry: {
+            /** Candidate Id */
+            candidate_id: string;
+            /** Entity Id */
+            entity_id: string;
+            /** Name */
+            name: string;
+            /** Neutral */
+            neutral?: ("crowd_affinity" | "past_fit" | "local_heat" | "novelty" | "size_fit" | "momentum")[];
+            /** Reason */
+            reason?: string | null;
+            /** Source Labels */
+            source_labels?: {
+                [key: string]: "qloo" | "draw";
+            } | null;
+            sub_scores?: components["schemas"]["ScoreBreakdown"] | null;
+            /** Top Reason */
+            top_reason?: string | null;
+            /** Total */
+            total: number;
         };
         /** Signal */
         Signal: {

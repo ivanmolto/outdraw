@@ -384,6 +384,10 @@ def test_run_returns_ranked_candidates(client: TestClient, scripts: Scripts) -> 
     assert shortlist
     totals = [e["total"] for e in shortlist]
     assert totals == sorted(totals, reverse=True)
+    for entry in shortlist:
+        assert entry["top_reason"] and set(entry["neutral"]) <= set(entry["sub_scores"])
+        assert {"crowd_affinity", "past_fit", "local_heat"} <= set(entry["sub_scores"])
+    assert sum(run["result"]["weights"].values()) == pytest.approx(1.0)
     assert run["result"]["steps"] == 2, "the stored profile saves build_crowd_profile"
     assert run["token_usage"]["model_calls"] == 3
 

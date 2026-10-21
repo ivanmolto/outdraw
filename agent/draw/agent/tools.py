@@ -30,7 +30,7 @@ from draw.qloo.exec_client import QlooExec
 from draw.ranking import candidates as candidates_mod
 from draw.ranking import signals as signals_mod
 from draw.ranking.rank import RankedCandidate, rank
-from draw.ranking.score import WEIGHTS, WORKFLOW_OF
+from draw.ranking.score import WEIGHTS, source_labels
 from draw.schemas import Constraints, DataQuality
 
 __all__ = ["DrawTools", "TOOL_NAMES"]
@@ -282,10 +282,7 @@ class DrawTools:
         score = item.score
         sub_scores = score.breakdown.model_dump(mode="json")
         neutral = set(score.neutral or [])
-        labels = {
-            name: "qloo" if WORKFLOW_OF[name] and name not in neutral else "draw"
-            for name in WEIGHTS
-        }
+        labels = source_labels(neutral)
         call_ids = [e.call_id for e in score.evidence or []]
         return {
             "candidate_id": candidate_id,
