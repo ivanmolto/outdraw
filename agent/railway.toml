@@ -1,0 +1,14 @@
+# Railway config-as-code for the agent service (root directory `/agent`). Railway does not
+# follow the root directory for this file: set the service's config path to /agent/railway.toml.
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+watchPatterns = ["/agent/**"]
+
+[deploy]
+# The image's CMD (docker/start.sh): harness readiness, migrations, uvicorn.
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+numReplicas = 1

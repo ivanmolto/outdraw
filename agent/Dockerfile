@@ -27,9 +27,9 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY draw ./draw
-# Migrations run as Railway's pre-deploy command: `alembic upgrade head`.
 COPY alembic.ini ./
 COPY migrations ./migrations
+COPY --chmod=755 docker/start.sh ./start.sh
 
 ENV PATH="/app/node_modules/.bin:/app/.venv/bin:${PATH}"
 
@@ -37,5 +37,6 @@ RUN useradd --create-home --uid 10001 app
 USER app
 
 EXPOSE 8000
-# Railway injects PORT.
-CMD ["sh", "-c", "exec uvicorn draw.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# No secrets at build time: QLOO_API_KEY and the rest are Railway env vars read at run time.
+# start.sh checks harness readiness, runs migrations, then execs uvicorn on Railway's PORT.
+CMD ["./start.sh"]
