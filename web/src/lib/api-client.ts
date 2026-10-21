@@ -5,10 +5,11 @@ import type {
   Reason,
   ResolutionItem,
   Resolutions,
+  RunOut,
   VenueId,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
-import type { ConfirmInput, VenueUpsert } from "./schemas";
+import type { ConfirmInput, RunInput, VenueUpsert } from "./schemas";
 
 export type { EntityCandidate, Reason, ResolutionItem, Resolutions };
 
@@ -72,4 +73,5 @@ export const api = {
   confirmMatch: (id: string, body: ConfirmInput) =>
     post<ResolutionItem>(`/api/venues/${seg(id)}/confirm`, body),
   buildProfile: (id: string) => post<CrowdProfile>(`/api/venues/${seg(id)}/profile`),
+  createRun: (body: RunInput) => post<RunOut>("/api/runs", body),
 };
