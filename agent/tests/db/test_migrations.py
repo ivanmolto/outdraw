@@ -4,8 +4,7 @@ base, upgrade head; the migrated schema matches the ORM models; triggers and che
 from __future__ import annotations
 
 import asyncio
-import os
-from collections.abc import Callable, Iterator
+from collections.abc import Callable
 from typing import Any
 
 import pytest
@@ -24,8 +23,6 @@ from draw.db.models import Base
 from draw.qloo.cache import QLOO_CACHE_DDL
 from draw.qloo.recording import QLOO_CALLS_DDL
 
-# Same major version as the Neon project.
-IMAGE = "pgvector/pgvector:pg18"
 TABLES = {
     "venues",
     "crowd_profiles",
@@ -38,28 +35,6 @@ TABLES = {
     "embeddings",
 }
 VENUE = "INSERT INTO venues (id, name, city, country, capacity) VALUES ('v1', 'n', 'c', 'US', 10)"
-
-
-def _docker_available() -> bool:
-    try:
-        import docker
-
-        docker.from_env().ping()
-    except Exception:
-        return False
-    return True
-
-
-@pytest.fixture(scope="module")
-def pg_url() -> Iterator[str]:
-    if not _docker_available():
-        if os.environ.get("CI"):
-            pytest.fail("Docker is required for migration tests in CI")
-        pytest.skip("Docker is not running")
-    from testcontainers.community.postgres import PostgresContainer
-
-    with PostgresContainer(IMAGE, driver=None) as pg:
-        yield pg.get_connection_url()
 
 
 def _sync[T](url: str, fn: Callable[[Connection], T]) -> T:

@@ -6,7 +6,7 @@ import asyncio
 import importlib.util
 import json
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -55,6 +55,35 @@ def read_json(path: Path) -> Any:
 
 def fixture_text(workflow: str, name: str) -> str:
     return (FIXTURES_DIR / workflow / f"{name}.json").read_text("utf-8")
+
+
+# --- throwaway Postgres (testcontainers) -----------------------------------------------
+
+# Same major version as the Neon project.
+PG_IMAGE = "pgvector/pgvector:pg18"
+
+
+def _docker_available() -> bool:
+    try:
+        import docker
+
+        docker.from_env().ping()
+    except Exception:
+        return False
+    return True
+
+
+@pytest.fixture(scope="module")
+def pg_url() -> Iterator[str]:
+    """One pgvector Postgres per test module; skipped without Docker, except in CI."""
+    if not _docker_available():
+        if os.environ.get("CI"):
+            pytest.fail("Docker is required for database tests in CI")
+        pytest.skip("Docker is not running")
+    from testcontainers.community.postgres import PostgresContainer
+
+    with PostgresContainer(PG_IMAGE, driver=None) as pg:
+        yield pg.get_connection_url()
 
 
 # --- fake harness: `create_subprocess_exec` printing fixture envelopes ----------------
