@@ -3,38 +3,32 @@
 // so the browser reaches the agent only through the /api route handlers.
 import "server-only";
 
-import type { components } from "@/types/api";
+import type {
+  CandidateEvidence,
+  QlooCall,
+  Reason,
+  ResolutionItem,
+  Resolutions,
+  RunOut,
+  VenueId,
+  VenueOut,
+} from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
 import type { ConfirmInput, RunInput, VenueUpsert } from "@/src/lib/schemas";
 
-// --- response shapes ----------------------------------------------------------------------
-// Generated from the agent's routes: `make openapi` in /agent writes shared/openapi.json and
-// `npm run gen:api` turns it into types/api.ts (CI fails when either drifts). Each name
-// below is the Pydantic response model in agent/draw/api/{venues,runs}.py.
-
-type Schema<K extends keyof components["schemas"]> = components["schemas"][K];
-
-export type VenueId = Schema<"VenueId">;
-/** `query` is an opaque key: echo it back to confirm as-is. */
-export type ResolutionItem = Schema<"ResolutionItem">;
-export type Resolutions = Schema<"Resolutions">;
-export type VenueOut = Schema<"VenueOut">;
-export type RunOut = Schema<"RunOut">;
-export type CandidateEvidence = Schema<"Evidence">;
-export type QlooCall = Schema<"QlooCall">;
+// Response shapes live in types/agent.ts, shared with the browser client.
+export type {
+  CandidateEvidence,
+  QlooCall,
+  Reason,
+  ResolutionItem,
+  Resolutions,
+  RunOut,
+  VenueId,
+  VenueOut,
+};
 
 // --- errors -----------------------------------------------------------------------------
-
-/** What the UI may branch on; never a backend message, URL or stack trace. */
-export type Reason =
-  | "invalid_input"
-  | "not_found"
-  | "conflict"
-  | "budget"
-  | "busy"
-  | "live_mode_off"
-  | "unavailable"
-  | "unknown";
 
 const PASSTHROUGH: ReadonlySet<string> = new Set<Reason>(["busy", "budget", "live_mode_off"]);
 

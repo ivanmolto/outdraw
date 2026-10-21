@@ -1,0 +1,45 @@
+{
+  "venue_id": "ven_fixture",
+  "items": [
+    {
+      "kind": "venue",
+      "query": "venue:Synthetic Room",
+      "confirmed": true,
+      "entity_id": "urn:entity:synthetic:place:1",
+      "canonical_name": "Synthetic Room NYC",
+      "candidates": [
+        { "entity_id": "urn:entity:synthetic:place:1", "name": "Synthetic Room NYC", "type": "urn:entity:place" }
+      ]
+    },
+    {
+      "kind": "act",
+      "query": "Synthetic Act",
+      "confirmed": true,
+      "entity_id": "urn:entity:synthetic:artist:1",
+      "canonical_name": "Synthetic Act",
+      "candidates": [
+        { "entity_id": "urn:entity:synthetic:artist:1", "name": "Synthetic Act", "type": "urn:entity:artist" }
+      ]
+    },
+    {
+      "kind": "act",
+      "query": "Ambiguous Band",
+      "confirmed": false,
+      "entity_id": "urn:entity:synthetic:artist:2",
+      "canonical_name": "Ambiguous Band",
+      "candidates": [
+        { "entity_id": "urn:entity:synthetic:artist:2", "name": "Ambiguous Band", "type": "urn:entity:artist" },
+        { "entity_id": "urn:entity:synthetic:artist:3", "name": "Ambiguous Band (UK)", "type": "urn:entity:artist" },
+        { "entity_id": "urn:entity:synthetic:artist:4", "name": "The Ambiguous Band", "type": "urn:entity:artist" }
+      ]
+    },
+    {
+      "kind": "act",
+      "query": "Unknown Duo",
+      "confirmed": false,
+      "entity_id": null,
+      "canonical_name": "Unknown Duo",
+      "candidates": []
+    }
+  ]
+}

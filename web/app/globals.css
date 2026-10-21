@@ -8,6 +8,10 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /* Brand palette; amber only on ink grounds. */
+  --color-ink: #0e0f14;
+  --color-paper: #f6f4ee;
+  --color-brand-amber: #f5b400;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
