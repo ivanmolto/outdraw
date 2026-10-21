@@ -104,7 +104,7 @@ class AuditRecorder(Recorder):
         self.count += 1
         check = self.check_name(workflow, request)
         self.checks.append(check)
-        folder = self.root / workflow
+        folder = RECORDINGS_DIR / workflow
         folder.mkdir(parents=True, exist_ok=True)
         (folder / f"{check}.request.json").write_text(
             redact(json.dumps({"workflow": workflow, "input": request}, indent=2), self._secret)

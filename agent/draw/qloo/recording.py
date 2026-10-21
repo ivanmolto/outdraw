@@ -1,9 +1,11 @@
 """Per-call recordings for the submission walkthrough (`QLOO_RECORD=1`).
 
 Each call writes `{call_id, ts, workflow, request, envelope, status, cache_hit}` to
-`/agent/recordings/<date>/<call_id>.json` and, when a Postgres pool is available, to the
-`qloo_calls` table. The API key is redacted from the file text before it touches disk.
-The folder is gitignored: Qloo response data never enters the public repo.
+`/agent/recordings/<date>/<call_id>.json` (unless `root` is None) and, when a Postgres pool
+is available, to the `qloo_calls` table. The API service records every call to the table
+so `GET /runs/{id}/calls` can list them, and writes files only with `QLOO_RECORD=1`. The
+API key is redacted from the text before it touches disk or the table. The folder is
+gitignored: Qloo response data never enters the public repo.
 """
 
 from __future__ import annotations
@@ -42,7 +44,7 @@ def redact(text: str, secret: str | None) -> str:
 class Recorder:
     def __init__(
         self,
-        root: Path,
+        root: Path | None,
         *,
         secret: str | None = None,
         pool: asyncpg.Pool | None = None,
@@ -65,7 +67,7 @@ class Recorder:
         status: str,
         cache_hit: bool,
         run_id: str | None = None,
-    ) -> Path:
+    ) -> Path | None:
         now = datetime.now(UTC)
         entry = {
             "call_id": call_id,
@@ -77,10 +79,12 @@ class Recorder:
             "cache_hit": cache_hit,
         }
         text = redact(json.dumps(entry, indent=2, ensure_ascii=False), self._secret) + "\n"
-        folder = self.root / now.strftime("%Y-%m-%d")
-        folder.mkdir(parents=True, exist_ok=True)
-        path = folder / f"{call_id}.json"
-        path.write_text(text, encoding="utf-8")
+        path: Path | None = None
+        if self.root is not None:
+            folder = self.root / now.strftime("%Y-%m-%d")
+            folder.mkdir(parents=True, exist_ok=True)
+            path = folder / f"{call_id}.json"
+            path.write_text(text, encoding="utf-8")
 
         if self._pool is not None:
             redacted = json.loads(text)
