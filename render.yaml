@@ -8,10 +8,11 @@ services:
     # Paid instance: free ones spin down after 15 idle minutes (about a minute to wake) and
     # have no pre-deploy command or shell. Switch to `free` only to try the Blueprint.
     plan: 0.5c-512mb
-    # rootDir makes dockerfilePath and dockerContext relative to /agent.
-    rootDir: agent
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+    # No rootDir: Render's docs disagree on whether these paths are relative to it, and
+    # the Blueprint import rejected the rootDir form. Repo-root paths are unambiguous, and
+    # buildFilter below already limits builds to /agent.
+    dockerfilePath: agent/Dockerfile
+    dockerContext: agent
     # The image's CMD (docker/start.sh): harness readiness, migrations, uvicorn on PORT.
     healthCheckPath: /health
     numInstances: 1
