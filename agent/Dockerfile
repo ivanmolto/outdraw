@@ -1,4 +1,4 @@
-# Outdraw agent for Railway: Python app plus Node 22.19+ and the pinned Qloo harness.
+# Outdraw agent (Render, render.yaml at the repo root): Python app plus Node 22.19+ and the pinned Qloo harness.
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -37,6 +37,6 @@ RUN useradd --create-home --uid 10001 app
 USER app
 
 EXPOSE 8000
-# No secrets at build time: QLOO_API_KEY and the rest are Railway env vars read at run time.
-# start.sh checks harness readiness, runs migrations, then execs uvicorn on Railway's PORT.
+# No secrets at build time: QLOO_API_KEY and the rest are service env vars read at run time.
+# start.sh checks harness readiness, runs migrations, then execs uvicorn on the host's PORT.
 CMD ["./start.sh"]

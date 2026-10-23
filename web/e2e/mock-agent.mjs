@@ -1,6 +1,6 @@
 // A stand-in for the agent service for the Playwright suite: the routes the venue flow calls,
 // answered with the synthetic fixtures the component tests use (no Qloo data). The Next
-// server reaches it through AGENT_URL exactly as it reaches Railway, so the /api proxy,
+// server reaches it through AGENT_URL exactly as it reaches Render, so the /api proxy,
 // server components and the internal key all run for real. `GET /__requests` lists what
 // it received, for the spec to assert on.
 import { readFileSync } from "node:fs";

@@ -11,7 +11,7 @@ starting any task. Each task there has a prompt, a definition of done and tests.
 ## Repo layout (monorepo)
 
 - `/web` — Next.js 16 (App Router, TypeScript, Tailwind), deployed on Vercel.
-- `/agent` — Python 3.12, FastAPI, Strands Agents SDK, deployed on Railway in a container
+- `/agent` — Python 3.12, FastAPI, Strands Agents SDK, deployed on Render (`render.yaml`) in a container
   that also has Node 22.19+ and the pinned Qloo harness.
 - `/shared` — JSON Schemas shared by both; generated TypeScript types live in
   `/web/types`, generated Pydantic models in `/agent/draw/schemas.py`. Regenerate with
@@ -71,7 +71,7 @@ starting any task. Each task there has a prompt, a definition of done and tests.
 ## Data and secrets
 
 - Postgres (Neon or Supabase) with pgvector; Redis (Upstash) for rate limits and budgets.
-- Secrets never in code or git: `.env.local` (gitignored) locally, Vercel/Railway env vars
+- Secrets never in code or git: `.env.local` (gitignored) locally, Vercel/Render env vars
   in prod. Keys are server-side only; never `NEXT_PUBLIC_`.
 - A gitleaks pre-commit hook lives in `.githooks/`; enable it once per clone with
   `brew install gitleaks && git config core.hooksPath .githooks`. Never bypass it with

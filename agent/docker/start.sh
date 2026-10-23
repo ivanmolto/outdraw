@@ -1,5 +1,6 @@
 #!/bin/sh
-# Container start (Railway): harness readiness, then migrations, then uvicorn.
+# Container start: harness readiness, then migrations, then uvicorn. Migrations run here
+# rather than as Render's pre-deploy command so the image also starts on free instances.
 # Secrets come from the service's env vars at run time; nothing here is baked into the image.
 set -eu
 

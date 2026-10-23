@@ -8,7 +8,7 @@ will turn out for, using Qloo's taste graph. Built for the Qloo Agentic Hackatho
 ## Layout
 
 - `web/` — Next.js 16 (App Router, TypeScript, Tailwind v4), deployed on Vercel.
-- `agent/` — Python 3.12 FastAPI service with the pinned Qloo harness, deployed on Railway.
+- `agent/` — Python 3.12 FastAPI service with the pinned Qloo harness, deployed on Render.
 - `shared/schemas/` — JSON Schemas (draft 2020-12) shared by both; source of truth for
   `web/types/schemas.ts` and `agent/draw/schemas.py`.
 

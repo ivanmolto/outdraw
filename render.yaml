@@ -1,0 +1,50 @@
+# Render Blueprint for the agent service (docs/ops.md). Web is on Vercel, not here.
+services:
+  - type: web
+    name: outdraw-agent
+    runtime: docker
+    # Virginia sits next to Neon and Upstash us-east; the region can't change after creation.
+    region: virginia
+    # Paid instance: free ones spin down after 15 idle minutes (about a minute to wake) and
+    # have no pre-deploy command or shell. Switch to `free` only to try the Blueprint.
+    plan: 0.5c-512mb
+    # rootDir makes dockerfilePath and dockerContext relative to /agent.
+    rootDir: agent
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    # The image's CMD (docker/start.sh): harness readiness, migrations, uvicorn on PORT.
+    healthCheckPath: /health
+    numInstances: 1
+    autoDeployTrigger: checksPass
+    # Build filter paths are relative to the repo root, not rootDir.
+    buildFilter:
+      paths:
+        - agent/**
+    envVars:
+      # Secrets: sync: false makes Render prompt for them once, at Blueprint creation; they
+      # never live in this file or in the image.
+      - key: QLOO_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: INTERNAL_API_KEY
+        sync: false
+      # The container has no ~/.qloo/config, so the harness needs both URLs from env.
+      - key: QLOO_BASE_URL
+        value: https://hackathon.api.qloo.com
+      - key: QLOO_TRUSTED_BASE_URL
+        value: https://hackathon.api.qloo.com
+      - key: ANTHROPIC_MODEL
+        value: claude-haiku-5-5
+      - key: QLOO_DAILY_CAP
+        value: "300"
+      - key: LLM_DAILY_TOKEN_CAP
+        value: "2000000"
+      - key: QLOO_CONCURRENCY
+        value: "3"
+      - key: QLOO_RECORD
+        value: "0"

@@ -1,4 +1,4 @@
-// Typed client for the agent service on Railway. Server-only: it reads AGENT_URL and
+// Typed client for the agent service on Render. Server-only: it reads AGENT_URL and
 // INTERNAL_API_KEY from the server environment and sends the key as X-Draw-Internal-Key,
 // so the browser reaches the agent only through the /api route handlers.
 import "server-only";
