@@ -16,8 +16,12 @@ jobs:
       - name: Build image
         run: docker build -t outdraw-agent:ci agent
 
+      # Bypass docker/start.sh: it aborts without QLOO_API_KEY and DATABASE_URL, and this job
+      # only checks the image's harness and Node probes, which /health reads without either.
       - name: Run container
-        run: docker run -d --name agent -p 8000:8000 outdraw-agent:ci
+        run: >-
+          docker run -d --name agent -p 8000:8000 outdraw-agent:ci
+          uvicorn draw.main:app --host 0.0.0.0 --port 8000
 
       - name: Curl /health and check versions
         run: |
