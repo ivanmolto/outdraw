@@ -29,9 +29,15 @@ from draw.profile import crowd, resolve
 from draw.qloo.exec_client import QlooExec
 from draw.ranking import candidates as candidates_mod
 from draw.ranking import signals as signals_mod
+from draw.ranking.evidence import (
+    TrailError,
+    affinities_by_sub_score,
+    assert_complete,
+    build_trail,
+)
 from draw.ranking.rank import RankedCandidate, rank
-from draw.ranking.score import WEIGHTS, source_labels
-from draw.schemas import Constraints, DataQuality
+from draw.ranking.score import WEIGHTS
+from draw.schemas import Constraints, CrowdProfile, DataQuality, EvidenceTrail
 
 __all__ = ["DrawTools", "TOOL_NAMES"]
 
@@ -196,7 +202,8 @@ class DrawTools:
     async def gather_signals(self, run_id: str) -> dict[str, Any]:
         """Read past_fit, local_heat and momentum from Qloo for the run's top candidates.
 
-        Costs up to 33 Qloo calls; candidates past the top N score neutral on these.
+        Costs up to 33 Qloo calls; candidates past the top N take the median of the
+        measured candidates on these.
         Optional but recommended before score_and_rank.
 
         Args:
@@ -243,6 +250,7 @@ class DrawTools:
         profile = self.store.profile(run.profile_id)
         run.ranked = rank(run.candidates.candidates, profile, run.constraints, run.signals)
         self.store.assign_candidate_ids(run)
+        self._store_trails(run, profile)
         shortlist = []
         for i, item in enumerate(run.ranked[:SHORTLIST]):
             entry: dict[str, Any] = {
@@ -266,44 +274,87 @@ class DrawTools:
     # --- evidence and brief -----------------------------------------------------------
 
     async def get_evidence(self, candidate_id: str) -> dict[str, Any]:
-        """The evidence trail behind one candidate's score: sub-scores, weights, Qloo calls.
+        """The evidence trail behind one candidate's score: what fed it, the Qloo calls, labels.
 
-        `source_labels` says per sub-score whether the number is Qloo data ("qloo") or
-        Outdraw's own interpretation ("draw", including neutral fallbacks).
+        `inputs` are what fed the score (crowd signals with their weights, region, size
+        tier, popularity, booking history); `qloo_calls` the calls behind it with status and
+        cache flag; `affinities` the values read from those calls per sub-score;
+        `sub_scores`, `weights` and `total` the score itself. `source_labels` marks each
+        sub-score and the total "qloo" (came out of a Qloo envelope) or "draw" (computed or
+        templated by Outdraw, neutral fallbacks included); `neutral` lists the sub-scores
+        Qloo gave no value for. This is the compact view of the stored EvidenceTrail
+        (`evidence_trail`), which the API serves in full.
 
         Args:
             candidate_id: A candidate id from score_and_rank's shortlist.
 
         Returns:
-            {candidate_id, run_id, entity_id, name, total, top_reason, sub_scores, weights,
-            neutral, evidence, qloo_calls, source_labels}.
+            {candidate_id, run_id, entity_id, name, top_reason, neutral, inputs, qloo_calls,
+            affinities, sub_scores, weights, total, source_labels}.
         """
         run, entity_id, item = self._ranked(candidate_id)
-        score = item.score
-        sub_scores = score.breakdown.model_dump(mode="json")
-        neutral = set(score.neutral or [])
-        labels = source_labels(neutral)
-        call_ids = [e.call_id for e in score.evidence or []]
+        trail = self.store.trail(candidate_id)
         return {
             "candidate_id": candidate_id,
             "run_id": run.run_id,
             "entity_id": entity_id,
             "name": item.candidate.name,
-            "total": _r(score.total),
-            "top_reason": score.top_reason,
-            "sub_scores": {k: _r(v) for k, v in sub_scores.items()},
-            "weights": dict(WEIGHTS),
-            "neutral": sorted(neutral),
-            "evidence": [
-                {"item_ref": e.item_ref, "call_id": e.call_id} for e in score.evidence or []
-            ],
+            "top_reason": item.score.top_reason,
+            "neutral": sorted(item.score.neutral or []),
+            "total": _r(trail.total),
+            "sub_scores": {
+                k: _r(v) for k, v in trail.sub_scores.model_dump(exclude_none=True).items()
+            },
+            "weights": trail.weights.model_dump(exclude_none=True),
+            "source_labels": {
+                k: v for k, v in trail.source_labels.items() if k in WEIGHTS or k == "total"
+            },
+            "inputs": [i.label for i in trail.inputs],
             "qloo_calls": [
-                self.store.calls[c].model_dump(mode="json", exclude={"params_summary"})
-                for c in dict.fromkeys(call_ids)
-                if c in self.store.calls
+                c.model_dump(mode="json", exclude={"params_summary"}) for c in trail.qloo_calls
             ],
-            "source_labels": labels,
+            "affinities": [
+                {"sub_score": name, "value": _r(a.value), "call_id": a.call_id}
+                for name, a in affinities_by_sub_score(trail).items()
+            ],
         }
+
+    def evidence_trail(self, candidate_id: str) -> dict[str, Any]:
+        """The full stored EvidenceTrail plus the candidate's ids (what the API stores)."""
+        run, entity_id, item = self._ranked(candidate_id)
+        trail = self.store.trail(candidate_id)
+        return {
+            "candidate_id": candidate_id,
+            "run_id": run.run_id,
+            "entity_id": entity_id,
+            "name": item.candidate.name,
+            "top_reason": item.score.top_reason,
+            "neutral": sorted(item.score.neutral or []),
+            **trail.model_dump(mode="json", exclude_none=True),
+        }
+
+    def _store_trails(self, run: Run, profile: CrowdProfile) -> None:
+        """Build, validate and store the trail of every ranked candidate (no orphan numbers)."""
+        names = self.store.signal_names(run.venue_id)
+        for item in run.ranked or []:
+            candidate_id = run.candidate_ids[item.candidate.entity_id]
+            trail: EvidenceTrail = build_trail(
+                item.candidate,
+                item.score,
+                profile=profile,
+                constraints=run.constraints,
+                region=run.region,
+                signals=run.signals.get(item.candidate.entity_id) if run.signals else None,
+                calls=self.store.calls,
+                signal_names=names,
+            )
+            try:
+                assert_complete(item.score, trail)
+            except TrailError as exc:
+                raise ValueError(
+                    f"Evidence trail for {item.candidate.name!r} is incomplete: {exc}"
+                ) from None
+            run.trails[candidate_id] = trail
 
     async def draft_brief(self, candidate_id: str) -> dict[str, Any]:
         """Draft the one-page booking brief for a candidate (stub: templated reasons only).

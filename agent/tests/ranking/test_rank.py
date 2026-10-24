@@ -90,11 +90,12 @@ def order(ranked: list[RankedCandidate]) -> list[str]:
 
 # --- hand-built set -------------------------------------------------------------------
 
-# Never booked, in the requested band, no Qloo signals: total = 0.35 * affinity + 0.425.
-# A: 0.6 affinity but strong Qloo signals      -> 0.21 + 0.18 + 0.18 + 0.1 + 0.1 + 0.045 = 0.815
-# B: 0.9 affinity, nothing else measured       -> 0.315 + 0.425                         = 0.740
-# D: 0.5 affinity, nothing else measured       -> 0.175 + 0.425                         = 0.600
-# C: 0.7 affinity, played here 6 months ago    -> 0.245 + 0.425 - 0.1 * 0.75            = 0.595
+# A and D are measured (0.9 and 0.3 on all three Qloo signals), so the unmeasured B and C
+# fall back to the run's median, 0.6. All in the requested band (size_fit 0.1).
+# A: 0.6 affinity, strong signals       -> 0.21 + 0.405 (0.45 * 0.9) + 0.1 + 0.1           = 0.815
+# B: 0.9 affinity, median fallback      -> 0.315 + 0.27 (0.45 * 0.6) + 0.1 + 0.1          = 0.785
+# C: 0.7 affinity, played 6 months ago  -> 0.245 + 0.27 + 0.1 * 0.25 + 0.1                = 0.640
+# D: 0.5 affinity, weak signals         -> 0.175 + 0.135 (0.45 * 0.3) + 0.1 + 0.1         = 0.510
 HAND = [
     candidate("ID-B", "Bravo", 0.9),
     candidate("ID-C", "Charlie", 0.7),
@@ -104,13 +105,53 @@ HAND = [
 HAND_SIGNALS = {
     "ID-A": signals("ID-A", past_fit=0.9, local_heat=0.9, momentum=0.9),
     "ID-C": signals("ID-C", months=6),
+    "ID-D": signals("ID-D", past_fit=0.3, local_heat=0.3, momentum=0.3),
 }
 
 
 def test_expected_order_on_hand_built_set() -> None:
     ranked = rank(HAND, PROFILE, CONSTRAINTS, HAND_SIGNALS)
-    assert order(ranked) == ["ID-A", "ID-B", "ID-D", "ID-C"]
-    assert [round(r.score.total, 3) for r in ranked] == [0.815, 0.740, 0.600, 0.595]
+    assert order(ranked) == ["ID-A", "ID-B", "ID-C", "ID-D"]
+    assert [round(r.score.total, 3) for r in ranked] == [0.815, 0.785, 0.640, 0.510]
+
+
+def test_unmeasured_acts_take_the_run_median_not_a_flat_half() -> None:
+    # The shape of a real run: past_fit measured below 0.5 for most acts, local_heat above.
+    # A flat 0.5 lifted the unmeasured tail over measured acts with the same affinity.
+    cands = [
+        candidate("ID-M1", "Measured low", 0.97),
+        candidate("ID-M2", "Measured mid", 0.97),
+        candidate("ID-M3", "Measured high", 0.97),
+        candidate("ID-U", "Unmeasured", 0.969),
+    ]
+    sigs = {
+        "ID-M1": signals("ID-M1", past_fit=0.38, local_heat=0.65, momentum=0.5),
+        "ID-M2": signals("ID-M2", past_fit=0.45, local_heat=0.8, momentum=0.5),
+        "ID-M3": signals("ID-M3", past_fit=0.56, local_heat=0.95, momentum=0.5),
+    }
+    ranked = rank(cands, PROFILE, CONSTRAINTS, sigs)
+    assert order(ranked) == ["ID-M3", "ID-M2", "ID-U", "ID-M1"]
+    unmeasured = next(r for r in ranked if r.candidate.entity_id == "ID-U").score
+    assert unmeasured.breakdown.past_fit == 0.45
+    assert unmeasured.breakdown.local_heat == 0.8
+    assert sorted(unmeasured.neutral) == ["local_heat", "momentum", "past_fit"]
+
+    # Novelty is 1.0 for every act here, so it explains none of them; each reason names
+    # what the act leads the list on, or its crowd affinity when it leads on nothing.
+    reasons = {r.candidate.entity_id: r.score.top_reason for r in ranked}
+    assert not any("never played this room" in t for t in reasons.values())
+    assert "where_popular" in reasons["ID-M3"]
+    assert all("affinity with this crowd" in reasons[e] for e in ("ID-M2", "ID-U", "ID-M1"))
+
+
+def test_novelty_explains_an_act_only_when_it_sets_the_act_apart() -> None:
+    cands = [candidate("ID-NEW", "Never booked", 0.9), candidate("ID-OLD", "Booked", 0.9)]
+    sigs = {"ID-OLD": signals("ID-OLD", months=3), "ID-NEW": signals("ID-NEW")}
+    reasons = {
+        r.candidate.entity_id: r.score.top_reason for r in rank(cands, PROFILE, CONSTRAINTS, sigs)
+    }
+    assert "never played this room" in reasons["ID-NEW"]
+    assert "never played this room" not in reasons["ID-OLD"]
 
 
 def test_every_input_order_gives_the_same_ranking() -> None:

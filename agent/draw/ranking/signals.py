@@ -8,10 +8,10 @@ cached, budgeted, recorded and carries the `call_id` of the call that produced i
 - **past_fit** — `compare_audiences(candidate, top 2 best-selling past acts)`: the Jaccard
   overlap of the two groups' tag sets (`results.tags` shared / `tags ∪ a ∪ b`). One call
   per candidate.
-- **local_heat** — `where_popular(candidate, venue region)`: the mean heatmap `affinity`
-  over the points Qloo returns for the region. Affinity is normalised to 1.0 at the top
-  point within one call (decision 001), so the mean measures how broadly the act is hot
-  across the region rather than how hot its single best spot is. One call per candidate.
+- **local_heat** — `where_popular(candidate, venue region)`: the mean heatmap
+  `affinity_rank` over the points Qloo returns for the region. Not `affinity`: Qloo
+  normalises that to 1.0 at the top point and 0.0 at the bottom of each call (decision
+  001), so its mean comes out the same for every act. One call per candidate.
 - **momentum** — `trends(batch of up to 5 candidates, last 6 months)`: the change in
   `population_percentile` from the oldest to the newest point of the window, mapped from
   [-1, 1] to [0, 1] (0.5 = flat). One call per batch of `TRENDS_BATCH` candidates. The
@@ -20,7 +20,8 @@ cached, budgeted, recorded and carries the `call_id` of the call that produced i
 
 Cold, 15 candidates cost 15 + 15 + 3 = 33 gateway calls (`DEFAULT_MAX_CALLS`, the per-run
 signals budget from CLAUDE.md). When fewer calls are allowed, N shrinks so the budget
-holds; the candidates past N get no signals and score neutral on all three.
+holds; the candidates past N get no signals, and `rank` gives them the median of the
+measured candidates on all three (`fallbacks_of` in `score.py`).
 
 **Missing or non-ok results yield `None`, never a guess.** Only an `ok` envelope produces a
 value. `partial` and `degraded` keep their `call_id` and summary in `notes` but give `None`
@@ -191,7 +192,11 @@ def past_fit_of(result: QlooResult) -> float | None:
 
 
 def local_heat_of(result: QlooResult) -> float | None:
-    """Mean heatmap `query.affinity` over the points returned for the region."""
+    """Mean heatmap `query.affinity_rank` over the points returned for the region.
+
+    Not `query.affinity`: Qloo rescales that to 1.0 at the top point and 0.0 at the bottom of
+    every response, so its mean is the same for every act (decision 001, item 4).
+    """
     if not isinstance(result.results, list):
         return None
     values = [
@@ -199,7 +204,7 @@ def local_heat_of(result: QlooResult) -> float | None:
         for row in result.results
         if isinstance(row, dict)
         and isinstance(row.get("query"), dict)
-        and (v := _number(row["query"].get("affinity"))) is not None
+        and (v := _number(row["query"].get("affinity_rank"))) is not None
     ]
     if not values:
         return None
@@ -281,16 +286,19 @@ async def gather_signals(
     top = list(candidates[:n])
     notes: list[str] = []
     if n < len(candidates):
-        why = (
-            f"to stay within {max_calls} Qloo calls"
+        budget = (
+            f" (to stay within {max_calls} Qloo calls)"
             if n < min(top_n, constraints.max_candidates, len(candidates))
-            else "the rest score neutral on the Qloo signals"
+            else ""
         )
-        notes.append(f"Signals read for the top {n} of {len(candidates)} candidates; {why}.")
+        notes.append(
+            f"Past fit, local heat and momentum were checked for the top {n} of "
+            f"{len(candidates)} acts{budget}; the others get the typical value of those {n}."
+        )
     if not past_acts:
-        notes.append("No confirmed past act to compare with; past_fit is neutral for every act.")
+        notes.append("No confirmed past act to compare with, so past fit can't tell acts apart.")
     if not region:
-        notes.append("No venue region; local_heat is neutral for every act.")
+        notes.append("No venue region, so local heat can't tell acts apart.")
 
     def compare(c: Candidate) -> Callable[[], Awaitable[QlooResult]]:
         return lambda: qloo.compare_audiences([c.entity_id], past_acts, limit=TAG_LIMIT)

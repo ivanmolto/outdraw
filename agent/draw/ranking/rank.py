@@ -22,7 +22,12 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from draw.qloo import QlooEmpty, QlooError, QlooExec
-from draw.ranking.score import score_candidate
+from draw.ranking.score import (
+    baseline_of,
+    distinctive_reason,
+    fallbacks_of,
+    score_candidate,
+)
 from draw.ranking.signals import CandidateSignals, SignalSet
 from draw.schemas import Candidate, Constraints, CrowdProfile, EvidenceRef, Score
 
@@ -76,13 +81,26 @@ def rank(
     constraints: Constraints,
     signals: SignalSet | Mapping[str, CandidateSignals] | None,
 ) -> list[RankedCandidate]:
-    """Score and sort. Pure: no I/O, no randomness, and the input order never matters."""
+    """Score and sort. Pure: no I/O, no randomness, and the input order never matters.
+
+    Unmeasured Qloo sub-scores fall back to the median of the candidates measured here, and
+    each `top_reason` names what sets the act apart from this list (`distinctive_reason`).
+    """
+    found = [signals.get(c.entity_id) if signals else None for c in candidates]
+    fallback = fallbacks_of(found)
+    scores = [
+        score_candidate(c, profile, constraints, s, fallback)
+        for c, s in zip(candidates, found, strict=True)
+    ]
+    baseline = baseline_of(scores)
     scored = [
         RankedCandidate(
             c,
-            score_candidate(c, profile, constraints, signals.get(c.entity_id) if signals else None),
+            score.model_copy(
+                update={"top_reason": distinctive_reason(c, constraints, score, baseline)}
+            ),
         )
-        for c in candidates
+        for c, score in zip(candidates, scores, strict=True)
     ]
     return sorted(scored, key=sort_key)
 

@@ -11,7 +11,7 @@ from typing import Any
 import pytest
 from conftest import FIXTURES_DIR, RouterHarness
 
-from draw.qloo import exec_client
+from draw.qloo import QlooResult, exec_client
 from draw.qloo.config import QlooConfig
 from draw.qloo.exec_client import QlooExec
 from draw.ranking.signals import (
@@ -21,6 +21,7 @@ from draw.ranking.signals import (
     SignalSet,
     calls_for,
     gather_signals,
+    local_heat_of,
     top_n_within,
 )
 from draw.schemas import Candidate, Constraints, CrowdProfile, EvidenceRef, Signal
@@ -262,14 +263,33 @@ async def test_past_fit_is_tag_overlap_with_top_two_past_acts(
     assert value is not None and 0.0 < value < 1.0
 
 
-async def test_local_heat_is_mean_heatmap_affinity(routed: Callable[..., RouterHarness]) -> None:
+async def test_local_heat_is_mean_heatmap_affinity_rank(
+    routed: Callable[..., RouterHarness],
+) -> None:
     fake = routed()
     result = await run(candidates(1))
     (sent,) = fake.inputs_for("where_popular")
     assert sent == {"entity": "ID-C0", "entity_type": "artist", "within": REGION, "limit": 10}
     points = fixture("where_popular", "radiohead_new_york_ny")["results"]
-    mean = sum(p["query"]["affinity"] for p in points) / len(points)
+    mean = sum(p["query"]["affinity_rank"] for p in points) / len(points)
     assert result.by_id["ID-C0"].local_heat.value == pytest.approx(mean)
+
+
+def test_local_heat_ignores_the_per_call_normalised_affinity() -> None:
+    # Qloo rescales `affinity` to 1.0 … 0.0 inside every heatmap, so its mean is 0.5 for any
+    # act; only `affinity_rank` tells two acts apart.
+    def heatmap(rank: float) -> QlooResult:
+        envelope = forced(fixture("where_popular", "radiohead_new_york_ny"), "ok")
+        envelope["results"] = [
+            {"query": {"affinity": 1 - i / 7, "affinity_rank": rank}, "location": {}}
+            for i in range(8)
+        ]
+        return QlooResult.model_validate(
+            {**envelope, "call_id": "call-heat", "workflow": "where_popular"}
+        )
+
+    assert local_heat_of(heatmap(0.95)) == pytest.approx(0.95)
+    assert local_heat_of(heatmap(0.65)) == pytest.approx(0.65)
 
 
 async def test_months_since_booked_travels_with_signals(
@@ -328,7 +348,7 @@ async def test_no_past_acts_skips_compare(routed: Callable[..., RouterHarness]) 
     assert all(
         s.past_fit.value is None and s.past_fit.status is None for s in result.by_id.values()
     )
-    assert any("past_fit is neutral" in n for n in result.notes)
+    assert any("past fit can't tell acts apart" in n for n in result.notes)
 
 
 async def test_no_region_skips_where_popular(routed: Callable[..., RouterHarness]) -> None:

@@ -1,7 +1,7 @@
 // The ranked shortlist: one row per act in the agent's order (the deterministic score, never
 // the model's), with the total as a bar, the templated top reason and a chip per sub-score.
 // Chips say where each number comes from (the agent's `source_labels`): Qloo data, Outdraw's
-// own data, or a neutral 0.5 where Qloo gave no signal. No hooks: rendered by the server page
+// own data, or the run's median of the measured acts where Qloo gave no signal. No hooks: rendered by the server page
 // for a stored run and by the client run component for a fresh one.
 import Link from "next/link";
 
@@ -41,11 +41,11 @@ function Chip({
       <li
         data-testid="chip"
         data-source="neutral"
-        title="No Qloo signal: scored a neutral 0.5"
+        title="No Qloo signal: scored the median of the acts Qloo measured in this run"
         className="rounded-full border border-dashed border-ink/40 px-2 py-0.5 text-ink/60"
       >
         {label} <span className="font-mono">{value.toFixed(2)}</span>
-        <span className="sr-only"> (no Qloo signal, neutral)</span>
+        <span className="sr-only"> (no Qloo signal, run median)</span>
       </li>
     );
   }
@@ -191,7 +191,7 @@ export function ShortlistView({
                 className="h-3 w-3 rounded-full border border-dashed border-ink/40"
                 aria-hidden="true"
               />{" "}
-              No Qloo signal (0.5)
+              No Qloo signal (run median)
             </span>
           </div>
           <ol aria-label="Ranked acts" className="space-y-3">

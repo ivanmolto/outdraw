@@ -11,6 +11,8 @@ from draw.ranking.score import (
     NEUTRAL,
     NOVELTY_HORIZON_MONTHS,
     WEIGHTS,
+    SubScore,
+    fallbacks_of,
     novelty_of,
     score_candidate,
     size_fit_of,
@@ -179,6 +181,28 @@ def test_no_signals_at_all_is_neutral_on_every_qloo_signal() -> None:
     )
     assert result.breakdown.novelty == 1.0  # never booked: no venue data says otherwise
     assert [e.item_ref for e in result.evidence] == ["crowd_affinity"]
+
+
+def test_fallback_replaces_neutral_and_stays_flagged() -> None:
+    fallback: dict[SubScore, float] = {"past_fit": 0.42, "local_heat": 0.81, "momentum": 0.5}
+    result = score_candidate(candidate(), PROFILE, constraints(), None, fallback)
+    assert result.breakdown.past_fit == 0.42
+    assert result.breakdown.local_heat == 0.81
+    assert sorted(result.neutral) == ["local_heat", "momentum", "past_fit"]
+    assert [e.item_ref for e in result.evidence] == ["crowd_affinity"]
+
+
+def test_fallbacks_are_medians_of_measured_values() -> None:
+    rows = [
+        signals(past_fit=0.2, local_heat=0.9, momentum=None),
+        signals(past_fit=0.6, local_heat=None, momentum=None),
+        signals(past_fit=0.4, local_heat=0.7, momentum=None),
+        None,
+    ]
+    assert fallbacks_of(rows) == pytest.approx(
+        {"past_fit": 0.4, "local_heat": 0.8, "momentum": NEUTRAL}
+    )
+    assert fallbacks_of([]) == {"past_fit": NEUTRAL, "local_heat": NEUTRAL, "momentum": NEUTRAL}
 
 
 def test_neutral_fallback_never_becomes_the_top_reason() -> None:

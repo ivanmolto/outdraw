@@ -63,7 +63,7 @@ describe("shortlist view", () => {
       "Local heat 0.70 (Qloo data)",
       "Novelty 1.00 (Outdraw)",
       "Size fit 1.00 (Outdraw)",
-      "Momentum 0.50 (no Qloo signal, neutral)",
+      "Momentum 0.50 (no Qloo signal, run median)",
     ]);
     expect(head.map((c) => c.dataset.source)).toEqual([
       "qloo",
