@@ -636,9 +636,9 @@
     "include_tags": [],
     "exclude_tags": [
       {
-        "input": "urn:tag:synthetic:genre:033",
-        "tagId": "urn:tag:synthetic:genre:033",
-        "name": "urn:tag:synthetic:genre:033",
+        "input": "urn:tag:synthetic:genre:019",
+        "tagId": "urn:tag:synthetic:genre:019",
+        "name": "urn:tag:synthetic:genre:019",
         "match": "identifier"
       }
     ],
@@ -721,12 +721,12 @@
         }
       },
       {
-        "input": "urn:tag:synthetic:genre:033",
+        "input": "urn:tag:synthetic:genre:019",
         "status": "resolved",
         "match": "identifier",
         "selected": {
-          "id": "urn:tag:synthetic:genre:033",
-          "name": "urn:tag:synthetic:genre:033"
+          "id": "urn:tag:synthetic:genre:019",
+          "name": "urn:tag:synthetic:genre:019"
         },
         "provenance": {
           "contract_version": "1.0-preview.1",
@@ -818,7 +818,7 @@
           ],
           "signal.location.query": "Synthetic Region 2",
           "filter.exclude.tags": [
-            "urn:tag:synthetic:genre:033"
+            "urn:tag:synthetic:genre:019"
           ],
           "operator.filter.exclude.tags": "union",
           "feature.explainability": true
@@ -842,7 +842,7 @@
     },
     "filters": {
       "excludeTags": [
-        "urn:tag:synthetic:genre:033"
+        "urn:tag:synthetic:genre:019"
       ]
     },
     "operators": {

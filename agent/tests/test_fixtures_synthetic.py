@@ -75,7 +75,7 @@ def test_no_real_name_in_fixtures() -> None:
     assert names
     ordered = sorted(names, key=len, reverse=True)
     pattern = re.compile(
-        r"(?<![A-Za-z0-9])(" + "|".join(re.escape(n) for n in ordered) + r")(?![A-Za-z0-9])",
+        r"(?<!\w)(" + "|".join(re.escape(n) for n in ordered) + r")(?!\w)",
         re.IGNORECASE,
     )
     for path in _fixtures():

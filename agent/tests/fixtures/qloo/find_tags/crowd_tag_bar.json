@@ -3,19 +3,19 @@
   "status": "ok",
   "results": [
     {
-      "id": "urn:tag:synthetic:category:069",
+      "id": "urn:tag:synthetic:category:071",
       "name": "Synthetic Tag 60",
       "type": "urn:tag:category:place",
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:cuisine:071",
+      "id": "urn:tag:synthetic:cuisine:072",
       "name": "Synthetic Tag 60",
       "type": "urn:tag:cuisine:qloo",
       "popularity": 0.9249
     },
     {
-      "id": "urn:tag:synthetic:keyword:068",
+      "id": "urn:tag:synthetic:keyword:069",
       "name": "Synthetic Tag 60",
       "type": "urn:tag:keyword:qloo",
       "popularity": 0.8833
@@ -27,7 +27,7 @@
       "popularity": 0.8329
     },
     {
-      "id": "urn:tag:synthetic:product_service:072",
+      "id": "urn:tag:synthetic:product_service:068",
       "name": "Synthetic Tag 60",
       "type": "urn:tag:product_service:qloo",
       "popularity": 0.7955

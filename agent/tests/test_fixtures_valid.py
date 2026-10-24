@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from conftest import FIXTURES_DIR, STATUSES, WORKFLOWS, envelope_files, read_json
+from conftest import FIXTURES_DIR, STATUSES, WORKFLOWS, envelope_files, load_script, read_json
 
 ENVELOPES = envelope_files()
 
@@ -47,3 +47,13 @@ def test_non_ok_statuses_are_covered() -> None:
     assert seen >= {"ok", "needs_input", "error", "empty", "partial", "degraded"}, seen
     retryable = [p for p in ENVELOPES if (read_json(p).get("error") or {}).get("retryable") is True]
     assert retryable, "no retryable error fixture"
+
+
+def test_no_accented_real_name_survives_synthesis() -> None:
+    """`make_fixtures` once skipped names with non-ASCII letters ("Björk", "José James"), so
+    real Qloo entity names reached the public fixtures. Every name is now a placeholder."""
+    make_fixtures = load_script("make_fixtures")
+    for path in sorted(FIXTURES_DIR.rglob("*.json")):
+        for key, leaf, _ in make_fixtures.walk(read_json(path)):
+            if key in make_fixtures.NAME_KEYS and isinstance(leaf, str) and not leaf.isascii():
+                assert leaf.startswith("Synthetic "), f"{path.name}: real name {leaf!r}"

@@ -164,7 +164,7 @@
     },
     {
       "entity_id": "5478F12B-9A11-5363-A739-A2A9FE3F50F5",
-      "name": "Bj\u00f6rk",
+      "name": "Synthetic Entity 195",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.8329,
@@ -268,7 +268,7 @@
     },
     {
       "entity_id": "EDAF2D9F-2921-5060-A428-EE6FC0AB689E",
-      "name": "Sigur R\u00f3s",
+      "name": "Synthetic Entity 196",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.6569,

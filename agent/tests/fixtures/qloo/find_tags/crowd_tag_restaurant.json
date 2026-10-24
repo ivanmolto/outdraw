@@ -9,19 +9,19 @@
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:product_service:075",
+      "id": "urn:tag:synthetic:product_service:073",
       "name": "Synthetic Tag 62",
       "type": "urn:tag:product_service:qloo",
       "popularity": 0.9249
     },
     {
-      "id": "urn:tag:synthetic:amenity:077",
+      "id": "urn:tag:synthetic:amenity:075",
       "name": "Synthetic Tag 62",
       "type": "urn:tag:amenity:qloo",
       "popularity": 0.8833
     },
     {
-      "id": "urn:tag:synthetic:genre:073",
+      "id": "urn:tag:synthetic:genre:077",
       "name": "Synthetic Tag 62",
       "type": "urn:tag:genre:place",
       "popularity": 0.8329

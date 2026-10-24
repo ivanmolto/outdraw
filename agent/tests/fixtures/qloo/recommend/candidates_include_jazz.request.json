@@ -9,7 +9,7 @@
     ],
     "signal_location": "Synthetic Region 2",
     "include_tags": [
-      "urn:tag:synthetic:genre:033"
+      "urn:tag:synthetic:genre:019"
     ],
     "include_tags_operator": "union",
     "limit": 20

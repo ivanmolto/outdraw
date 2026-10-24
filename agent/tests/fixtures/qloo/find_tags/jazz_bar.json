@@ -15,7 +15,7 @@
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:amenity:089",
+      "id": "urn:tag:synthetic:amenity:088",
       "name": "Synthetic Concept 2",
       "type": "urn:tag:amenity:qloo",
       "popularity": 0.9249
@@ -33,7 +33,7 @@
       "popularity": 0.8329
     },
     {
-      "id": "urn:tag:synthetic:ambience:088",
+      "id": "urn:tag:synthetic:ambience:089",
       "name": "Synthetic Tag 64",
       "type": "urn:tag:ambience:qloo",
       "popularity": 0.7955

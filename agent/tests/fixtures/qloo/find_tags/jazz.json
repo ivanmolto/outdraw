@@ -9,25 +9,25 @@
   },
   "results": [
     {
-      "id": "urn:tag:synthetic:genre:085",
+      "id": "urn:tag:synthetic:genre:082",
       "name": "Synthetic Tag 5",
       "type": "urn:tag:genre:qloo",
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:genre:033",
+      "id": "urn:tag:synthetic:genre:019",
       "name": "Synthetic Tag 5",
       "type": "urn:tag:genre:music",
       "popularity": 0.9249
     },
     {
-      "id": "urn:tag:synthetic:music:084",
+      "id": "urn:tag:synthetic:music:085",
       "name": "Synthetic Tag 5",
       "type": "urn:tag:music:qloo",
       "popularity": 0.8833
     },
     {
-      "id": "urn:tag:synthetic:genre_category:082",
+      "id": "urn:tag:synthetic:genre_category:084",
       "name": "Synthetic Tag 5",
       "type": "urn:tag:genre_category:qloo",
       "popularity": 0.8329

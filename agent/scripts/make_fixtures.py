@@ -36,7 +36,14 @@ FIXTURES_DIR = AGENT_DIR / "tests" / "fixtures" / "qloo"
 NAMESPACE = uuid.UUID("6f1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d")
 UUID_RE = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
 TAG_PREFIX = "urn:tag:"
-WORD_RE = re.compile(r"^[A-Za-z0-9 ,.'&\-]+$")
+WORD_RE = re.compile(r"^[\w ,.'&\-]+$")
+"""A name of a real thing: letters in any script (`\\w` is Unicode-aware: "Björk", "José
+James"), digits, spaces and light punctuation. Nothing else is treated as a name."""
+
+
+def is_ascii(text: str) -> bool:
+    return text.isascii()
+
 
 # String values under these keys are structural (statuses, type URNs, endpoints) and stay.
 KEEP_KEYS = frozenset(
@@ -213,10 +220,14 @@ class Synthesizer:
         self.counters: dict[str, int] = {}
         self.name_re: re.Pattern[str] | None = None
 
-    def learn(self, data: Any) -> None:
+    def learn(self, data: Any, *, non_ascii: bool | None = None) -> None:
+        """Learn the names and tag ids in `data`. `non_ascii` restricts the names learned
+        to ASCII ones (False) or accented ones (True), so `build` can number the accented
+        names after every ASCII one and keep the long-standing fixture numbering stable."""
         for key, leaf, parent in walk(data):
             if key in NAME_KEYS and isinstance(leaf, str):
-                self.learn_name(leaf, key, parent)
+                if non_ascii is None or (not is_ascii(leaf)) is non_ascii:
+                    self.learn_name(leaf, key, parent)
         for tag in real_tag_ids(data):
             self.fake_tag(tag)
 
@@ -263,9 +274,7 @@ class Synthesizer:
         if self.name_re is None:
             ordered = sorted(self.names, key=len, reverse=True)
             self.name_re = re.compile(
-                r"(?<![A-Za-z0-9])("
-                + "|".join(re.escape(n) for n in ordered)
-                + r")(?![A-Za-z0-9])",
+                r"(?<!\w)(" + "|".join(re.escape(n) for n in ordered) + r")(?!\w)",
                 re.IGNORECASE,
             )
         return self.name_re
@@ -369,10 +378,13 @@ def build(clean: bool) -> int:
         sys.exit(f"no recordings at {RECORDINGS_DIR}; run scripts/qloo_audit.py first")
     items = list(recordings())
     synth = Synthesizer()
-    for _, _, env_path, req_path in items:
-        synth.learn(json.loads(env_path.read_text(encoding="utf-8")))
-        if req_path:
-            synth.learn(json.loads(req_path.read_text(encoding="utf-8")))
+    # ASCII names first, accented ones after: the numbering the tests and docs already rely
+    # on stays put when a recording adds a "Björk" in the middle of a list.
+    for non_ascii in (False, True):
+        for _, _, env_path, req_path in items:
+            synth.learn(json.loads(env_path.read_text(encoding="utf-8")), non_ascii=non_ascii)
+            if req_path:
+                synth.learn(json.loads(req_path.read_text(encoding="utf-8")), non_ascii=non_ascii)
     if clean and FIXTURES_DIR.is_dir():
         shutil.rmtree(FIXTURES_DIR)
     written = 0

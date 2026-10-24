@@ -15,25 +15,25 @@
       "popularity": 0.9751
     },
     {
-      "id": "urn:tag:synthetic:genre:080",
+      "id": "urn:tag:synthetic:genre:079",
       "name": "Synthetic Concept 1",
       "type": "urn:tag:genre:qloo",
       "popularity": 0.9249
     },
     {
-      "id": "urn:tag:synthetic:music:079",
+      "id": "urn:tag:synthetic:music:078",
       "name": "Synthetic Tag 38",
       "type": "urn:tag:music:qloo",
       "popularity": 0.8833
     },
     {
-      "id": "urn:tag:synthetic:genre:044",
+      "id": "urn:tag:synthetic:genre:013",
       "name": "Synthetic Tag 38",
       "type": "urn:tag:genre:music",
       "popularity": 0.8329
     },
     {
-      "id": "urn:tag:synthetic:subgenre:078",
+      "id": "urn:tag:synthetic:subgenre:080",
       "name": "Synthetic Concept 1",
       "type": "urn:tag:subgenre:qloo",
       "popularity": 0.7955

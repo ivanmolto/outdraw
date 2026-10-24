@@ -154,7 +154,7 @@
     },
     {
       "entity_id": "44B037FC-9A79-5BF9-B337-038438C99109",
-      "name": "Raul Mid\u00f3n",
+      "name": "Synthetic Entity 197",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.7431,
@@ -514,7 +514,7 @@
     },
     {
       "entity_id": "667E524F-CC98-5BB7-92ED-833B98AC4960",
-      "name": "Michael Bubl\u00e9",
+      "name": "Synthetic Entity 198",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.1958,
@@ -574,7 +574,7 @@
     },
     {
       "entity_id": "EB3B7889-F121-5F4C-826C-DEB13736354E",
-      "name": "Jos\u00e9 James",
+      "name": "Synthetic Entity 199",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.1201,

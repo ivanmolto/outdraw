@@ -154,7 +154,7 @@
     },
     {
       "entity_id": "44B037FC-9A79-5BF9-B337-038438C99109",
-      "name": "Raul Mid\u00f3n",
+      "name": "Synthetic Entity 197",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.7431,
@@ -394,7 +394,7 @@
     },
     {
       "entity_id": "667E524F-CC98-5BB7-92ED-833B98AC4960",
-      "name": "Michael Bubl\u00e9",
+      "name": "Synthetic Entity 198",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.3912,
@@ -454,7 +454,7 @@
     },
     {
       "entity_id": "EB3B7889-F121-5F4C-826C-DEB13736354E",
-      "name": "Jos\u00e9 James",
+      "name": "Synthetic Entity 199",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.2998,
@@ -514,7 +514,7 @@
     },
     {
       "entity_id": "E790959C-D9AF-52E4-AD22-FEC50F1AAE84",
-      "name": "C\u00e9cile McLorin Salvant",
+      "name": "Synthetic Entity 200",
       "type": "urn:entity",
       "subtype": "urn:entity:artist",
       "popularity": 0.1958,
@@ -635,9 +635,9 @@
     "signal_location": "Synthetic Region 2",
     "include_tags": [
       {
-        "input": "urn:tag:synthetic:genre:033",
-        "tagId": "urn:tag:synthetic:genre:033",
-        "name": "urn:tag:synthetic:genre:033",
+        "input": "urn:tag:synthetic:genre:019",
+        "tagId": "urn:tag:synthetic:genre:019",
+        "name": "urn:tag:synthetic:genre:019",
         "match": "identifier"
       }
     ],
@@ -721,12 +721,12 @@
         }
       },
       {
-        "input": "urn:tag:synthetic:genre:033",
+        "input": "urn:tag:synthetic:genre:019",
         "status": "resolved",
         "match": "identifier",
         "selected": {
-          "id": "urn:tag:synthetic:genre:033",
-          "name": "urn:tag:synthetic:genre:033"
+          "id": "urn:tag:synthetic:genre:019",
+          "name": "urn:tag:synthetic:genre:019"
         },
         "provenance": {
           "contract_version": "1.0-preview.1",
@@ -818,7 +818,7 @@
           ],
           "signal.location.query": "Synthetic Region 2",
           "filter.tags": [
-            "urn:tag:synthetic:genre:033"
+            "urn:tag:synthetic:genre:019"
           ],
           "operator.filter.tags": "union",
           "feature.explainability": true
@@ -842,7 +842,7 @@
     },
     "filters": {
       "includeTags": [
-        "urn:tag:synthetic:genre:033"
+        "urn:tag:synthetic:genre:019"
       ]
     },
     "operators": {

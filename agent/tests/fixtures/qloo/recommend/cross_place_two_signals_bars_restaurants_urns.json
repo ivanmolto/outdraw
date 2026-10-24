@@ -25,15 +25,15 @@
     "filter_location": "Synthetic Region 1",
     "include_tags": [
       {
-        "input": "urn:tag:synthetic:category:069",
-        "tagId": "urn:tag:synthetic:category:069",
-        "name": "urn:tag:synthetic:category:069",
+        "input": "urn:tag:synthetic:category:071",
+        "tagId": "urn:tag:synthetic:category:071",
+        "name": "urn:tag:synthetic:category:071",
         "match": "identifier"
       },
       {
-        "input": "urn:tag:synthetic:amenity:077",
-        "tagId": "urn:tag:synthetic:amenity:077",
-        "name": "urn:tag:synthetic:amenity:077",
+        "input": "urn:tag:synthetic:amenity:075",
+        "tagId": "urn:tag:synthetic:amenity:075",
+        "name": "urn:tag:synthetic:amenity:075",
         "match": "identifier"
       }
     ],
@@ -96,12 +96,12 @@
         }
       },
       {
-        "input": "urn:tag:synthetic:category:069",
+        "input": "urn:tag:synthetic:category:071",
         "status": "resolved",
         "match": "identifier",
         "selected": {
-          "id": "urn:tag:synthetic:category:069",
-          "name": "urn:tag:synthetic:category:069"
+          "id": "urn:tag:synthetic:category:071",
+          "name": "urn:tag:synthetic:category:071"
         },
         "provenance": {
           "contract_version": "1.0-preview.1",
@@ -114,12 +114,12 @@
         }
       },
       {
-        "input": "urn:tag:synthetic:amenity:077",
+        "input": "urn:tag:synthetic:amenity:075",
         "status": "resolved",
         "match": "identifier",
         "selected": {
-          "id": "urn:tag:synthetic:amenity:077",
-          "name": "urn:tag:synthetic:amenity:077"
+          "id": "urn:tag:synthetic:amenity:075",
+          "name": "urn:tag:synthetic:amenity:075"
         },
         "provenance": {
           "contract_version": "1.0-preview.1",
@@ -587,8 +587,8 @@
           ],
           "filter.location.query": "Synthetic Region 1",
           "filter.tags": [
-            "urn:tag:synthetic:category:069",
-            "urn:tag:synthetic:amenity:077"
+            "urn:tag:synthetic:category:071",
+            "urn:tag:synthetic:amenity:075"
           ],
           "operator.filter.tags": "union",
           "feature.explainability": true
@@ -610,8 +610,8 @@
     },
     "filters": {
       "includeTags": [
-        "urn:tag:synthetic:category:069",
-        "urn:tag:synthetic:amenity:077"
+        "urn:tag:synthetic:category:071",
+        "urn:tag:synthetic:amenity:075"
       ],
       "location": "Synthetic Region 1"
     },

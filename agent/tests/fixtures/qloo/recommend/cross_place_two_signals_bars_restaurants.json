@@ -15,7 +15,7 @@
         "purpose": "include_filter",
         "candidates": [
           {
-            "id": "urn:tag:synthetic:category:069",
+            "id": "urn:tag:synthetic:category:071",
             "name": "Synthetic Tag 60",
             "type": "urn:tag:category:place",
             "rank": 0.9649,
@@ -25,7 +25,7 @@
             ]
           },
           {
-            "id": "urn:tag:synthetic:cuisine:071",
+            "id": "urn:tag:synthetic:cuisine:072",
             "name": "Synthetic Tag 60",
             "type": "urn:tag:cuisine:qloo",
             "rank": 0.9174,
@@ -85,7 +85,7 @@
         "purpose": "include_filter",
         "candidates": [
           {
-            "id": "urn:tag:synthetic:amenity:077",
+            "id": "urn:tag:synthetic:amenity:075",
             "name": "Synthetic Tag 62",
             "type": "urn:tag:amenity:qloo",
             "rank": 0.9725,
@@ -95,7 +95,7 @@
             ]
           },
           {
-            "id": "urn:tag:synthetic:genre:073",
+            "id": "urn:tag:synthetic:genre:077",
             "name": "Synthetic Tag 62",
             "type": "urn:tag:genre:place",
             "rank": 0.9243,
@@ -105,7 +105,7 @@
             ]
           },
           {
-            "id": "urn:tag:synthetic:dining_option:114",
+            "id": "urn:tag:synthetic:dining_option:118",
             "name": "Synthetic Tag 62",
             "type": "urn:tag:dining_option:qloo",
             "rank": 0.871,
@@ -115,7 +115,7 @@
             ]
           },
           {
-            "id": "urn:tag:synthetic:amenities:118",
+            "id": "urn:tag:synthetic:amenities:117",
             "name": "Synthetic Tag 62",
             "type": "urn:tag:amenities:place",
             "rank": 0.8338,
@@ -125,7 +125,7 @@
             ]
           },
           {
-            "id": "urn:tag:synthetic:cuisine:117",
+            "id": "urn:tag:synthetic:cuisine:114",
             "name": "Synthetic Tag 62",
             "type": "urn:tag:cuisine:qloo",
             "rank": 0.7872,

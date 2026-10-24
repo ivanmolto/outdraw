@@ -8,9 +8,9 @@
     "signals": [],
     "signal_tags": [
       {
-        "input": "urn:tag:synthetic:genre:085",
-        "tagId": "urn:tag:synthetic:genre:085",
-        "name": "urn:tag:synthetic:genre:085",
+        "input": "urn:tag:synthetic:genre:082",
+        "tagId": "urn:tag:synthetic:genre:082",
+        "name": "urn:tag:synthetic:genre:082",
         "match": "identifier"
       }
     ],
@@ -33,12 +33,12 @@
     },
     "outcomes": [
       {
-        "input": "urn:tag:synthetic:genre:085",
+        "input": "urn:tag:synthetic:genre:082",
         "status": "resolved",
         "match": "identifier",
         "selected": {
-          "id": "urn:tag:synthetic:genre:085",
-          "name": "urn:tag:synthetic:genre:085"
+          "id": "urn:tag:synthetic:genre:082",
+          "name": "urn:tag:synthetic:genre:082"
         },
         "provenance": {
           "contract_version": "1.0-preview.1",
@@ -247,7 +247,7 @@
           "filter.type": "urn:entity:movie",
           "take": 10,
           "signal.interests.tags": [
-            "urn:tag:synthetic:genre:085"
+            "urn:tag:synthetic:genre:082"
           ],
           "operator.signal.interests.tags": "intersection",
           "signal.location.query": "Synthetic Region 1",
@@ -264,7 +264,7 @@
     "job": "recommend",
     "signals": {
       "tags": [
-        "urn:tag:synthetic:genre:085"
+        "urn:tag:synthetic:genre:082"
       ],
       "location": "Synthetic Region 1"
     },
