@@ -352,6 +352,10 @@ async def build_crowd_profile(
     evidence: list[EvidenceRef] = []
     for name, outcome in zip(fills, fill_outcomes, strict=True):
         items = _items(outcome.rows, genres_only=name == "genres")
+        if name == "genres":
+            # A group's own tags carry no score and are not shared by the crowd (one act's
+            # "Canadian"); they stand in only when no shared genre came back.
+            items = [i for i in items if i.affinity is not None] or items
         setattr(profile, name, items)
         if outcome.call_id:
             evidence.extend(

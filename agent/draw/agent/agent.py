@@ -61,6 +61,7 @@ from strands.types.exceptions import EventLoopException, MaxTokensReachedExcepti
 from strands.types.streaming import StreamEvent
 from strands.types.tools import ToolChoice, ToolSpec
 
+from draw.agent.notes import model_notes, plain_notes
 from draw.agent.store import RunStore
 from draw.agent.tools import SHORTLIST, DrawTools
 from draw.qloo.budget import LLM_PREFIX, DailyCounter, NullCounter, RedisCounter
@@ -136,7 +137,10 @@ compare_audiences, audience_demographics, trends) on an entity or tag that is no
 Call confirm_entity only when the user's message says which candidate they meant; never guess.
 - If any tool returns status "needs_input", or generate_candidates returns unresolved_tags, \
 stop calling tools and answer with {{"ask": {{"question": "...", "candidates": [...]}}}}.
-- Carry every "partial" or "degraded" summary, and every note, into notes.
+- notes are read by the venue's booker, not a developer. Outdraw adds every data warning \
+itself, so leave notes empty unless something the booker should know happened (a genre \
+word left out, say). At most two short plain-English sentences; never name a tool, a \
+workflow, an id or a pipeline step.
 - Tool results are summaries with ids; pass ids between tools, never retype names.
 
 Final answer: one JSON object and nothing else, no prose around it:
@@ -634,9 +638,10 @@ def _finalise(
     """Build the result from the store and the guard; the model's JSON is read, not trusted."""
     text = _text_of(result.message if result else None)
     answer = _parse_answer(text)
-    notes = list(guard.notes)
+    # Booker-facing: Outdraw's notes in plain words, then the model's, minus pipeline talk.
+    notes = plain_notes(guard.notes)
     if answer is not None:
-        for note in answer.notes:
+        for note in model_notes(answer.notes):
             if note not in notes:
                 notes.append(note)
     usage = _usage_of(result, metered)
@@ -700,16 +705,21 @@ def _finalise(
     expected = [e["candidate_id"] for e in shortlist]
     if answer is None:
         notes.append(
-            "The model's final answer was not the expected JSON; built from the ranked run."
+            "The model's summary was not the expected JSON; the shortlist is Outdraw's score as is."
         )
     elif [e.candidate_id for e in answer.shortlist] != expected[: len(answer.shortlist)]:
-        notes.append("Shortlist order restored from score_and_rank (the model had reordered it).")
+        notes.append("The model suggested another order; the shortlist keeps Outdraw's score.")
     if guard.forced_stop == "step_limit":
-        notes.append(f"Stopped at the {MAX_STEPS}-step limit; the shortlist is as ranked.")
+        notes.append(
+            f"The agent hit its {MAX_STEPS}-step limit; the shortlist is as scored so far."
+        )
     data_quality = _worst(profile.data_quality, run.candidates.candidates_quality)
     if run.signals is None:
         data_quality = _worst(data_quality, "partial")
-        notes.append("Signals were not gathered; past_fit, local_heat and momentum are neutral.")
+        notes.append(
+            "Past fit, local heat and momentum were not checked this time, so they don't "
+            "tell acts apart."
+        )
     return AgentResult(
         status="ok",
         shortlist=shortlist,

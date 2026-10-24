@@ -261,7 +261,7 @@ async def test_prompt_carries_ids_and_sell_through_not_envelopes(qloo: QlooMCP) 
     assert "UNCONFIRMED" in prompt and "ID-A" in prompt
     assert "none (profile from location and past acts)" in prompt
     assert "provenance" not in prompt and "affinity" not in prompt
-    assert any("Signals were not gathered" in n for n in result.notes)
+    assert any("were not checked this time" in n for n in result.notes)
     assert result.data_quality in ("partial", "degraded")
 
 
@@ -318,7 +318,7 @@ async def test_tools_in_one_turn_run_in_order(qloo: QlooMCP) -> None:
     assert run.ranked is not None
     with_signals = [r for r in run.ranked if r.candidate.entity_id in run.signals.by_id]
     assert with_signals and any("past_fit" not in (r.score.neutral or []) for r in with_signals)
-    assert not any("Signals were not gathered" in n for n in result.notes)
+    assert not any("were not checked this time" in n for n in result.notes)
 
 
 async def test_broadening_happens_at_most_once(qloo: QlooMCP) -> None:
@@ -409,7 +409,7 @@ async def test_reordered_shortlist_is_restored(qloo: QlooMCP) -> None:
     assert result.status == "ok"
     totals = [e["total"] for e in result.shortlist]
     assert totals == sorted(totals, reverse=True)
-    assert any("restored from score_and_rank" in n for n in result.notes)
+    assert any("keeps Outdraw's score" in n for n in result.notes)
 
 
 async def test_prose_answer_still_yields_the_ranked_shortlist(qloo: QlooMCP) -> None:

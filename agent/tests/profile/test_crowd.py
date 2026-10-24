@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import datetime as dt
 import json
 import os
@@ -220,17 +221,39 @@ async def test_call_shapes(routed: Callable[..., RoutedHarness]) -> None:
     }
 
 
-async def test_genres_are_only_genre_tags(routed: Callable[..., RoutedHarness]) -> None:
-    routed()
-    profile = await build_crowd_profile(VENUE, ACTS, qloo=client())
-    envelope = ROUTES[("compare_audiences", None)]
-    rows = [*envelope["results"]["tags"], *envelope["results"]["a"], *envelope["results"]["b"]]
-    expected = []
+def _genre_ids(rows: list[dict[str, Any]]) -> list[str]:
+    expected: list[str] = []
     for row in rows:
         if ":genre:" in row["subtype"] and row["tag_id"] not in expected:
             expected.append(row["tag_id"])
+    return expected
+
+
+async def test_genres_are_the_shared_scored_genre_tags(
+    routed: Callable[..., RoutedHarness],
+) -> None:
+    routed()
+    profile = await build_crowd_profile(VENUE, ACTS, qloo=client())
+    shared = ROUTES[("compare_audiences", None)]["results"]["tags"]
+    expected = _genre_ids(shared)
+    assert expected, "the fixture shares at least one genre"
     assert [g.entity_id for g in profile.genres] == expected[:10]
-    assert all(g.affinity is None or 0 <= g.affinity <= 1 for g in profile.genres)
+    # One group's own tags (no score) never sit beside shared ones as a bar with no value.
+    assert all(g.affinity is not None and 0 <= g.affinity <= 1 for g in profile.genres)
+
+
+async def test_genres_fall_back_to_own_tags_when_none_are_shared(
+    routed: Callable[..., RoutedHarness],
+) -> None:
+    envelope = copy.deepcopy(ROUTES[("compare_audiences", None)])
+    envelope["results"]["tags"] = [
+        t for t in envelope["results"]["tags"] if ":genre:" not in t["subtype"]
+    ]
+    routed(compare_audiences=envelope)
+    profile = await build_crowd_profile(VENUE, ACTS, qloo=client())
+    own = _genre_ids([*envelope["results"]["a"], *envelope["results"]["b"]])
+    assert own, "the fixture's groups carry genre tags of their own"
+    assert [g.entity_id for g in profile.genres] == own[:10]
 
 
 async def test_single_act_compares_itself(routed: Callable[..., RoutedHarness]) -> None:
