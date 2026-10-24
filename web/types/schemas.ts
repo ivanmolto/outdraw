@@ -305,6 +305,10 @@ export interface EntityCandidate {
   entity_id: string;
   name: string;
   type: string;
+  /**
+   * Street address Qloo gives for a place, so same-named venues can be told apart.
+   */
+  address?: string;
 }
 /**
  * Deterministic score from draw/ranking/score.py; the LLM never ranks.
@@ -318,7 +322,7 @@ export interface Score {
   weights: ScoreWeights;
   top_reason: string;
   /**
-   * Sub-scores that fell back to the neutral 0.5 because Qloo gave no usable signal.
+   * Sub-scores Qloo gave no usable signal for; they score the run's median of the measured acts (0.5 when none was measured).
    */
   neutral: ("crowd_affinity" | "past_fit" | "local_heat" | "novelty" | "size_fit" | "momentum")[];
   /**

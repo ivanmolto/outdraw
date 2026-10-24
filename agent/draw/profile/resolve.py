@@ -218,10 +218,12 @@ def _score_all(query: str, rows: Iterable[Mapping[str, Any]], default_type: str)
             continue
         seen.add(entity_id)
         kind = row.get("type")
+        address = row.get("address")
         candidate = EntityCandidate(
             entity_id=entity_id,
             name=name,
             type=kind if isinstance(kind, str) and kind else default_type,
+            address=address.strip() if isinstance(address, str) and address.strip() else None,
         )
         name_score = _name_score(query, name)
         score = NAME_WEIGHT * name_score + POPULARITY_WEIGHT * _popularity(row)

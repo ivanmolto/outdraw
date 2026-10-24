@@ -53,6 +53,7 @@ describe("confirm matches", () => {
     expect(screen.getByText("Qloo match")).toBeTruthy();
     expect(screen.getAllByTestId("match-row")).toHaveLength(4);
     expect(screen.getByText(/Synthetic Room NYC/)).toBeTruthy();
+    expect(screen.getByText("1 Synthetic St, New York, NY")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Change match for Synthetic Act" })).toBeTruthy();
 
     const ambiguous = within(group("Ambiguous Band"));
@@ -103,6 +104,28 @@ describe("confirm matches", () => {
       ["/api/venues/ven_fixture/profile", undefined],
     ]);
     expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it("shows a spinner and an elapsed timer while the profile builds", async () => {
+    let answer!: (r: Response) => void;
+    fakeApi([[/\/profile$/, () => new Promise<Response>((r) => (answer = r))]]);
+    const ready = resolutions.items.map((i) => ({
+      ...i,
+      confirmed: true,
+      entity_id: i.entity_id ?? i.candidates[0]?.entity_id ?? null,
+    }));
+    const { user, onDone } = setup(ready);
+
+    expect(screen.queryByRole("timer")).toBeNull();
+    await user.click(build());
+
+    const busy = screen.getByRole("button", { name: "Building crowd profile…" });
+    expect(busy.getAttribute("aria-busy")).toBe("true");
+    expect(within(busy).getByTestId("spinner")).toBeTruthy();
+    expect(screen.getByRole("timer", { name: "Time elapsed" }).textContent).toBe("0:00 elapsed");
+
+    answer(Response.json({}));
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalledOnce());
   });
 
   it("lets the user change an auto-confirmed match, blocking the profile meanwhile", async () => {

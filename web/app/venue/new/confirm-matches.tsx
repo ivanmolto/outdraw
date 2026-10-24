@@ -14,6 +14,7 @@ import {
   type EntityCandidate,
   type ResolutionItem,
 } from "@/src/lib/api-client";
+import { Elapsed, Spinner } from "@/src/components/progress";
 
 interface Props {
   venueId: string;
@@ -73,6 +74,9 @@ function MatchRow({
               <p className="mt-1 text-sm break-words text-ink/80">
                 <span className="sr-only">Confirmed: </span>✓ {item.canonical_name}
                 {chosen && <span className="text-ink/50"> · {typeLabel(chosen.type)}</span>}
+                {chosen?.address && (
+                  <span className="mt-0.5 block text-ink/60">{chosen.address}</span>
+                )}
               </p>
             ) : (
               <p className="mt-1 text-sm text-ink/70">Skipped: not in Qloo</p>
@@ -136,6 +140,9 @@ function MatchRow({
                       <span className="font-medium break-words text-ink">{c.name}</span>
                       <span className="text-ink/50"> · {typeLabel(c.type)}</span>
                       {guess && <span className="ml-1 text-xs text-ink/60">(best guess)</span>}
+                      {c.address && (
+                        <span className="mt-0.5 block break-words text-ink/60">{c.address}</span>
+                      )}
                     </>
                   ) : (
                     <span className="text-ink/80">Not in Qloo: skip it</span>
@@ -282,19 +289,24 @@ export function ConfirmMatches({ venueId, venueName, items: initial, onBack, onD
           type="button"
           onClick={() => void build()}
           disabled={!ready || building}
-          className="rounded-md bg-ink px-4 py-3 text-base font-semibold text-paper disabled:opacity-50"
+          aria-busy={building}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 text-base font-semibold text-paper disabled:opacity-50"
         >
+          {building && <Spinner />}
           {building ? "Building crowd profile…" : "Build crowd profile"}
         </button>
-        <p className="text-sm text-ink/60" aria-live="polite">
-          {building
-            ? "This makes a few Qloo calls and can take up to a minute."
-            : open > 0
-              ? `${open} ${open === 1 ? "match" : "matches"} left to confirm`
-              : saving.size > 0
-                ? "Saving your picks…"
-                : "All matches confirmed"}
-        </p>
+        <div className="text-sm text-ink/60">
+          <p aria-live="polite">
+            {building
+              ? "This makes a few Qloo calls and can take up to a minute."
+              : open > 0
+                ? `${open} ${open === 1 ? "match" : "matches"} left to confirm`
+                : saving.size > 0
+                  ? "Saving your picks…"
+                  : "All matches confirmed"}
+          </p>
+          {building && <Elapsed className="mt-1 block text-ink/50" />}
+        </div>
       </div>
     </section>
   );

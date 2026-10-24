@@ -54,6 +54,10 @@
         },
         "type": {
           "type": "string"
+        },
+        "address": {
+          "type": "string",
+          "description": "Street address Qloo gives for a place, so same-named venues can be told apart."
         }
       },
       "required": [

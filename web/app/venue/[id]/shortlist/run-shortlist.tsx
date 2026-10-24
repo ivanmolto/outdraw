@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { Elapsed, Spinner } from "@/src/components/progress";
 import { ApiError, api, reasonText, type Reason } from "@/src/lib/api-client";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
 import type { Constraints } from "@/types/schemas";
@@ -66,10 +67,16 @@ export function RunShortlist({ venueId, venueName, constraints }: Props) {
   if (state.name === "running") {
     return (
       <>
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-ink/15 bg-white p-4 text-sm">
+          <Spinner className="text-ink" />
+          <div className="min-w-0">
+            <p className="text-ink" aria-live="polite">
+              Outdraw is asking Qloo for acts and scoring them. This can take up to two minutes.
+            </p>
+            <Elapsed className="mt-1 block text-ink/50" />
+          </div>
+        </div>
         <ShortlistSkeleton label="Building shortlist" />
-        <p className="mt-4 text-sm text-ink/60" aria-live="polite">
-          Outdraw is asking Qloo for acts and scoring them. This can take up to two minutes.
-        </p>
       </>
     );
   }

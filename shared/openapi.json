@@ -241,6 +241,18 @@
       "EntityCandidate": {
         "additionalProperties": false,
         "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Street address Qloo gives for a place, so same-named venues can be told apart.",
+            "title": "Address"
+          },
           "entity_id": {
             "minLength": 1,
             "title": "Entity Id",

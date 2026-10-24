@@ -205,6 +205,21 @@ describe("venue form", () => {
     expect(calls[2].body).toMatchObject({ id: "ven_fixture", name: "Synthetic Room" });
   });
 
+  it("shows a spinner and an elapsed timer while matching in Qloo", async () => {
+    const user = userEvent.setup();
+    fakeApi([[/\/api\/venues$/, () => new Promise<Response>(() => {})]]);
+    render(<NewVenue />);
+
+    fillVenue();
+    expect(screen.queryByRole("timer")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Save and match acts" }));
+
+    const busy = await screen.findByRole("button", { name: "Matching in Qloo…" });
+    expect(busy.getAttribute("aria-busy")).toBe("true");
+    expect(within(busy).getByTestId("spinner")).toBeTruthy();
+    expect(screen.getByRole("timer", { name: "Time elapsed" }).textContent).toBe("0:00 elapsed");
+  });
+
   it("shows the API's reason when saving fails", async () => {
     const user = userEvent.setup();
     fakeApi([[/\/api\/venues$/, Response.json({ reason: "busy" }, { status: 429 })]]);

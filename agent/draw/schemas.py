@@ -120,6 +120,12 @@ class EntityCandidate(BaseModel):
     entity_id: Annotated[str, Field(min_length=1)]
     name: str
     type: str
+    address: Annotated[
+        str | None,
+        Field(
+            description="Street address Qloo gives for a place, so same-named venues can be told apart."
+        ),
+    ] = None
 
 
 class ScoreBreakdown(BaseModel):
@@ -273,7 +279,7 @@ class Score(BaseModel):
             Literal["crowd_affinity", "past_fit", "local_heat", "novelty", "size_fit", "momentum"]
         ],
         Field(
-            description="Sub-scores that fell back to the neutral 0.5 because Qloo gave no usable signal."
+            description="Sub-scores Qloo gave no usable signal for; they score the run's median of the measured acts (0.5 when none was measured)."
         ),
     ]
     evidence: Annotated[

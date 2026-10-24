@@ -4,6 +4,7 @@
 // survives a trip back from the confirm step; validation uses the T17 zod schema.
 import { useState, type FormEvent } from "react";
 
+import { Elapsed, Spinner } from "@/src/components/progress";
 import type { VenueUpsert } from "@/src/lib/schemas";
 import {
   MAX_SHOWS,
@@ -338,13 +339,18 @@ export function VenueForm({ draft, onChange, onSubmit, busy, serverError }: Prop
         )}
       </section>
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="w-full rounded-md bg-ink px-4 py-3 text-base font-semibold text-paper disabled:opacity-60 sm:w-auto"
-      >
-        {busy ? "Matching in Qloo…" : "Save and match acts"}
-      </button>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <button
+          type="submit"
+          disabled={busy}
+          aria-busy={busy}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-ink px-4 py-3 text-base font-semibold text-paper disabled:opacity-60 sm:w-auto"
+        >
+          {busy && <Spinner />}
+          {busy ? "Matching in Qloo…" : "Save and match acts"}
+        </button>
+        {busy && <Elapsed className="text-sm text-ink/50" />}
+      </div>
     </form>
   );
 }

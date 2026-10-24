@@ -286,6 +286,11 @@ export interface components {
         DataQuality: "ok" | "partial" | "degraded";
         /** EntityCandidate */
         EntityCandidate: {
+            /**
+             * Address
+             * @description Street address Qloo gives for a place, so same-named venues can be told apart.
+             */
+            address?: string | null;
             /** Entity Id */
             entity_id: string;
             /** Name */

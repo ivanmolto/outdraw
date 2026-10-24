@@ -32,9 +32,11 @@ describe("fresh run", () => {
     setup();
 
     expect(screen.getByRole("status", { name: "Building shortlist" })).toBeTruthy();
+    expect(screen.getByRole("timer", { name: "Time elapsed" }).textContent).toBe("0:00 elapsed");
     answer(Response.json(fixture));
 
     expect(await screen.findByRole("list", { name: "Ranked acts" })).toBeTruthy();
+    expect(screen.queryByRole("timer")).toBeNull();
     expect(calls).toEqual([
       {
         method: "POST",

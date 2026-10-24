@@ -297,6 +297,11 @@ async def test_venue_needs_input_lists_in_city_candidate_first(client: Client) -
     assert resolved.confirmed is False  # needs_input always asks
     assert resolved.entity_id is None
     assert [c.entity_id for c in resolved.candidates] == ["P-2", "P-1"]
+    # The address travels with each candidate so the user can tell same-named rooms apart.
+    assert [c.address for c in resolved.candidates] == [
+        "2 Synthetic Ave, New York, NY",
+        "1 Synthetic St, Elsewhere",
+    ]
 
 
 async def test_venue_not_found_falls_back_to_synthetic(client: Client) -> None:

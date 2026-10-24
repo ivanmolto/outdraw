@@ -8,7 +8,12 @@
       "entity_id": "urn:entity:synthetic:place:1",
       "canonical_name": "Synthetic Room NYC",
       "candidates": [
-        { "entity_id": "urn:entity:synthetic:place:1", "name": "Synthetic Room NYC", "type": "urn:entity:place" }
+        {
+          "entity_id": "urn:entity:synthetic:place:1",
+          "name": "Synthetic Room NYC",
+          "type": "urn:entity:place",
+          "address": "1 Synthetic St, New York, NY"
+        }
       ]
     },
     {

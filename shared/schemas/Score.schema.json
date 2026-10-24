@@ -20,7 +20,7 @@
     },
     "neutral": {
       "type": "array",
-      "description": "Sub-scores that fell back to the neutral 0.5 because Qloo gave no usable signal.",
+      "description": "Sub-scores Qloo gave no usable signal for; they score the run's median of the measured acts (0.5 when none was measured).",
       "items": {
         "type": "string",
         "enum": [
