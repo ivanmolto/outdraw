@@ -1,6 +1,7 @@
 // Browser-side calls to our own /api routes (never the agent or Qloo directly). Every
 // failure becomes an ApiError carrying the `{reason}` body the proxy routes emit.
 import type {
+  CompareOut,
   EntityCandidate,
   Reason,
   ResolutionItem,
@@ -10,8 +11,9 @@ import type {
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
 import type { ConfirmInput, RunInput, VenueUpsert } from "./schemas";
+import type { SoundcheckData } from "./soundcheck";
 
-export type { EntityCandidate, Reason, ResolutionItem, Resolutions };
+export type { CompareOut, EntityCandidate, Reason, ResolutionItem, Resolutions };
 
 export class ApiError extends Error {
   constructor(
@@ -46,11 +48,11 @@ export function reasonMessage(err: unknown): string {
   return reasonText(err instanceof ApiError ? err.reason : "unavailable");
 }
 
-async function post<T>(path: string, body?: unknown): Promise<T> {
+async function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
     res = await fetch(path, {
-      method: "POST",
+      method,
       headers: body === undefined ? undefined : { "content-type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
@@ -65,9 +67,15 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
   return data as T;
 }
 
+const post = <T>(path: string, body?: unknown) => request<T>("POST", path, body);
+const get = <T>(path: string) => request<T>("GET", path);
+
 const seg = encodeURIComponent;
 
 export const api = {
+  getSoundcheck: (runId: string, entityId: string) =>
+    get<SoundcheckData>(`/api/runs/${seg(runId)}/candidates/${seg(entityId)}/soundcheck`),
+  getCompare: (runId: string) => get<CompareOut>(`/api/runs/${seg(runId)}/compare`),
   upsertVenue: (body: VenueUpsert) => post<VenueId>("/api/venues", body),
   resolveVenue: (id: string) => post<Resolutions>(`/api/venues/${seg(id)}/resolve`),
   confirmMatch: (id: string, body: ConfirmInput) =>

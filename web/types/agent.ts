@@ -17,6 +17,7 @@ export type VenueOut = Schema<"VenueOut">;
 export type RunOut = Schema<"RunOut">;
 export type CandidateEvidence = Schema<"Evidence">;
 export type QlooCall = Schema<"QlooCall">;
+export type CompareOut = Schema<"CompareOut">;
 
 /** What the UI may branch on; never a backend message, URL or stack trace. */
 export type Reason =

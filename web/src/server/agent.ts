@@ -5,6 +5,7 @@ import "server-only";
 
 import type {
   CandidateEvidence,
+  CompareOut,
   QlooCall,
   Reason,
   ResolutionItem,
@@ -19,6 +20,7 @@ import type { ConfirmInput, RunInput, VenueUpsert } from "@/src/lib/schemas";
 // Response shapes live in types/agent.ts, shared with the browser client.
 export type {
   CandidateEvidence,
+  CompareOut,
   QlooCall,
   Reason,
   ResolutionItem,
@@ -142,4 +144,7 @@ export const agent = {
   getEvidence: (runId: string, entityId: string) =>
     call<CandidateEvidence>("GET", `/runs/${seg(runId)}/candidates/${seg(entityId)}/evidence`),
   getCalls: (runId: string) => call<QlooCall[]>("GET", `/runs/${seg(runId)}/calls`),
+  /** One tool-less model call the first time per run, then the cached copy. */
+  getCompare: (runId: string) =>
+    call<CompareOut>("GET", `/runs/${seg(runId)}/compare`, undefined, SLOW_TIMEOUT_MS),
 };
