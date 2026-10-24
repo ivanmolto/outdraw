@@ -14,11 +14,13 @@ from dataclasses import dataclass, field
 
 from draw.qloo.envelope import QlooResult
 from draw.ranking.candidates import CandidateList
+from draw.ranking.evidence import params_summary
 from draw.ranking.rank import RankedCandidate
 from draw.ranking.signals import SignalSet
 from draw.schemas import (
     Constraints,
     CrowdProfile,
+    EvidenceTrail,
     QlooCallRecord,
     QlooWorkflow,
     ResolvedEntity,
@@ -47,6 +49,8 @@ class Run:
     ranked: list[RankedCandidate] | None = None
     candidate_ids: dict[str, str] = field(default_factory=dict)
     """entity_id -> candidate_id, assigned by `score_and_rank`."""
+    trails: dict[str, EvidenceTrail] = field(default_factory=dict)
+    """candidate_id -> the evidence trail behind its score, built by `score_and_rank`."""
 
 
 @dataclass
@@ -61,7 +65,10 @@ class RunStore:
     candidates: dict[str, tuple[str, str]] = field(default_factory=dict)
     """candidate_id -> (run_id, entity_id)."""
     calls: dict[str, QlooCallRecord] = field(default_factory=dict)
-    """Every gateway call observed during the run, by call_id (evidence trail)."""
+    """Every gateway call observed during the run, by call_id, in call order (evidence trail)."""
+    results: dict[str, QlooResult] = field(default_factory=dict)
+    """The observed results themselves (request shape, summary, counts) for the walkthrough.
+    They never leave the process: the model sees `QlooCallRecord`s, the API the recordings."""
 
     # --- seeding (done by the API layer before the agent runs) -------------------------
 
@@ -104,6 +111,19 @@ class RunStore:
         run_id, entity_id = _get(self.candidates, candidate_id, "candidate")
         return self.run(run_id), entity_id
 
+    def trail(self, candidate_id: str) -> EvidenceTrail:
+        """The stored evidence trail for a scored candidate (`score_and_rank` stores one each)."""
+        run, _ = self.candidate(candidate_id)
+        return _get(run.trails, candidate_id, "evidence trail for candidate")
+
+    def signal_names(self, venue_id: str) -> dict[str, str]:
+        """Canonical act name by Qloo entity ID, for the trail's input labels."""
+        return {
+            act.entity_id: act.canonical_name
+            for act in self.acts_for(venue_id)
+            if act.entity_id and act.confirmed
+        }
+
     # --- writes ---------------------------------------------------------------------
 
     def add_profile(self, venue_id: str, profile: CrowdProfile) -> str:
@@ -130,10 +150,11 @@ class RunStore:
         self.calls[result.call_id] = QlooCallRecord(
             call_id=result.call_id,
             workflow=workflow,
-            params_summary=f"{result.workflow} ({'cache hit' if result.cache_hit else 'live'})",
+            params_summary=params_summary(result.workflow, result.request),
             status=result.status,
             cache_hit=result.cache_hit,
         )
+        self.results[result.call_id] = result
 
 
 def _get[T](table: dict[str, T], key: str, kind: str) -> T:

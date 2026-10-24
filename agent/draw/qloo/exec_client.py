@@ -258,6 +258,7 @@ class QlooExec:
             workflow=workflow,
             cache_hit=cache_hit,
             latency_ms=latency_ms,
+            request=dict(input_),
         )
         log.info(
             "qloo_call workflow=%s status=%s cache=%s latency_ms=%d attempts=%d call_id=%s",

@@ -34,13 +34,16 @@ class QlooResult(QlooEnvelope):
     """A normalised envelope plus the gateway's evidence-tracing fields.
 
     `call_id` is a UUID minted per gateway call (cache hits included) so a score can point
-    back at the exact call that produced an affinity.
+    back at the exact call that produced an affinity. `request` is the input the harness
+    was given (entity IDs, tags, regions, dates: never personal data), kept so the evidence
+    trail and the walkthrough can show the request shape behind each call.
     """
 
     call_id: str
     workflow: str
     cache_hit: bool = False
     latency_ms: int = 0
+    request: dict[str, Any] = {}
 
 
 # --- exceptions -----------------------------------------------------------------------

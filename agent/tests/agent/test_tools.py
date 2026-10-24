@@ -168,18 +168,27 @@ async def test_pipeline_end_to_end(seeded: tuple[DrawTools, RunStore, str, str])
     assert set(evidence["sub_scores"]) == set(WEIGHTS) and evidence["weights"] == dict(WEIGHTS)
     assert evidence["source_labels"]["novelty"] == "draw"
     assert evidence["source_labels"]["crowd_affinity"] == "qloo"
-    assert evidence["evidence"], "a Qloo-backed sub-score points at a call"
-    call_ids = {e["call_id"] for e in evidence["evidence"]}
-    assert {c["call_id"] for c in evidence["qloo_calls"]} == call_ids
+    assert evidence["affinities"], "a Qloo-backed sub-score points at a call"
+    call_ids = {c["call_id"] for c in evidence["qloo_calls"]}
+    assert {a["call_id"] for a in evidence["affinities"]} <= call_ids
+    assert {a["sub_score"] for a in evidence["affinities"]} == {
+        k for k, v in evidence["source_labels"].items() if v == "qloo"
+    }
     assert all(c["workflow"] in {"recommend", "compare_audiences", "where_popular", "trends"}
                for c in evidence["qloo_calls"])  # fmt: skip
     assert call_ids <= set(store.calls), "the store observed every gateway call"
+    assert len(evidence["inputs"]) == 3 + 4, (
+        "three crowd signals, region, tier, popularity, history"
+    )
+    full = tools.evidence_trail(top)
+    assert {c["call_id"] for c in full["qloo_calls"]} == call_ids
+    assert set(full["source_labels"]) > set(evidence["source_labels"])
 
     brief = await tools.draft_brief(top)
     check(brief)
     assert brief["status"] == "stub" and brief["name"] == shortlist[0]["name"]
     assert brief["why_it_fits"] == [
-        {"text": evidence["top_reason"], "evidence_ref": evidence["evidence"][0]["call_id"]}
+        {"text": evidence["top_reason"], "evidence_ref": evidence["qloo_calls"][0]["call_id"]}
     ]
 
 

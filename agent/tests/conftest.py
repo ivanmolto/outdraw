@@ -6,6 +6,7 @@ import asyncio
 import importlib.util
 import json
 import os
+import sys
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from types import ModuleType
@@ -41,6 +42,7 @@ def load_script(name: str) -> ModuleType:
     spec = importlib.util.spec_from_file_location(name, path)
     assert spec and spec.loader, path
     module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module  # dataclasses in the script resolve their module through here
     spec.loader.exec_module(module)
     return module
 

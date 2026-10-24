@@ -4,7 +4,9 @@ A run needs the venue's stored crowd profile (409 otherwise: the profile step is
 confirm gate sits). The gateway for the run carries the run's id, so every Qloo call it
 makes lands in `qloo_calls` under that id. The stored result is the agent's final JSON
 (`shortlist` from `score_and_rank`, or `ask`); each ranked candidate is stored with its
-score and its evidence trail (`get_evidence`). Shortlist entries also carry their
+score and its full evidence trail (`DrawTools.evidence_trail`: the T22 `EvidenceTrail` plus
+the candidate's ids, validated for completeness when it was built). Shortlist entries also
+carry their
 sub-scores, `top_reason`, neutral fallbacks and source labels, and the result the
 `weights`; `RunResult` is the typed view the web reads through the OpenAPI contract.
 """
@@ -128,7 +130,8 @@ async def _candidates(result: AgentResult, qloo: QlooExec, run_id: str) -> list[
     rows: list[CandidateRow] = []
     for item in run.ranked or []:
         entity_id = item.candidate.entity_id
-        evidence = await tools.get_evidence(run.candidate_ids[entity_id])
+        # The full EvidenceTrail (validated when score_and_rank stored it), not the model's view.
+        evidence = tools.evidence_trail(run.candidate_ids[entity_id])
         rows.append(
             CandidateRow(
                 run_id=run_id,
