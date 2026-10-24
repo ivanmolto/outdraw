@@ -1,0 +1,35 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`With Qloo / LLM only toggle > matches the mobile layout snapshot at 375px 1`] = `
+{
+  "columns": false,
+  "tabs": [
+    {
+      "label": "With Qloo",
+      "panel": {
+        "acts": [
+          "Synthetic Headliner",
+          "Fixture Collective",
+          "Test Pattern Trio",
+        ],
+        "hidden": true,
+        "list": "Ranked acts",
+      },
+      "selected": false,
+    },
+    {
+      "label": "LLM only",
+      "panel": {
+        "acts": [
+          "Synthetic Headliner",
+          "Imaginary Arena Band",
+          "Placeholder Duo",
+        ],
+        "hidden": false,
+        "list": "LLM-only acts",
+      },
+      "selected": true,
+    },
+  ],
+}
+`;

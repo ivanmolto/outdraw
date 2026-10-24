@@ -1,10 +1,13 @@
 // Page chrome shared by /venue/[id], its not-found page and its error states.
 import Link from "next/link";
 
-export function Shell({ children }: { children: React.ReactNode }) {
+/** `wide` makes room for two lists side by side (the shortlist's LLM-only comparison). */
+export function Shell({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   return (
     <main className="flex-1 bg-paper text-ink">
-      <div className="mx-auto w-full max-w-3xl px-4 py-8">{children}</div>
+      <div className={`mx-auto w-full px-4 py-8 ${wide ? "max-w-5xl" : "max-w-3xl"}`}>
+        {children}
+      </div>
     </main>
   );
 }

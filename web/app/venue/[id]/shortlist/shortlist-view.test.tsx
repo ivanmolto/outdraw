@@ -19,7 +19,14 @@ function shortlist(): ShortlistResult {
 }
 
 function setup(result: ShortlistResult = shortlist()) {
-  render(<ShortlistView venueId="ven_fixture" venueName="Synthetic Room" result={result} />);
+  render(
+    <ShortlistView
+      venueId="ven_fixture"
+      venueName="Synthetic Room"
+      runId="run_fixture"
+      result={result}
+    />,
+  );
 }
 
 const acts = () => within(screen.getByRole("list", { name: "Ranked acts" })).getAllByRole("heading");
@@ -166,6 +173,7 @@ describe("run outcome", () => {
       <ShortlistView
         venueId="ven_fixture"
         venueName="Synthetic Room"
+        runId="run_fixture"
         result={{ ...base, shortlist: [flipped] }}
       />,
     );

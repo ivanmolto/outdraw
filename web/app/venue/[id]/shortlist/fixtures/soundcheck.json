@@ -1,0 +1,106 @@
+{
+  "trail": {
+    "candidate_id": "cand_1",
+    "run_id": "run_fixture",
+    "entity_id": "urn:entity:synthetic:artist:11",
+    "name": "Synthetic Headliner",
+    "top_reason": "Qloo's recommend puts Synthetic Headliner at 92% affinity with this crowd.",
+    "neutral": ["momentum"],
+    "inputs": [
+      {
+        "ref": "signal:urn:entity:synthetic:artist:1",
+        "label": "Crowd signal Synthetic Act, weight 0.95 (sell-through)"
+      },
+      { "ref": "region", "label": "Venue region: New York, United States" },
+      { "ref": "size_tier", "label": "Requested size tier: mid" },
+      { "ref": "popularity", "label": "Qloo popularity 0.812 (recommend)" },
+      { "ref": "months_since_booked", "label": "Never booked at this venue (novelty 1.0)" }
+    ],
+    "qloo_calls": [
+      {
+        "call_id": "00000000-0000-4000-8000-0000000000a1",
+        "workflow": "recommend",
+        "params_summary": "recommend(target_type=artist, signals[1], signal_location=\"New York, United States\", limit=20)",
+        "status": "ok",
+        "cache_hit": false
+      },
+      {
+        "call_id": "00000000-0000-4000-8000-0000000000a2",
+        "workflow": "compare_audiences",
+        "params_summary": "compare_audiences(a=<id>, b=<id>)",
+        "status": "partial",
+        "cache_hit": true
+      },
+      {
+        "call_id": "00000000-0000-4000-8000-0000000000a3",
+        "workflow": "where_popular",
+        "params_summary": "where_popular(entity=<id>, region=\"New York, United States\")",
+        "status": "ok",
+        "cache_hit": false
+      }
+    ],
+    "affinities": [
+      {
+        "entity": "urn:entity:synthetic:artist:11",
+        "value": 0.92,
+        "call_id": "00000000-0000-4000-8000-0000000000a1"
+      },
+      {
+        "entity": "urn:entity:synthetic:artist:11",
+        "value": 0.81,
+        "call_id": "00000000-0000-4000-8000-0000000000a2"
+      },
+      {
+        "entity": "urn:entity:synthetic:artist:11",
+        "value": 0.7,
+        "call_id": "00000000-0000-4000-8000-0000000000a3"
+      }
+    ],
+    "sub_scores": {
+      "crowd_affinity": 0.92,
+      "past_fit": 0.81,
+      "local_heat": 0.7,
+      "novelty": 1.0,
+      "size_fit": 1.0,
+      "momentum": 0.5
+    },
+    "weights": {
+      "crowd_affinity": 0.35,
+      "past_fit": 0.2,
+      "local_heat": 0.2,
+      "novelty": 0.1,
+      "size_fit": 0.1,
+      "momentum": 0.05
+    },
+    "total": 0.849,
+    "source_labels": {
+      "input:signal:urn:entity:synthetic:artist:1": "draw",
+      "input:region": "draw",
+      "input:size_tier": "draw",
+      "input:popularity": "qloo",
+      "input:months_since_booked": "draw",
+      "call:00000000-0000-4000-8000-0000000000a1": "qloo",
+      "call:00000000-0000-4000-8000-0000000000a2": "qloo",
+      "call:00000000-0000-4000-8000-0000000000a3": "qloo",
+      "affinity:crowd_affinity": "qloo",
+      "affinity:past_fit": "qloo",
+      "affinity:local_heat": "qloo",
+      "crowd_affinity": "qloo",
+      "past_fit": "qloo",
+      "local_heat": "qloo",
+      "novelty": "draw",
+      "size_fit": "draw",
+      "momentum": "draw",
+      "weight:crowd_affinity": "draw",
+      "weight:past_fit": "draw",
+      "weight:local_heat": "draw",
+      "weight:novelty": "draw",
+      "weight:size_fit": "draw",
+      "weight:momentum": "draw",
+      "total": "draw"
+    }
+  },
+  "summaries": {
+    "00000000-0000-4000-8000-0000000000a2": "Synthetic summary: 2 of 3 audiences compared; overlap uses the rest."
+  }
+}

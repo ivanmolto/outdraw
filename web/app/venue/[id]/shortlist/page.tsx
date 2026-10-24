@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { reasonText } from "@/src/lib/api-client";
 import { defaultConstraints, parseRun } from "@/src/lib/run-result";
 import { idSchema } from "@/src/lib/schemas";
+import { crossDomain } from "@/src/lib/soundcheck";
 import { AgentError, agent, type RunOut, type VenueOut } from "@/src/server/agent";
 import { Message, Shell } from "../shell";
 import { RunOutcome } from "./run-outcome";
@@ -60,15 +61,22 @@ export default async function ShortlistPage({
     );
   }
 
+  const strip = crossDomain(venue.profile);
   return (
-    <Shell>
+    <Shell wide>
       {run ? (
-        <RunOutcome venueId={venue.id} venueName={venue.venue.name} run={parseRun(run)} />
+        <RunOutcome
+          venueId={venue.id}
+          venueName={venue.venue.name}
+          run={parseRun(run)}
+          crossDomain={strip}
+        />
       ) : (
         <RunShortlist
           venueId={venue.id}
           venueName={venue.venue.name}
           constraints={defaultConstraints(venue.venue.capacity)}
+          crossDomain={strip}
         />
       )}
     </Shell>

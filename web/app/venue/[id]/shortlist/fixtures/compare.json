@@ -1,0 +1,15 @@
+{
+  "run_id": "run_fixture",
+  "label": "llm_only",
+  "acts": [
+    { "name": "Synthetic Headliner", "reason": "A synthetic pick the model knows.", "label": "llm_only" },
+    { "name": "Imaginary Arena Band", "reason": "Synthetic: plays far bigger rooms.", "label": "llm_only" },
+    { "name": "Placeholder Duo", "reason": null, "label": "llm_only" }
+  ],
+  "disclaimer": "LLM only: claude-haiku-5-5's own suggestions from one call with no tools and no Qloo data. Not scored by Outdraw; the order is the model's.",
+  "model": "claude-haiku-5-5",
+  "created_at": "2026-10-21T12:00:00Z",
+  "cached": true,
+  "token_usage": { "input_tokens": 1, "output_tokens": 1 },
+  "error": null
+}

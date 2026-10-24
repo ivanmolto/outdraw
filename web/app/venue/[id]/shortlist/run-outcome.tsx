@@ -4,19 +4,30 @@ import Link from "next/link";
 
 import { reasonText } from "@/src/lib/api-client";
 import type { ParsedRun } from "@/src/lib/run-result";
+import type { CrossDomain } from "@/src/lib/soundcheck";
 import { ShortlistView } from "./shortlist-view";
 
 export function RunOutcome({
   venueId,
   venueName,
   run,
+  crossDomain,
 }: {
   venueId: string;
   venueName: string;
   run: ParsedRun;
+  crossDomain?: CrossDomain;
 }) {
   if (run.kind === "shortlist") {
-    return <ShortlistView venueId={venueId} venueName={venueName} result={run} />;
+    return (
+      <ShortlistView
+        venueId={venueId}
+        venueName={venueName}
+        runId={run.runId}
+        result={run}
+        crossDomain={crossDomain}
+      />
+    );
   }
   const back = (
     <Link

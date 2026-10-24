@@ -43,6 +43,15 @@ export const SUB_SCORES = [
 ] as const;
 export type SubScore = (typeof SUB_SCORES)[number];
 
+export const SUB_SCORE_LABELS: Record<SubScore, string> = {
+  crowd_affinity: "Crowd affinity",
+  past_fit: "Past fit",
+  local_heat: "Local heat",
+  novelty: "Novelty",
+  size_fit: "Size fit",
+  momentum: "Momentum",
+};
+
 export type ParsedRun =
   | ({ kind: "shortlist"; runId: string } & ShortlistResult)
   | { kind: "ask"; runId: string; question: string; options: string[] }

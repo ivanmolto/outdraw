@@ -2,25 +2,22 @@
 // the model's), with the total as a bar, the templated top reason and a chip per sub-score.
 // Chips say where each number comes from (the agent's `source_labels`): Qloo data, Outdraw's
 // own data, or the run's median of the measured acts where Qloo gave no signal. No hooks: rendered by the server page
-// for a stored run and by the client run component for a fresh one.
+// for a stored run and by the client run component for a fresh one. Each scored act opens
+// its Soundcheck panel, and the list sits inside the With Qloo / LLM only toggle (both
+// client components).
 import Link from "next/link";
 
 import {
   SUB_SCORES,
+  SUB_SCORE_LABELS as LABELS,
   type ShortlistEntry,
   type ShortlistResult,
   type SubScore,
 } from "@/src/lib/run-result";
+import type { CrossDomain } from "@/src/lib/soundcheck";
 import { SourceBadge } from "../profile-view";
-
-const LABELS: Record<SubScore, string> = {
-  crowd_affinity: "Crowd affinity",
-  past_fit: "Past fit",
-  local_heat: "Local heat",
-  novelty: "Novelty",
-  size_fit: "Size fit",
-  momentum: "Momentum",
-};
+import { CompareToggle } from "./compare-toggle";
+import { SoundcheckButton } from "./soundcheck";
 
 const pct = (value: number) => `${Math.round(Math.min(Math.max(value, 0), 1) * 100)}%`;
 
@@ -68,7 +65,17 @@ function Chip({
   );
 }
 
-function Act({ entry, rank }: { entry: ShortlistEntry; rank: number }) {
+function Act({
+  entry,
+  rank,
+  runId,
+  crossDomain,
+}: {
+  entry: ShortlistEntry;
+  rank: number;
+  runId: string;
+  crossDomain?: CrossDomain;
+}) {
   const reason = entry.top_reason ?? entry.reason;
   const neutral = new Set(entry.neutral ?? []);
   const labels = entry.source_labels ?? {};
@@ -107,6 +114,16 @@ function Act({ entry, rank }: { entry: ShortlistEntry; rank: number }) {
             );
           })}
         </ul>
+      )}
+      {entry.sub_scores && (
+        <div className="mt-3">
+          <SoundcheckButton
+            runId={runId}
+            entityId={entry.entity_id}
+            name={entry.name}
+            crossDomain={crossDomain}
+          />
+        </div>
       )}
     </li>
   );
@@ -156,11 +173,16 @@ function Header({ venueName }: { venueName: string }) {
 export function ShortlistView({
   venueId,
   venueName,
+  runId,
   result,
+  crossDomain,
 }: {
   venueId: string;
   venueName: string;
+  runId: string;
   result: ShortlistResult;
+  /** The crowd profile's places, films and brands, for Soundcheck's cross-domain strip. */
+  crossDomain?: CrossDomain;
 }) {
   return (
     <>
@@ -194,11 +216,19 @@ export function ShortlistView({
               No Qloo signal (run median)
             </span>
           </div>
-          <ol aria-label="Ranked acts" className="space-y-3">
-            {result.shortlist.map((entry, i) => (
-              <Act key={entry.entity_id} entry={entry} rank={i + 1} />
-            ))}
-          </ol>
+          <CompareToggle runId={runId} qlooNames={result.shortlist.map((e) => e.name)}>
+            <ol aria-label="Ranked acts" className="space-y-3">
+              {result.shortlist.map((entry, i) => (
+                <Act
+                  key={entry.entity_id}
+                  entry={entry}
+                  rank={i + 1}
+                  runId={runId}
+                  crossDomain={crossDomain}
+                />
+              ))}
+            </ol>
+          </CompareToggle>
         </>
       )}
       <Link

@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { Elapsed, Spinner } from "@/src/components/progress";
 import { ApiError, api, reasonText, type Reason } from "@/src/lib/api-client";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
+import type { CrossDomain } from "@/src/lib/soundcheck";
 import type { Constraints } from "@/types/schemas";
 import { ShortlistSkeleton } from "./shortlist-view";
 import { RunOutcome } from "./run-outcome";
@@ -41,9 +42,10 @@ interface Props {
   venueId: string;
   venueName: string;
   constraints: Constraints;
+  crossDomain?: CrossDomain;
 }
 
-export function RunShortlist({ venueId, venueName, constraints }: Props) {
+export function RunShortlist({ venueId, venueName, constraints, crossDomain }: Props) {
   const [state, setState] = useState<State>({ name: "running" });
   const [attempt, setAttempt] = useState(0);
 
@@ -107,5 +109,12 @@ export function RunShortlist({ venueId, venueName, constraints }: Props) {
     );
   }
 
-  return <RunOutcome venueId={venueId} venueName={venueName} run={state.run} />;
+  return (
+    <RunOutcome
+      venueId={venueId}
+      venueName={venueName}
+      run={state.run}
+      crossDomain={crossDomain}
+    />
+  );
 }
