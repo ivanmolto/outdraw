@@ -82,6 +82,8 @@ class RunRow(Base):
     result: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     # {"input": n, "output": n} as counted by the agent loop.
     token_usage: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    # The LLM-only shortlist for the same venue and constraints, cached by GET /runs/{id}/compare.
+    compare: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     is_seed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     seed_slug: Mapped[str | None] = mapped_column(Text, unique=True)
     created_at: Mapped[datetime] = _created_at()

@@ -109,6 +109,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{run_id}/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Compare
+         * @description The LLM-only shortlist for the run's venue and constraints: one tool-less Haiku 5.5
+         *     call the first time, then the copy cached on the run (no tokens spent).
+         */
+        get: operations["get_compare_runs__run_id__compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/venues": {
         parameters: {
             query?: never;
@@ -215,6 +236,55 @@ export interface components {
             }[];
             /** Question */
             question: string;
+        };
+        /** CompareAct */
+        CompareAct: {
+            /**
+             * Label
+             * @default llm_only
+             * @constant
+             */
+            label: "llm_only";
+            /** Name */
+            name: string;
+            /** Reason */
+            reason?: string | null;
+        };
+        /**
+         * CompareOut
+         * @description `GET /runs/{id}/compare`: the run's LLM-only shortlist, as cached on the run.
+         */
+        CompareOut: {
+            /** Acts */
+            acts?: components["schemas"]["CompareAct"][];
+            /**
+             * Cached
+             * @default false
+             */
+            cached: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Disclaimer */
+            disclaimer: string;
+            /** Error */
+            error?: string | null;
+            /**
+             * Label
+             * @default llm_only
+             * @constant
+             */
+            label: "llm_only";
+            /** Model */
+            model: string;
+            /** Run Id */
+            run_id: string;
+            /** Token Usage */
+            token_usage?: {
+                [key: string]: number;
+            };
         };
         /** ConfirmBody */
         ConfirmBody: {
@@ -789,6 +859,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Evidence"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_compare_runs__run_id__compare_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompareOut"];
                 };
             };
             /** @description Validation Error */

@@ -23,6 +23,104 @@
         "title": "AskOut",
         "type": "object"
       },
+      "CompareAct": {
+        "properties": {
+          "label": {
+            "const": "llm_only",
+            "default": "llm_only",
+            "title": "Label",
+            "type": "string"
+          },
+          "name": {
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CompareAct",
+        "type": "object"
+      },
+      "CompareOut": {
+        "description": "`GET /runs/{id}/compare`: the run's LLM-only shortlist, as cached on the run.",
+        "properties": {
+          "acts": {
+            "items": {
+              "$ref": "#/components/schemas/CompareAct"
+            },
+            "maxItems": 10,
+            "title": "Acts",
+            "type": "array"
+          },
+          "cached": {
+            "default": false,
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "label": {
+            "const": "llm_only",
+            "default": "llm_only",
+            "title": "Label",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "token_usage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Token Usage",
+            "type": "object"
+          }
+        },
+        "required": [
+          "run_id",
+          "disclaimer",
+          "model",
+          "created_at"
+        ],
+        "title": "CompareOut",
+        "type": "object"
+      },
       "ConfirmBody": {
         "properties": {
           "chosen_entity_id": {
@@ -1581,6 +1679,62 @@
           }
         },
         "summary": "Get Evidence"
+      }
+    },
+    "/runs/{run_id}/compare": {
+      "get": {
+        "description": "The LLM-only shortlist for the run's venue and constraints: one tool-less Haiku 5.5\ncall the first time, then the copy cached on the run (no tokens spent).",
+        "operationId": "get_compare_runs__run_id__compare_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompareOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Compare"
       }
     },
     "/venues": {

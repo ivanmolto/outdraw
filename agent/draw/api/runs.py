@@ -13,6 +13,7 @@ sub-scores, `top_reason`, neutral fallbacks and source labels, and the result th
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime
 from typing import Annotated, Any
 
@@ -21,6 +22,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 
 from draw.agent.agent import AgentResult, run_venue_agent
+from draw.agent.compare import CompareOut, llm_only_shortlist
 from draw.agent.store import new_id
 from draw.agent.tools import DrawTools
 from draw.api.auth import require_internal_key
@@ -29,7 +31,14 @@ from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
 from draw.qloo.exec_client import QlooExec
 from draw.ranking.score import WEIGHTS, SourceLabel, SubScore, source_labels
-from draw.schemas import Constraints, CrowdProfile, DataQuality, ScoreBreakdown, ScoreWeights
+from draw.schemas import (
+    Constraints,
+    CrowdProfile,
+    DataQuality,
+    ScoreBreakdown,
+    ScoreWeights,
+    VenueInput,
+)
 
 __all__ = ["router"]
 
@@ -246,6 +255,55 @@ async def get_evidence(run_id: str, entity_id: str, deps: DepsDep) -> Evidence:
             status.HTTP_404_NOT_FOUND, f"No candidate {entity_id!r} in run {run_id!r}."
         )
     return Evidence(run_id=run_id, entity_id=entity_id, score=row.score, evidence=row.evidence)
+
+
+_compare_locks: dict[str, asyncio.Lock] = {}
+"""One lock per run around its first compare call, so concurrent requests spend one call
+(the service runs as one process; a second request waits, then reads the cached copy)."""
+
+
+async def _cached_compare(deps: Deps, run_id: str) -> CompareOut | tuple[VenueInput, Constraints]:
+    """The run's cached compare, or what the first call needs; 404 for an unknown run."""
+    async with deps.sessions() as session:
+        row = await session.get(RunRow, run_id)
+        if row is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
+        if row.compare is not None:
+            return CompareOut.model_validate({**row.compare, "cached": True})
+        _, venue = await load_venue(session, row.venue_id)
+        return venue, Constraints.model_validate(row.constraints)
+
+
+@router.get("/{run_id}/compare")
+async def get_compare(run_id: str, deps: DepsDep) -> CompareOut:
+    """The LLM-only shortlist for the run's venue and constraints: one tool-less Haiku 5.5
+    call the first time, then the copy cached on the run (no tokens spent)."""
+    found = await _cached_compare(deps, run_id)
+    if isinstance(found, CompareOut):
+        return found
+    lock = _compare_locks.setdefault(run_id, asyncio.Lock())
+    async with lock:
+        # A request that waited here finds the first one's result cached.
+        found = await _cached_compare(deps, run_id)
+        if isinstance(found, CompareOut):
+            return found
+        venue, constraints = found
+        out = await llm_only_shortlist(
+            run_id,
+            venue,
+            constraints,
+            model_factory=deps.model_factory,
+            token_counter=deps.llm_counter,
+            token_cap=deps.llm_cap,
+        )
+        if out.error is None:
+            async with deps.sessions.begin() as session:
+                row = await session.get(RunRow, run_id)
+                assert row is not None
+                row.compare = out.model_dump(mode="json", exclude={"cached"})
+    if not lock.locked():
+        _compare_locks.pop(run_id, None)
+    return out
 
 
 @router.get("/{run_id}/calls")

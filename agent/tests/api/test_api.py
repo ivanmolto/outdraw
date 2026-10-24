@@ -73,6 +73,7 @@ PROTECTED = [
     ("get", "/runs/run_x"),
     ("get", "/runs/run_x/candidates/E/evidence"),
     ("get", "/runs/run_x/calls"),
+    ("get", "/runs/run_x/compare"),
     ("get", "/limits"),
 ]
 
@@ -412,7 +413,7 @@ def test_run_returns_ask_on_needs_input(client: TestClient, scripts: Scripts) ->
     assert run["status"] == "ask"
     ask = run["result"]["ask"]
     assert ask["question"] and len(ask["candidates"]) == 2
-    assert "shortlist" not in run["result"]
+    assert run["result"]["shortlist"] == [], "RunResult always carries the key; an ask has none"
     assert client.get(f"/runs/{run['run_id']}").json()["status"] == "ask"
 
 
