@@ -204,8 +204,50 @@ def guarded(monkeypatch: pytest.MonkeyPatch) -> dict[str, int]:
     monkeypatch.setattr(precompute, "confirm_spend", prompt)
     monkeypatch.setattr(precompute, "remaining_from_status", lambda *a, **k: None)
     monkeypatch.setattr(precompute, "load_env_file", lambda *a, **k: None)
+    monkeypatch.setattr(precompute, "revalidate_web", lambda slugs, **k: "web: skipped")
     monkeypatch.delenv("QLOO_JUDGING_RESERVE", raising=False)
     return calls
+
+
+def test_revalidate_web_posts_the_slugs_or_says_why_not(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("WEB_URL", raising=False)
+    monkeypatch.setenv("INTERNAL_API_KEY", "k")
+    assert "WEB_URL not set" in precompute.revalidate_web(["alpha"])
+
+    monkeypatch.setenv("WEB_URL", "https://outdraw.live/")
+    monkeypatch.delenv("INTERNAL_API_KEY", raising=False)
+    assert "INTERNAL_API_KEY not set" in precompute.revalidate_web(["alpha"])
+
+    monkeypatch.setenv("INTERNAL_API_KEY", "k")
+    seen: list[Any] = []
+
+    class Res:
+        status = 200
+
+        def __enter__(self) -> Res:
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            pass
+
+    def fake_urlopen(req: Any, timeout: float) -> Res:
+        seen.append(
+            (req.full_url, req.get_method(), req.get_header("X-draw-internal-key"), req.data)
+        )
+        return Res()
+
+    monkeypatch.setattr(precompute.urllib.request, "urlopen", fake_urlopen)
+    out = precompute.revalidate_web(["alpha", "beta"])
+    assert out.startswith("web cache revalidated for alpha, beta")
+    assert seen == [
+        ("https://outdraw.live/api/seeds/revalidate", "POST", "k", b'{"slugs": ["alpha", "beta"]}')
+    ]
+
+    def failing(req: Any, timeout: float) -> Res:
+        raise precompute.urllib.error.URLError("down")
+
+    monkeypatch.setattr(precompute.urllib.request, "urlopen", failing)
+    assert "not revalidated" in precompute.revalidate_web(["alpha"])
 
 
 def test_dry_run_prints_the_estimate_and_runs_nothing(
@@ -565,6 +607,28 @@ def test_seed_runs_are_marked_and_served_read_only_with_etag(
         assert alpha["compare_ready"] is True and len(alpha["brief_entity_ids"]) == BRIEFS
         assert alpha["brief_entity_ids"][0] == top and alpha["venue"]["capacity"] == 150
 
+        # The whole page in one read (T30): every section, ETag, nothing spent.
+        page = client.get("/seeds/alpha/page")
+        assert page.status_code == 200, page.text
+        assert "etag" in page.headers
+        assert (
+            client.get(
+                "/seeds/alpha/page", headers={"If-None-Match": page.headers["etag"]}
+            ).status_code
+            == 304
+        )
+        p = page.json()
+        assert p["seed"]["slug"] == "alpha" and p["run"]["run_id"] == run_id
+        assert p["venue"]["id"] == venue_id_for("alpha") and p["venue"]["profile"] is not None
+        shortlist = [e["entity_id"] for e in p["run"]["result"]["shortlist"]]
+        assert [c["entity_id"] for c in p["candidates"]][: len(shortlist)] == shortlist
+        assert all(c["pencilled"] is False for c in p["candidates"])
+        assert [b["entity_id"] for b in p["briefs"]] == alpha["brief_entity_ids"]
+        assert all(b["cached"] for b in p["briefs"])
+        assert p["compare"]["cached"] is True and p["calls"]
+        assert len(models.built) == built, "the page read spends nothing"
+        assert client.get("/seeds/nope/page").status_code == 404
+
         # A live run has no ETag and keeps its pencil.
         _sql(db_url, f"UPDATE runs SET is_seed = false, seed_slug = NULL WHERE id = '{run_id}'")
         live = client.get(f"/runs/{run_id}")
@@ -572,6 +636,9 @@ def test_seed_runs_are_marked_and_served_read_only_with_etag(
         hold = client.patch(f"/runs/{run_id}/candidates/{top}", json={"pencilled": True})
         assert hold.status_code == 200
         assert client.get("/seeds").json()["seeds"][0]["ready"] is False
+        not_ready = client.get("/seeds/alpha/page")
+        assert not_ready.status_code == 409
+        assert not_ready.json()["detail"]["reason"] == "seed_not_precomputed"
 
 
 def test_seeds_lists_unbuilt_seeds_as_not_ready(

@@ -217,6 +217,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/seeds/{slug}/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Seed Page
+         * @description The whole seed page in one read; 404 unknown slug, 409 not precomputed.
+         */
+        get: operations["seed_page_seeds__slug__page_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/venues": {
         parameters: {
             query?: never;
@@ -853,6 +873,22 @@ export interface components {
             /** Venue Stored */
             venue_stored: boolean;
         };
+        /**
+         * SeedPageOut
+         * @description One seed's page, as `GET /seeds/{slug}/page` serves it.
+         */
+        SeedPageOut: {
+            /** Briefs */
+            briefs: components["schemas"]["BriefOut"][];
+            /** Calls */
+            calls: components["schemas"]["QlooCall"][];
+            /** Candidates */
+            candidates: components["schemas"]["Evidence"][];
+            compare?: components["schemas"]["CompareOut"] | null;
+            run: components["schemas"]["RunOut"];
+            seed: components["schemas"]["SeedOut"];
+            venue: components["schemas"]["VenueOut"];
+        };
         /** SeedsOut */
         SeedsOut: {
             /** Seeds */
@@ -1337,6 +1373,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeedsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    seed_page_seeds__slug__page_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeedPageOut"];
                 };
             };
             /** @description Validation Error */

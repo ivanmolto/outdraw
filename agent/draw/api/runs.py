@@ -76,6 +76,7 @@ __all__ = [
     "compare_for",
     "execute_run",
     "router",
+    "run_out",
     "venue_for_run",
 ]
 
@@ -187,7 +188,8 @@ class QlooCall(BaseModel):
     created_at: datetime
 
 
-def _out(row: RunRow) -> RunOut:
+def run_out(row: RunRow) -> RunOut:
+    """A stored run as the API serves it; also used by the seed page (`draw.api.seeds`)."""
     return RunOut(
         run_id=row.id,
         venue_id=row.venue_id,
@@ -354,7 +356,7 @@ async def execute_run(
     async with deps.sessions() as session:
         row = await session.get(RunRow, run_id)
         assert row is not None
-        return _out(row)
+        return run_out(row)
 
 
 @router.post("")
@@ -429,7 +431,7 @@ async def get_run(run_id: str, request: Request, response: Response, deps: DepsD
         row = await session.get(RunRow, run_id)
     if row is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
-    out = _out(row)
+    out = run_out(row)
     conditional(request, response, out, seed=row.is_seed)
     return out
 

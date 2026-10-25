@@ -20,6 +20,11 @@ export type QlooCall = Schema<"QlooCall">;
 export type CompareOut = Schema<"CompareOut">;
 export type BriefOut = Schema<"BriefOut">;
 export type CandidateOut = Schema<"CandidateOut">;
+/** A demo venue (T29) and what was precomputed for it; `ready` means every read is free. */
+export type SeedOut = Schema<"SeedOut">;
+export type SeedsOut = Schema<"SeedsOut">;
+/** One seed's whole page in one read (`GET /seeds/{slug}/page`). */
+export type SeedPageOut = Schema<"SeedPageOut">;
 
 /** What the UI may branch on; never a backend message, URL or stack trace. */
 export type Reason =
