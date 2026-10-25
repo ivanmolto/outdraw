@@ -12,6 +12,7 @@ const KEY = process.env.INTERNAL_API_KEY ?? "e2e-internal-key";
 const fixture = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const venueFixture = fixture("../app/venue/[id]/fixtures/venue.json");
 const runFixture = fixture("../app/venue/[id]/shortlist/fixtures/run.json");
+const refinedFixture = fixture("../app/venue/[id]/shortlist/fixtures/refined-run.json");
 
 const VENUE_ID = venueFixture.id;
 /** How long a run "takes", so the skeleton is visible. */
@@ -22,8 +23,8 @@ const requests = [];
 /** @type {Record<string, unknown> | null} */
 let venue = null;
 let profiled = false;
-/** @type {Record<string, unknown> | null} */
-let lastRun = null;
+/** Stored runs by id, fresh and refined. @type {Map<string, any>} */
+const runs = new Map();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -59,6 +60,32 @@ function resolutions(input) {
   };
 }
 
+/** A refinement of `parent`: the first one is the refined fixture (an act enters, one
+ * leaves, two move); later ones rotate the parent's list by one place, so every step shows
+ * moves. Ids are numbered so a chain of any length stays distinct. */
+function refine(parent, message) {
+  const n = runs.size;
+  const base = parent.parent_run_id ? parent : refinedFixture;
+  const shortlist = parent.parent_run_id
+    ? [...parent.result.shortlist.slice(1), parent.result.shortlist[0]]
+    : refinedFixture.result.shortlist;
+  return {
+    ...base,
+    run_id: `run_refined_${n}`,
+    venue_id: parent.venue_id,
+    parent_run_id: parent.run_id,
+    result: {
+      ...base.result,
+      shortlist,
+      refinement: {
+        ...refinedFixture.result.refinement,
+        message,
+        explanation: `Applied "${message}" to the previous shortlist.`,
+      },
+    },
+  };
+}
+
 async function route(method, path, body) {
   if (method === "POST" && path === "/venues") {
     venue = { ...body };
@@ -79,10 +106,23 @@ async function route(method, path, body) {
   }
   if (method === "POST" && path === "/runs") {
     await sleep(RUN_DELAY_MS);
-    lastRun = { ...runFixture, venue_id: body.venue_id, constraints: body.constraints };
-    return [200, lastRun];
+    const run = { ...runFixture, venue_id: body.venue_id, constraints: body.constraints };
+    runs.set(run.run_id, run);
+    return [200, run];
   }
-  if (method === "GET" && lastRun && path === `/runs/${lastRun.run_id}`) return [200, lastRun];
+  const refining = method === "POST" && /^\/runs\/([^/]+)\/refine$/.exec(path);
+  if (refining) {
+    const parent = runs.get(decodeURIComponent(refining[1]));
+    if (!parent) return [404, { detail: "Unknown run." }];
+    await sleep(RUN_DELAY_MS);
+    const run = refine(parent, body.message);
+    runs.set(run.run_id, run);
+    return [200, run];
+  }
+  const reading = method === "GET" && /^\/runs\/([^/]+)$/.exec(path);
+  if (reading && runs.has(decodeURIComponent(reading[1]))) {
+    return [200, runs.get(decodeURIComponent(reading[1]))];
+  }
   return [404, { detail: "Not found." }];
 }
 
