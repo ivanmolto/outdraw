@@ -104,8 +104,7 @@ def source_labels(neutral: Iterable[str]) -> dict[SubScore, SourceLabel]:
     (a neutral fallback counts as Outdraw's, however Qloo-backed the sub-score is)."""
     fell_back = set(neutral)
     return {
-        name: "qloo" if WORKFLOW_OF[name] and name not in fell_back else "draw"
-        for name in WEIGHTS
+        name: "qloo" if WORKFLOW_OF[name] and name not in fell_back else "draw" for name in WEIGHTS
     }
 
 
