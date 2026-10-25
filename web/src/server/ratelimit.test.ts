@@ -1,10 +1,12 @@
+import { createHash } from "node:crypto";
+
 import type { Redis } from "@upstash/redis";
 import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createFakeRedis } from "@/e2e/fake-redis.mjs";
 import nextConfig from "@/next.config";
 import { config } from "@/proxy";
+import { createFakeRedis } from "./fake-redis.mjs";
 import {
   checkRateLimit,
   clientIp,
@@ -97,6 +99,38 @@ describe("checkRateLimit", () => {
 
     expect(await checkRateLimit(req("/api/runs"), [broken])).toBeNull();
     expect(await checkRateLimit(req("/api/runs"), null)).toBeNull();
+  });
+});
+
+describe("fake-redis.mjs", () => {
+  /** SHA-1 of the sliding-window Lua script @upstash/ratelimit 2.2.0 sends to Redis. */
+  const SCRIPT_SHA1 = "74740bb3d7792848093cdef586b6b6037c455fd6";
+
+  it("mirrors the Lua script the pinned library sends", async () => {
+    // fake-redis.mjs re-implements that script in JS. A library bump that changes the
+    // script (its keys, args or reply) would leave the fake answering a different question,
+    // so pin the script here: when this fails, re-read the script and update the fake.
+    let script = "";
+    let keys: string[] = [];
+    let args: (string | number)[] = [];
+    const redis = {
+      evalsha: async () => {
+        throw new Error("NOSCRIPT No matching script");
+      },
+      eval: async (s: string, k: string[], a: (string | number)[]) => {
+        [script, keys, args] = [s, k, a];
+        return [2, 3];
+      },
+    };
+    const [burst] = createLimiters(redis as unknown as Redis);
+    await burst.limit("203.0.113.7");
+
+    expect(createHash("sha1").update(script).digest("hex")).toBe(SCRIPT_SHA1);
+    expect(keys).toEqual([
+      `outdraw:rl:burst:203.0.113.7:${Math.floor(HOUR / MINUTE)}`,
+      `outdraw:rl:burst:203.0.113.7:${Math.floor(HOUR / MINUTE) - 1}`,
+    ]);
+    expect(args).toEqual([3, HOUR, MINUTE, 1]);
   });
 });
 

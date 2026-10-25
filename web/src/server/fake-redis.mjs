@@ -1,6 +1,6 @@
 // An in-memory stand-in for the one Redis command @upstash/ratelimit's sliding window sends:
 // EVALSHA of its single-region limit script. `limit` is that Lua script in JS (same keys,
-// args and `[remaining, limit]` reply), so ratelimit.test.ts and the Playwright suite run
+// args and `[remaining, limit]` reply), so ratelimit.test.ts and e2e/mock-redis.mjs run
 // the real library against it with no Upstash database.
 
 /** @typedef {{ value: number, expiresAt: number }} Entry */

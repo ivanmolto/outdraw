@@ -3,7 +3,7 @@
 // window's EVALSHA (single commands and auto-pipelined batches) from fake-redis.mjs.
 import { createServer } from "node:http";
 
-import { createFakeRedis } from "./fake-redis.mjs";
+import { createFakeRedis } from "../src/server/fake-redis.mjs";
 
 const PORT = Number(process.env.MOCK_REDIS_PORT ?? 8788);
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN ?? "e2e-redis-token";
