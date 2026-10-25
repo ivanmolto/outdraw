@@ -38,10 +38,13 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import os
 import re
 import subprocess
 import sys
+import urllib.error
+import urllib.request
 from collections.abc import Awaitable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -533,6 +536,34 @@ async def precompute(deps: Deps, seeds: Sequence[Seed]) -> list[SeedReport]:
     return reports
 
 
+# --- the web's cache ---------------------------------------------------------------------------
+
+WEB_URL_ENV: Final = "WEB_URL"
+
+
+def revalidate_web(slugs: Sequence[str], *, timeout: float = 10.0) -> str:
+    """Drop the web's cached seed pages (T30) for `slugs` after a rebuild, through
+    `POST {WEB_URL}/api/seeds/revalidate` with the shared internal key. Best effort: the
+    cache also expires on its own, so a failure is a note, never an error."""
+    web_url = os.environ.get(WEB_URL_ENV, "").rstrip("/")
+    key = os.environ.get("INTERNAL_API_KEY")
+    if not web_url:
+        return f"{WEB_URL_ENV} not set: the web's cached seed pages expire on their own"
+    if not key:
+        return "INTERNAL_API_KEY not set: cannot revalidate the web's cached seed pages"
+    req = urllib.request.Request(
+        f"{web_url}/api/seeds/revalidate",
+        data=json.dumps({"slugs": list(slugs)}).encode(),
+        headers={"content-type": "application/json", "X-Draw-Internal-Key": key},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as res:  # noqa: S310 (our own URL)
+            return f"web cache revalidated for {', '.join(slugs)} (HTTP {res.status})"
+    except (urllib.error.URLError, TimeoutError, OSError) as exc:
+        return f"web cache not revalidated ({exc}); it expires on its own"
+
+
 # --- CLI -------------------------------------------------------------------------------------
 
 
@@ -595,6 +626,7 @@ async def run(args: argparse.Namespace, seeds: Sequence[Seed]) -> int:
             return EXIT_ABORTED
         reports = await precompute(deps, seeds)
         print(f"\n{len(reports)} seed{'s' if len(reports) != 1 else ''} ready.")
+        print(revalidate_web([s.slug for s in seeds]))
         return 0
     finally:
         await deps.aclose()
