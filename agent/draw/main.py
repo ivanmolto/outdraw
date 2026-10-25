@@ -3,7 +3,8 @@
 `create_app(deps_factory)` builds the service; tests pass a factory over their own database
 and fakes. Every route except /health needs `X-Draw-Internal-Key` (see `draw.api.auth`).
 Gateway exceptions map to HTTP: `BudgetExceeded` → 429, `QlooError` → 502 with its
-`code`, `retryable` and `recovery`, any other gateway error → 502.
+`code`, `retryable` and `recovery`, any other gateway error → 502; `NotModified` (a seed
+read whose `If-None-Match` matched) → 304 with the `ETag`.
 """
 
 from __future__ import annotations
@@ -16,8 +17,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from draw import __version__
-from draw.api import limits, runs, venues
+from draw.api import limits, runs, seeds, venues
 from draw.api.deps import Deps
+from draw.api.etag import CACHE_CONTROL, NotModified
 from draw.qloo.envelope import BudgetExceeded, QlooError, QlooGatewayError
 from draw.qloo.harness import RuntimeVersions, probe_versions
 
@@ -54,6 +56,14 @@ async def _gateway_error(request: Request, exc: Exception) -> Response:
     return JSONResponse({"detail": str(exc)}, status_code=status.HTTP_502_BAD_GATEWAY)
 
 
+async def _not_modified(request: Request, exc: Exception) -> Response:
+    assert isinstance(exc, NotModified)
+    return Response(
+        status_code=status.HTTP_304_NOT_MODIFIED,
+        headers={"ETag": exc.etag, "Cache-Control": CACHE_CONTROL},
+    )
+
+
 def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -71,9 +81,11 @@ def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
     app.include_router(venues.router)
     app.include_router(runs.router)
     app.include_router(limits.router)
+    app.include_router(seeds.router)
     app.add_exception_handler(BudgetExceeded, _budget_exceeded)
     app.add_exception_handler(QlooError, _qloo_error)
     app.add_exception_handler(QlooGatewayError, _gateway_error)
+    app.add_exception_handler(NotModified, _not_modified)
 
     @app.get("/health")
     def health(request: Request, response: Response) -> Health:

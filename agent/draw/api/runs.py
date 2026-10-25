@@ -23,6 +23,12 @@ cached on the candidate row and served from there with `cached: true`.
 
 `PATCH /runs/{id}/candidates/{entity_id} {pencilled}` (T28) sets the candidate's pencil
 hold; the evidence route reads it back, so the Soundcheck panel opens with it.
+
+Seed runs (T29, `is_seed` with a `seed_slug`, written by `scripts/precompute.py`) are
+read-only: their GETs carry an `ETag` and answer `304` to a matching `If-None-Match`
+(`draw.api.etag`), the pencil PATCH is refused with 403, and a compare or brief that was
+not precomputed is refused with 409 rather than spending a call. A refine of a seed run is
+allowed: it is a new live run chained to the seed by `parent_run_id`.
 """
 
 from __future__ import annotations
@@ -33,7 +39,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,6 +52,7 @@ from draw.agent.store import new_id
 from draw.agent.tools import DrawTools
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
+from draw.api.etag import conditional
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
 from draw.qloo.exec_client import QlooExec
@@ -61,9 +68,20 @@ from draw.schemas import (
     VenueInput,
 )
 
-__all__ = ["router"]
+__all__ = [
+    "RunOut",
+    "RunResult",
+    "ShortlistEntry",
+    "brief_for",
+    "compare_for",
+    "execute_run",
+    "router",
+    "venue_for_run",
+]
 
 MAX_MESSAGE = 2000
+SEED_READ_ONLY = "seed_read_only"
+SEED_NOT_PRECOMPUTED = "seed_not_precomputed"
 
 router = APIRouter(prefix="/runs", dependencies=[Depends(require_internal_key)])
 DepsDep = Annotated[Deps, Depends(get_deps)]
@@ -136,6 +154,9 @@ class RunOut(BaseModel):
     created_at: datetime | None = None
     parent_run_id: str | None = None
     """The run this one refined (`POST /runs/{id}/refine`); None for a first run."""
+    is_seed: bool = False
+    """A precomputed demo run (T29): read-only, served with an ETag."""
+    seed_slug: str | None = None
 
 
 class Evidence(BaseModel):
@@ -176,7 +197,19 @@ def _out(row: RunRow) -> RunOut:
         token_usage=row.token_usage,
         created_at=row.created_at,
         parent_run_id=row.parent_run_id,
+        is_seed=row.is_seed,
+        seed_slug=row.seed_slug,
     )
+
+
+async def _is_seed(deps: Deps, run_id: str) -> bool:
+    async with deps.sessions() as session:
+        row = await session.get(RunRow, run_id)
+    return bool(row is not None and row.is_seed)
+
+
+def _seed_refusal(code: int, reason: str, message: str, slug: str | None) -> HTTPException:
+    return HTTPException(code, {"reason": reason, "message": message, "seed_slug": slug})
 
 
 async def _candidates(result: AgentResult, qloo: QlooExec, run_id: str) -> list[CandidateRow]:
@@ -236,7 +269,7 @@ class _Venue:
     profile: CrowdProfile
 
 
-async def _venue_for_run(session: AsyncSession, venue_id: str) -> _Venue:
+async def venue_for_run(session: AsyncSession, venue_id: str) -> _Venue:
     """404 for an unknown venue, 409 before its crowd profile exists (the confirm gate)."""
     _, venue = await load_venue(session, venue_id)
     venue_entity, acts, _ = await load_resolutions(session, venue_id, venue)
@@ -255,7 +288,7 @@ async def _venue_for_run(session: AsyncSession, venue_id: str) -> _Venue:
     )
 
 
-async def _execute_run(
+async def execute_run(
     deps: Deps,
     run_id: str,
     target: _Venue,
@@ -266,7 +299,8 @@ async def _execute_run(
     finish: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
 ) -> RunOut:
     """Store the run as running, run the agent, store the result (or the error) and read it
-    back. `finish` sees the stored result before it is written (the refinement adds to it)."""
+    back. `finish` sees the stored result before it is written (the refinement adds to it).
+    The precompute script calls this directly with its deterministic seed run ids."""
     async with deps.sessions.begin() as session:
         session.add(
             RunRow(
@@ -326,8 +360,8 @@ async def _execute_run(
 @router.post("")
 async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
     async with deps.sessions() as session:
-        target = await _venue_for_run(session, body.venue_id)
-    return await _execute_run(deps, new_id("run"), target, body.constraints, body.message)
+        target = await venue_for_run(session, body.venue_id)
+    return await execute_run(deps, new_id("run"), target, body.constraints, body.message)
 
 
 def _shortlist_names(result: dict[str, Any] | None) -> list[str]:
@@ -346,7 +380,7 @@ async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
         parent = await session.get(RunRow, run_id)
         if parent is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
-        target = await _venue_for_run(session, parent.venue_id)
+        target = await venue_for_run(session, parent.venue_id)
     previous = Constraints.model_validate(parent.constraints)
     before = _shortlist_names(parent.result)
 
@@ -378,7 +412,7 @@ async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
         )
         return {**stored, "refinement": refinement.model_dump(mode="json")}
 
-    return await _execute_run(
+    return await execute_run(
         deps,
         new_id("run"),
         target,
@@ -390,41 +424,57 @@ async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
 
 
 @router.get("/{run_id}")
-async def get_run(run_id: str, deps: DepsDep) -> RunOut:
+async def get_run(run_id: str, request: Request, response: Response, deps: DepsDep) -> RunOut:
     async with deps.sessions() as session:
         row = await session.get(RunRow, run_id)
     if row is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
-    return _out(row)
+    out = _out(row)
+    conditional(request, response, out, seed=row.is_seed)
+    return out
 
 
 @router.get("/{run_id}/candidates/{entity_id}/evidence")
-async def get_evidence(run_id: str, entity_id: str, deps: DepsDep) -> Evidence:
+async def get_evidence(
+    run_id: str, entity_id: str, request: Request, response: Response, deps: DepsDep
+) -> Evidence:
     async with deps.sessions() as session:
         row = await session.get(CandidateRow, (run_id, entity_id))
-    if row is None:
+        run = await session.get(RunRow, run_id)
+    if row is None or run is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, f"No candidate {entity_id!r} in run {run_id!r}."
         )
-    return Evidence(
+    out = Evidence(
         run_id=run_id,
         entity_id=entity_id,
         score=row.score,
         evidence=row.evidence,
         pencilled=row.pencilled,
     )
+    conditional(request, response, out, seed=run.is_seed)
+    return out
 
 
 @router.patch("/{run_id}/candidates/{entity_id}")
 async def patch_candidate(
     run_id: str, entity_id: str, body: CandidatePatch, deps: DepsDep
 ) -> CandidateOut:
-    """Pencil (or release) a hold on the candidate; idempotent. 404 when unknown."""
+    """Pencil (or release) a hold on the candidate; idempotent. 404 when unknown, 403 on a
+    seed run (read-only)."""
     async with deps.sessions.begin() as session:
         row = await session.get(CandidateRow, (run_id, entity_id))
         if row is None:
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND, f"No candidate {entity_id!r} in run {run_id!r}."
+            )
+        run = await session.get(RunRow, run_id)
+        if run is not None and run.is_seed:
+            raise _seed_refusal(
+                status.HTTP_403_FORBIDDEN,
+                SEED_READ_ONLY,
+                "Seed runs are read-only; refine the run to pencil acts on a live copy.",
+                run.seed_slug,
             )
         row.pencilled = body.pencilled
     return CandidateOut(run_id=run_id, entity_id=entity_id, pencilled=body.pencilled)
@@ -436,21 +486,27 @@ _compare_locks: dict[str, asyncio.Lock] = {}
 
 
 async def _cached_compare(deps: Deps, run_id: str) -> CompareOut | tuple[VenueInput, Constraints]:
-    """The run's cached compare, or what the first call needs; 404 for an unknown run."""
+    """The run's cached compare, or what the first call needs; 404 for an unknown run, 409
+    for a seed run whose compare was not precomputed (nothing is spent on a seed)."""
     async with deps.sessions() as session:
         row = await session.get(RunRow, run_id)
         if row is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
         if row.compare is not None:
             return CompareOut.model_validate({**row.compare, "cached": True})
+        if row.is_seed:
+            raise _seed_refusal(
+                status.HTTP_409_CONFLICT,
+                SEED_NOT_PRECOMPUTED,
+                "This seed run has no precomputed comparison; start a live run for one.",
+                row.seed_slug,
+            )
         _, venue = await load_venue(session, row.venue_id)
         return venue, Constraints.model_validate(row.constraints)
 
 
-@router.get("/{run_id}/compare")
-async def get_compare(run_id: str, deps: DepsDep) -> CompareOut:
-    """The LLM-only shortlist for the run's venue and constraints: one tool-less Haiku 5.5
-    call the first time, then the copy cached on the run (no tokens spent)."""
+async def compare_for(deps: Deps, run_id: str) -> CompareOut:
+    """The run's LLM-only shortlist, computed once and cached on the run."""
     found = await _cached_compare(deps, run_id)
     if isinstance(found, CompareOut):
         return found
@@ -476,6 +532,17 @@ async def get_compare(run_id: str, deps: DepsDep) -> CompareOut:
                 row.compare = out.model_dump(mode="json", exclude={"cached"})
     if not lock.locked():
         _compare_locks.pop(run_id, None)
+    return out
+
+
+@router.get("/{run_id}/compare")
+async def get_compare(
+    run_id: str, request: Request, response: Response, deps: DepsDep
+) -> CompareOut:
+    """The LLM-only shortlist for the run's venue and constraints: one tool-less Haiku 5.5
+    call the first time, then the copy cached on the run (no tokens spent)."""
+    out = await compare_for(deps, run_id)
+    conditional(request, response, out, seed=await _is_seed(deps, run_id))
     return out
 
 
@@ -510,6 +577,13 @@ async def _cached_brief(
             )
         if row.brief is not None:
             return BriefOut.model_validate({**row.brief, "cached": True})
+        if run.is_seed:
+            raise _seed_refusal(
+                status.HTTP_409_CONFLICT,
+                SEED_NOT_PRECOMPUTED,
+                "This brief was not precomputed for the seed run; refine it for a live copy.",
+                run.seed_slug,
+            )
         _, venue = await load_venue(session, run.venue_id)
         profile_row = await session.get(CrowdProfileRow, run.venue_id)
         if profile_row is None:
@@ -535,11 +609,8 @@ async def _cached_brief(
     return row, ctx
 
 
-@router.get("/{run_id}/candidates/{entity_id}/brief")
-async def get_brief(run_id: str, entity_id: str, deps: DepsDep) -> BriefOut:
-    """The candidate's booking brief: one Qloo call and one model call (one retry) the first
-    time, then the copy cached on the candidate. Every `why_it_fits` ref exists in `evidence`;
-    a brief with `error` set is Outdraw's template and is not cached. 429 at the token cap."""
+async def brief_for(deps: Deps, run_id: str, entity_id: str) -> BriefOut:
+    """The candidate's brief, written once and cached on the candidate row."""
     found = await _cached_brief(deps, run_id, entity_id)
     if isinstance(found, BriefOut):
         return found
@@ -566,18 +637,39 @@ async def get_brief(run_id: str, entity_id: str, deps: DepsDep) -> BriefOut:
     return out
 
 
+@router.get("/{run_id}/candidates/{entity_id}/brief")
+async def get_brief(
+    run_id: str, entity_id: str, request: Request, response: Response, deps: DepsDep
+) -> BriefOut:
+    """The candidate's booking brief: one Qloo call and one model call (one retry) the first
+    time, then the copy cached on the candidate. Every `why_it_fits` ref exists in `evidence`;
+    a brief with `error` set is Outdraw's template and is not cached. 429 at the token cap."""
+    out = await brief_for(deps, run_id, entity_id)
+    conditional(request, response, out, seed=await _is_seed(deps, run_id))
+    return out
+
+
+class QlooCalls(BaseModel):
+    """The list body, so a seed run's calls can carry an ETag like its other reads."""
+
+    calls: list[QlooCall]
+
+
 @router.get("/{run_id}/calls")
-async def get_calls(run_id: str, deps: DepsDep) -> list[QlooCall]:
+async def get_calls(
+    run_id: str, request: Request, response: Response, deps: DepsDep
+) -> list[QlooCall]:
     """The run's Qloo calls in order, as recorded (the API key already redacted)."""
     async with deps.sessions() as session:
-        if await session.get(RunRow, run_id) is None:
+        run = await session.get(RunRow, run_id)
+        if run is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
         rows = await session.scalars(
             select(QlooCallRow)
             .where(QlooCallRow.run_id == run_id)
             .order_by(QlooCallRow.created_at, QlooCallRow.call_id)
         )
-        return [
+        calls = [
             QlooCall(
                 call_id=r.call_id,
                 workflow=r.workflow,
@@ -589,3 +681,5 @@ async def get_calls(run_id: str, deps: DepsDep) -> list[QlooCall]:
             )
             for r in rows
         ]
+    conditional(request, response, QlooCalls(calls=calls), seed=run.is_seed)
+    return calls

@@ -127,5 +127,7 @@
     "model_calls": 3
   },
   "created_at": "2026-10-25T12:00:00Z",
-  "parent_run_id": "run_fixture"
+  "parent_run_id": "run_fixture",
+  "is_seed": false,
+  "seed_slug": null
 }

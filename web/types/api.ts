@@ -107,7 +107,8 @@ export interface paths {
         head?: never;
         /**
          * Patch Candidate
-         * @description Pencil (or release) a hold on the candidate; idempotent. 404 when unknown.
+         * @description Pencil (or release) a hold on the candidate; idempotent. 404 when unknown, 403 on a
+         *     seed run (read-only).
          */
         patch: operations["patch_candidate_runs__run_id__candidates__entity_id__patch"];
         trace?: never;
@@ -190,6 +191,26 @@ export interface paths {
          *     normal agent run with every cap of `POST /runs`.
          */
         post: operations["refine_run_runs__run_id__refine_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/seeds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Seeds
+         * @description Every seed in file order with its precompute state; ETag over the whole list.
+         */
+        get: operations["list_seeds_seeds_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -723,11 +744,18 @@ export interface components {
             constraints: components["schemas"]["Constraints"];
             /** Created At */
             created_at?: string | null;
+            /**
+             * Is Seed
+             * @default false
+             */
+            is_seed: boolean;
             /** Parent Run Id */
             parent_run_id?: string | null;
             result: components["schemas"]["RunResult"] | null;
             /** Run Id */
             run_id: string;
+            /** Seed Slug */
+            seed_slug?: string | null;
             /** Status */
             status: string;
             /** Token Usage */
@@ -790,6 +818,45 @@ export interface components {
             past_fit: number;
             /** Size Fit */
             size_fit: number;
+        };
+        /** SeedOut */
+        SeedOut: {
+            /** Brief Entity Ids */
+            brief_entity_ids?: string[];
+            /**
+             * Compare Ready
+             * @default false
+             */
+            compare_ready: boolean;
+            constraints: components["schemas"]["Constraints"];
+            /** Created At */
+            created_at?: string | null;
+            /** Description */
+            description: string;
+            /** Message */
+            message: string;
+            /** Profile Stored */
+            profile_stored: boolean;
+            /** Ready */
+            ready: boolean;
+            /** Run Id */
+            run_id: string;
+            /** Run Status */
+            run_status?: string | null;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            venue: components["schemas"]["VenueInput"];
+            /** Venue Id */
+            venue_id: string;
+            /** Venue Stored */
+            venue_stored: boolean;
+        };
+        /** SeedsOut */
+        SeedsOut: {
+            /** Seeds */
+            seeds: components["schemas"]["SeedOut"][];
         };
         /**
          * ShortlistEntry
@@ -1239,6 +1306,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_seeds_seeds_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeedsOut"];
                 };
             };
             /** @description Validation Error */

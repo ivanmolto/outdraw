@@ -1153,6 +1153,11 @@
             ],
             "title": "Created At"
           },
+          "is_seed": {
+            "default": false,
+            "title": "Is Seed",
+            "type": "boolean"
+          },
           "parent_run_id": {
             "anyOf": [
               {
@@ -1177,6 +1182,17 @@
           "run_id": {
             "title": "Run Id",
             "type": "string"
+          },
+          "seed_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed Slug"
           },
           "status": {
             "title": "Status",
@@ -1415,6 +1431,118 @@
           "size_fit"
         ],
         "title": "ScoreWeights",
+        "type": "object"
+      },
+      "SeedOut": {
+        "properties": {
+          "brief_entity_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Brief Entity Ids",
+            "type": "array"
+          },
+          "compare_ready": {
+            "default": false,
+            "title": "Compare Ready",
+            "type": "boolean"
+          },
+          "constraints": {
+            "$ref": "#/components/schemas/Constraints"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "profile_stored": {
+            "title": "Profile Stored",
+            "type": "boolean"
+          },
+          "ready": {
+            "title": "Ready",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Status"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "venue": {
+            "$ref": "#/components/schemas/VenueInput"
+          },
+          "venue_id": {
+            "title": "Venue Id",
+            "type": "string"
+          },
+          "venue_stored": {
+            "title": "Venue Stored",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "slug",
+          "title",
+          "description",
+          "venue_id",
+          "run_id",
+          "venue",
+          "constraints",
+          "message",
+          "ready",
+          "venue_stored",
+          "profile_stored"
+        ],
+        "title": "SeedOut",
+        "type": "object"
+      },
+      "SeedsOut": {
+        "properties": {
+          "seeds": {
+            "items": {
+              "$ref": "#/components/schemas/SeedOut"
+            },
+            "title": "Seeds",
+            "type": "array"
+          }
+        },
+        "required": [
+          "seeds"
+        ],
+        "title": "SeedsOut",
         "type": "object"
       },
       "ShortlistEntry": {
@@ -2108,7 +2236,7 @@
     },
     "/runs/{run_id}/candidates/{entity_id}": {
       "patch": {
-        "description": "Pencil (or release) a hold on the candidate; idempotent. 404 when unknown.",
+        "description": "Pencil (or release) a hold on the candidate; idempotent. 404 when unknown, 403 on a\nseed run (read-only).",
         "operationId": "patch_candidate_runs__run_id__candidates__entity_id__patch",
         "parameters": [
           {
@@ -2430,6 +2558,53 @@
           }
         },
         "summary": "Refine Run"
+      }
+    },
+    "/seeds": {
+      "get": {
+        "description": "Every seed in file order with its precompute state; ETag over the whole list.",
+        "operationId": "list_seeds_seeds_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeedsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Seeds"
       }
     },
     "/venues": {

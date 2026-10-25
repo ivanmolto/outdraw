@@ -84,5 +84,7 @@
     "profile_id": "prof_fixture"
   },
   "token_usage": { "model_calls": 3 },
-  "created_at": "2026-10-21T12:00:00Z"
+  "created_at": "2026-10-21T12:00:00Z",
+  "is_seed": false,
+  "seed_slug": null
 }
