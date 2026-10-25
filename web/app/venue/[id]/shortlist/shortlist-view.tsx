@@ -4,8 +4,10 @@
 // own data, or the run's median of the measured acts where Qloo gave no signal. No hooks: rendered by the server page
 // for a stored run and by the client run component for a fresh one. Each scored act opens
 // its Soundcheck panel, and the list sits inside the With Qloo / LLM only toggle (both
-// client components).
+// client components). After a refinement each act carries a badge for how it changed
+// against the parent run, and the acts that left are listed under it.
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import {
   SUB_SCORES,
@@ -14,9 +16,11 @@ import {
   type ShortlistResult,
   type SubScore,
 } from "@/src/lib/run-result";
+import type { ActChange, ShortlistDiff } from "@/src/lib/shortlist-diff";
 import type { CrossDomain } from "@/src/lib/soundcheck";
 import { SourceBadge } from "../profile-view";
 import { CompareToggle } from "./compare-toggle";
+import { ChangeBadge, LeftList } from "./shortlist-diff";
 import { SoundcheckButton } from "./soundcheck";
 
 const pct = (value: number) => `${Math.round(Math.min(Math.max(value, 0), 1) * 100)}%`;
@@ -70,22 +74,30 @@ function Act({
   rank,
   runId,
   crossDomain,
+  change,
 }: {
   entry: ShortlistEntry;
   rank: number;
   runId: string;
   crossDomain?: CrossDomain;
+  change?: ActChange;
 }) {
   const reason = entry.top_reason ?? entry.reason;
   const neutral = new Set(entry.neutral ?? []);
   const labels = entry.source_labels ?? {};
   return (
-    <li className="rounded-lg border border-ink/15 bg-white/60 p-4">
+    <li
+      data-change={change?.kind}
+      className={`rounded-lg border bg-white/60 p-4 ${
+        change?.kind === "entered" ? "border-emerald-700 border-l-4" : "border-ink/15"
+      }`}
+    >
       <div className="flex items-baseline gap-3">
         <span className="shrink-0 font-mono text-sm text-ink/50" aria-hidden="true">
           {rank}
         </span>
         <h2 className="min-w-0 flex-1 font-semibold break-words text-ink">{entry.name}</h2>
+        <ChangeBadge change={change} />
         <span className="shrink-0 font-mono text-sm text-ink" data-testid="total">
           <span className="sr-only">Score </span>
           {entry.total.toFixed(2)}
@@ -176,6 +188,8 @@ export function ShortlistView({
   runId,
   result,
   crossDomain,
+  diff,
+  children,
 }: {
   venueId: string;
   venueName: string;
@@ -183,6 +197,10 @@ export function ShortlistView({
   result: ShortlistResult;
   /** The crowd profile's places, films and brands, for Soundcheck's cross-domain strip. */
   crossDomain?: CrossDomain;
+  /** Changes against the parent run, for a refined run. */
+  diff?: ShortlistDiff;
+  /** Shown under the list: the refinement box. */
+  children?: ReactNode;
 }) {
   return (
     <>
@@ -225,12 +243,15 @@ export function ShortlistView({
                   rank={i + 1}
                   runId={runId}
                   crossDomain={crossDomain}
+                  change={diff?.changes.get(entry.entity_id)}
                 />
               ))}
             </ol>
           </CompareToggle>
         </>
       )}
+      <LeftList diff={diff} />
+      {children}
       <Link
         href={`/venue/${encodeURIComponent(venueId)}`}
         className="mt-8 inline-block text-sm font-medium underline"

@@ -9,7 +9,7 @@ import type { Constraints } from "@/types/schemas";
 export type ShortlistEntry = components["schemas"]["ShortlistEntry"];
 export type ShortlistResult = Omit<
   components["schemas"]["RunResult"],
-  "shortlist" | "notes" | "ask" | "error"
+  "shortlist" | "notes" | "ask" | "error" | "refinement"
 > & { shortlist: ShortlistEntry[]; notes: string[] };
 
 /** Capacity bounds for the size tiers: < 300 emerging, < 1,500 mid, else established. */
@@ -52,25 +52,42 @@ export const SUB_SCORE_LABELS: Record<SubScore, string> = {
   momentum: "Momentum",
 };
 
-export type ParsedRun =
-  | ({ kind: "shortlist"; runId: string } & ShortlistResult)
-  | { kind: "ask"; runId: string; question: string; options: string[] }
-  | { kind: "error"; runId: string };
+/** How a refined run came from its parent: the booker's message and the agent's
+ * one-sentence explanation of what changed. */
+export interface RunLineage {
+  parentRunId: string | null;
+  refinement: { message: string; explanation: string } | null;
+}
+
+export type ParsedRun = RunLineage &
+  (
+    | ({ kind: "shortlist"; runId: string } & ShortlistResult)
+    | { kind: "ask"; runId: string; question: string; options: string[] }
+    | { kind: "error"; runId: string }
+  );
 
 export function parseRun(run: RunOut): ParsedRun {
   const runId = run.run_id;
   const result = run.result;
-  if (!result || result.error) return { kind: "error", runId };
+  const refinement = result?.refinement;
+  const lineage: RunLineage = {
+    parentRunId: run.parent_run_id ?? null,
+    refinement: refinement
+      ? { message: refinement.message, explanation: refinement.explanation }
+      : null,
+  };
+  if (!result || result.error) return { kind: "error", runId, ...lineage };
   if (run.status === "ask" && result.ask) {
     const options = result.ask.candidates.flatMap((c) =>
       typeof c.name === "string" ? [c.name] : [],
     );
-    return { kind: "ask", runId, question: result.ask.question, options };
+    return { kind: "ask", runId, question: result.ask.question, options, ...lineage };
   }
   if (run.status === "ok" && result.shortlist) {
     return {
       kind: "shortlist",
       runId,
+      ...lineage,
       shortlist: result.shortlist,
       notes: result.notes ?? [],
       data_quality: result.data_quality,
@@ -80,5 +97,5 @@ export function parseRun(run: RunOut): ParsedRun {
       profile_id: result.profile_id,
     };
   }
-  return { kind: "error", runId };
+  return { kind: "error", runId, ...lineage };
 }

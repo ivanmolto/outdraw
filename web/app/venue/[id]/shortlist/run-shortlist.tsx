@@ -13,7 +13,7 @@ import { parseRun, type ParsedRun } from "@/src/lib/run-result";
 import type { CrossDomain } from "@/src/lib/soundcheck";
 import type { Constraints } from "@/types/schemas";
 import { ShortlistSkeleton } from "./shortlist-view";
-import { RunOutcome } from "./run-outcome";
+import { RefinableRun } from "./refinable-run";
 
 type State =
   | { name: "running" }
@@ -110,10 +110,10 @@ export function RunShortlist({ venueId, venueName, constraints, crossDomain }: P
   }
 
   return (
-    <RunOutcome
+    <RefinableRun
       venueId={venueId}
       venueName={venueName}
-      run={state.run}
+      chain={[state.run]}
       crossDomain={crossDomain}
     />
   );

@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { reasonText } from "@/src/lib/api-client";
-import { defaultConstraints, parseRun } from "@/src/lib/run-result";
+import { defaultConstraints, parseRun, type ParsedRun } from "@/src/lib/run-result";
 import { idSchema } from "@/src/lib/schemas";
 import { crossDomain } from "@/src/lib/soundcheck";
 import { AgentError, agent, type RunOut, type VenueOut } from "@/src/server/agent";
 import { Message, Shell } from "../shell";
-import { RunOutcome } from "./run-outcome";
+import { RefinableRun } from "./refinable-run";
 import { RunShortlist } from "./run-shortlist";
 
 export const metadata: Metadata = {
@@ -27,6 +27,23 @@ async function storedRun(venueId: string, runId: unknown): Promise<RunOut | null
   }
 }
 
+/** Runs of the history sidebar beyond this many parents back are left out. */
+const MAX_CHAIN = 12;
+
+/** `run` and its parents, oldest first: plain reads, no Qloo calls. A parent that is gone
+ * or belongs to another venue ends the chain there. */
+async function runChain(run: RunOut): Promise<ParsedRun[]> {
+  const chain = [parseRun(run)];
+  let parentId = run.parent_run_id;
+  while (parentId && chain.length < MAX_CHAIN) {
+    const parent = await storedRun(run.venue_id, parentId);
+    if (!parent) break;
+    chain.unshift(parseRun(parent));
+    parentId = parent.parent_run_id;
+  }
+  return chain;
+}
+
 /** /venue/[id]/shortlist: the stored run from `?run=`, or a fresh run with the defaults. */
 export default async function ShortlistPage({
   params,
@@ -36,10 +53,11 @@ export default async function ShortlistPage({
   if (!idSchema.safeParse(id).success) notFound();
 
   let venue: VenueOut;
-  let run: RunOut | null;
+  let chain: ParsedRun[] | null;
   try {
     venue = await agent.getVenue(id);
-    run = await storedRun(id, (await searchParams).run);
+    const run = await storedRun(id, (await searchParams).run);
+    chain = run && (await runChain(run));
   } catch (err) {
     if (err instanceof AgentError && err.reason === "not_found") notFound();
     const reason = err instanceof AgentError ? err.reason : "unknown";
@@ -64,11 +82,11 @@ export default async function ShortlistPage({
   const strip = crossDomain(venue.profile);
   return (
     <Shell wide>
-      {run ? (
-        <RunOutcome
+      {chain ? (
+        <RefinableRun
           venueId={venue.id}
           venueName={venue.venue.name}
-          run={parseRun(run)}
+          chain={chain}
           crossDomain={strip}
         />
       ) : (
