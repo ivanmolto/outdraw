@@ -350,7 +350,7 @@ describe("GET /api/runs/[id]/candidates/[entityId]/brief", () => {
 
   it("refuses a visitor with no token left before calling the agent", async () => {
     const sent = fakeAgent();
-    const busy = Response.json({ reason: "busy", fallback_seed: "nyc-jazz" }, { status: 429 });
+    const busy = Response.json({ reason: "busy", fallback_seed: "nola-jazz" }, { status: 429 });
     peek.mockResolvedValue(busy);
 
     const res = await getBrief(jsonRequest({}), act);

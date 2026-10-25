@@ -54,7 +54,7 @@ test("the 4th run in a minute gets 429 and never reaches the agent", async ({ re
   const res = await request.post("/api/runs", { data: RUN, headers });
 
   expect(res.status()).toBe(429);
-  expect(await res.json()).toEqual({ reason: "busy", fallback_seed: "nyc-jazz" });
+  expect(await res.json()).toEqual({ reason: "busy", fallback_seed: "nola-jazz" });
   expect(Number(res.headers()["retry-after"])).toBeGreaterThan(0);
   expect(await agentRuns(request)).toBe(before);
 
@@ -64,7 +64,7 @@ test("the 4th run in a minute gets 429 and never reaches the agent", async ({ re
     headers: { "x-forwarded-for": ipFor(info, 101) },
   });
   expect(other.status()).not.toBe(429);
-  for (const path of ["/v/nyc-jazz", "/venue/new", "/api/health"]) {
+  for (const path of ["/v/nola-jazz", "/venue/new", "/api/health"]) {
     expect((await request.get(path, { headers })).status(), path).not.toBe(429);
   }
 });

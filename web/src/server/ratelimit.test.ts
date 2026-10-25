@@ -206,7 +206,7 @@ describe("proxy matcher", () => {
     ["/api/runs", true],
     ["/api/runs/run_1/compare", true],
     ["/api/venues/ven_1/resolve", true],
-    ["/v/nyc-jazz", false],
+    ["/v/nola-jazz", false],
     ["/", false],
     ["/venue/ven_1/shortlist", false],
     ["/api/health", false],

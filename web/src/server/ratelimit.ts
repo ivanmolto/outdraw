@@ -12,7 +12,7 @@ import { Redis } from "@upstash/redis";
 import type { ErrorBody } from "./proxy";
 
 /** The demo venue the UI falls back to when live analysis is limited. */
-export const FALLBACK_SEED = "nyc-jazz";
+export const FALLBACK_SEED = "nola-jazz";
 
 export const LIMITS = {
   burst: { tokens: 3, window: "1 m" },
