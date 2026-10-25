@@ -17,11 +17,13 @@
   check that nothing in the score is missing from the trail.
 - **source_labels** — one label per item: `"qloo"` when the number came out of an envelope,
   `"draw"` when Draw computed or templated it (weights, the total, neutral fallbacks,
-  novelty, size fit, the sell-through weights).
+  novelty, size fit, the sell-through weights). Two items the UI shows beside the trail are
+  labelled here too, so the UI never labels anything itself: the templated `top_reason`
+  (`draw`) and the crowd profile's cross-domain lists, places, films and brands (`qloo`).
 
 Label keys name the item they describe (`REF_*`): a sub-score by its bare name (what the
-UI reads), `total`, `weight:<sub-score>`, `input:<ref>`, `call:<call_id>` and
-`affinity:<sub-score>`.
+UI reads), `total`, `weight:<sub-score>`, `input:<ref>`, `call:<call_id>`,
+`affinity:<sub-score>`, `top_reason` and `profile:<places|films|brands>`.
 
 `validate_trail(score, trail)` is the completeness check behind the DoD "no orphan
 numbers": every number in the `Score` appears in the trail with a source label, every trail
@@ -52,9 +54,12 @@ from draw.schemas import (
 )
 
 __all__ = [
+    "PROFILE_LISTS",
     "REF_AFFINITY",
     "REF_CALL",
     "REF_INPUT",
+    "REF_PROFILE",
+    "REF_TOP_REASON",
     "REF_TOTAL",
     "REF_WEIGHT",
     "TrailError",
@@ -70,6 +75,10 @@ REF_WEIGHT: Final = "weight:"
 REF_INPUT: Final = "input:"
 REF_CALL: Final = "call:"
 REF_AFFINITY: Final = "affinity:"
+REF_TOP_REASON: Final = "top_reason"
+REF_PROFILE: Final = "profile:"
+"""The crowd profile's lists outside music, shown by the UI as what streaming data misses."""
+PROFILE_LISTS: Final = ("places", "films", "brands")
 TOLERANCE: Final = 1e-9
 
 _UUID = re.compile(r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
@@ -232,6 +241,10 @@ def build_trail(
         labels[name] = label
         labels[f"{REF_WEIGHT}{name}"] = "draw"
     labels[REF_TOTAL] = "draw"
+    # Draw's wording of the numbers above, and the profile lists Qloo returned for the crowd.
+    labels[REF_TOP_REASON] = "draw"
+    for kind in PROFILE_LISTS:
+        labels[f"{REF_PROFILE}{kind}"] = "qloo"
 
     return EvidenceTrail(
         inputs=inputs,
@@ -306,10 +319,19 @@ def validate_trail(score: Score, trail: EvidenceTrail) -> list[str]:
     items.update(f"{REF_CALL}{c}" for c in call_ids)
     affinities = affinities_by_sub_score(trail)
     items.update(f"{REF_AFFINITY}{name}" for name in affinities)
+    items.add(REF_TOP_REASON)
+    items.update(f"{REF_PROFILE}{kind}" for kind in PROFILE_LISTS)
     for key in items - set(labels):
         problems.append(f"{key}: no source label")
     for key in set(labels) - items:
         problems.append(f"{key}: label without an item")
+
+    # The top reason is Draw's template; the profile lists come straight from Qloo.
+    if labels.get(REF_TOP_REASON) == "qloo":
+        problems.append("top_reason: Draw's wording labelled qloo")
+    for kind in PROFILE_LISTS:
+        if labels.get(f"{REF_PROFILE}{kind}") == "draw":
+            problems.append(f"profile:{kind}: a Qloo list labelled draw")
 
     # Qloo-labelled sub-scores come from an affinity read out of a listed call; Draw-labelled
     # ones (neutral fallbacks, novelty, size fit) have none.

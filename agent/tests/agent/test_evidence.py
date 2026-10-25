@@ -12,9 +12,12 @@ from conftest import load_script
 from draw.agent.store import RunStore
 from draw.agent.tools import DrawTools
 from draw.ranking.evidence import (
+    PROFILE_LISTS,
     REF_AFFINITY,
     REF_CALL,
     REF_INPUT,
+    REF_PROFILE,
+    REF_TOP_REASON,
     REF_TOTAL,
     REF_WEIGHT,
     TrailError,
@@ -94,8 +97,12 @@ def test_every_item_is_labelled_qloo_or_draw_and_nothing_else(
         items |= {f"{REF_INPUT}{i.ref}" for i in trail.inputs}
         items |= {f"{REF_CALL}{c.call_id}" for c in trail.qloo_calls}
         items |= {f"{REF_AFFINITY}{n}" for n in affinities_by_sub_score(trail)}
+        items |= {REF_TOP_REASON, *(f"{REF_PROFILE}{k}" for k in PROFILE_LISTS)}
         assert set(labels) == items, name
-        # Draw's own arithmetic and inputs are never passed off as Qloo data.
+        # Draw's own arithmetic, inputs and wording are never passed off as Qloo data; the
+        # profile's cross-domain lists are Qloo's.
+        assert labels[REF_TOP_REASON] == "draw"
+        assert all(labels[f"{REF_PROFILE}{k}"] == "qloo" for k in PROFILE_LISTS)
         assert labels[REF_TOTAL] == "draw" and labels["novelty"] == "draw"
         assert labels["size_fit"] == "draw"
         assert all(labels[f"{REF_WEIGHT}{n}"] == "draw" for n in WEIGHTS)
@@ -171,6 +178,16 @@ def test_validator_reports_orphan_numbers_and_labels(nyc_run: tuple[RunStore, st
 
     labels = {**trail.source_labels, "crowd_affinity": "draw"}
     assert "crowd_affinity: has a Qloo affinity but is labelled draw" in validate_trail(
+        score, broken(trail, source_labels=labels)
+    )
+
+    labels = {**trail.source_labels, REF_TOP_REASON: "qloo", f"{REF_PROFILE}films": "draw"}
+    problems = validate_trail(score, broken(trail, source_labels=labels))
+    assert "top_reason: Draw's wording labelled qloo" in problems
+    assert "profile:films: a Qloo list labelled draw" in problems
+
+    labels = {k: v for k, v in trail.source_labels.items() if k != f"{REF_PROFILE}places"}
+    assert "profile:places: no source label" in validate_trail(
         score, broken(trail, source_labels=labels)
     )
 
