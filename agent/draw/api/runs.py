@@ -9,20 +9,30 @@ the candidate's ids, validated for completeness when it was built). Shortlist en
 carry their
 sub-scores, `top_reason`, neutral fallbacks and source labels, and the result the
 `weights`; `RunResult` is the typed view the web reads through the OpenAPI contract.
+
+`POST /runs/{id}/refine {message}` (T25) is a new run chained to its parent by
+`parent_run_id`: the message is parsed into a `ConstraintsDelta` (one structured-output
+call), merged into the parent's constraints, and the agent re-runs under the merged
+constraints with the same caps as any run. The stored result also carries `refinement`:
+the message, the delta and a one-sentence explanation of what changed.
 """
 
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from draw.agent.agent import AgentResult, run_venue_agent
 from draw.agent.compare import CompareOut, llm_only_shortlist
+from draw.agent.refine import ConstraintsDelta, explain, merge, parse_delta, refine_request
 from draw.agent.store import new_id
 from draw.agent.tools import DrawTools
 from draw.api.auth import require_internal_key
@@ -35,6 +45,7 @@ from draw.schemas import (
     Constraints,
     CrowdProfile,
     DataQuality,
+    ResolvedEntity,
     ScoreBreakdown,
     ScoreWeights,
     VenueInput,
@@ -52,6 +63,21 @@ class RunBody(BaseModel):
     venue_id: str
     constraints: Constraints
     message: str = Field(default="", max_length=MAX_MESSAGE)
+
+
+class RefineBody(BaseModel):
+    message: str = Field(min_length=1, max_length=MAX_MESSAGE)
+
+
+class Refinement(BaseModel):
+    """How a refined run came to be: the booker's message, the delta read from it (as
+    applied) and the explanation of what changed against the parent run."""
+
+    message: str
+    delta: ConstraintsDelta
+    explanation: str
+    token_usage: dict[str, int] = Field(default_factory=dict)
+    """The parse call's tokens; the run's own are on `RunOut.token_usage`."""
 
 
 class ShortlistEntry(BaseModel):
@@ -87,6 +113,7 @@ class RunResult(BaseModel):
     stop_reason: str | None = None
     steps: int | None = None
     profile_id: str | None = None
+    refinement: Refinement | None = None
 
 
 class RunOut(BaseModel):
@@ -97,6 +124,8 @@ class RunOut(BaseModel):
     result: RunResult | None
     token_usage: dict[str, Any] | None
     created_at: datetime | None = None
+    parent_run_id: str | None = None
+    """The run this one refined (`POST /runs/{id}/refine`); None for a first run."""
 
 
 class Evidence(BaseModel):
@@ -125,6 +154,7 @@ def _out(row: RunRow) -> RunOut:
         result=RunResult.model_validate(row.result) if row.result is not None else None,
         token_usage=row.token_usage,
         created_at=row.created_at,
+        parent_run_id=row.parent_run_id,
     )
 
 
@@ -174,37 +204,70 @@ def _with_scores(result: dict[str, Any], candidates: list[CandidateRow]) -> dict
     return {**result, "shortlist": shortlist, "weights": dict(WEIGHTS)}
 
 
-@router.post("")
-async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
-    async with deps.sessions() as session:
-        _, venue = await load_venue(session, body.venue_id)
-        venue_entity, acts, _ = await load_resolutions(session, body.venue_id, venue)
-        profile_row = await session.get(CrowdProfileRow, body.venue_id)
+@dataclass(frozen=True)
+class _Venue:
+    """What a run needs about its venue, as stored: the input, its resolutions, its profile."""
+
+    venue_id: str
+    venue: VenueInput
+    acts: Sequence[ResolvedEntity]
+    venue_entity: ResolvedEntity | None
+    profile: CrowdProfile
+
+
+async def _venue_for_run(session: AsyncSession, venue_id: str) -> _Venue:
+    """404 for an unknown venue, 409 before its crowd profile exists (the confirm gate)."""
+    _, venue = await load_venue(session, venue_id)
+    venue_entity, acts, _ = await load_resolutions(session, venue_id, venue)
+    profile_row = await session.get(CrowdProfileRow, venue_id)
     if profile_row is None:
         raise HTTPException(
             status.HTTP_409_CONFLICT,
             "No crowd profile for this venue; confirm its matches and POST /profile first.",
         )
-    profile = CrowdProfile.model_validate(profile_row.profile)
+    return _Venue(
+        venue_id=venue_id,
+        venue=venue,
+        acts=acts,
+        venue_entity=venue_entity if venue_entity and venue_entity.entity_id else None,
+        profile=CrowdProfile.model_validate(profile_row.profile),
+    )
 
-    run_id = new_id("run")
-    constraints = body.constraints.model_dump(mode="json")
+
+async def _execute_run(
+    deps: Deps,
+    run_id: str,
+    target: _Venue,
+    constraints: Constraints,
+    message: str,
+    *,
+    parent_run_id: str | None = None,
+    finish: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+) -> RunOut:
+    """Store the run as running, run the agent, store the result (or the error) and read it
+    back. `finish` sees the stored result before it is written (the refinement adds to it)."""
     async with deps.sessions.begin() as session:
         session.add(
-            RunRow(id=run_id, venue_id=body.venue_id, constraints=constraints, status="running")
+            RunRow(
+                id=run_id,
+                venue_id=target.venue_id,
+                parent_run_id=parent_run_id,
+                constraints=constraints.model_dump(mode="json"),
+                status="running",
+            )
         )
 
     try:
         async with deps.gateways.agent(run_id) as qloo:
             result = await run_venue_agent(
-                venue,
-                body.constraints,
-                body.message,
+                target.venue,
+                constraints,
+                message,
                 qloo=qloo,
-                acts=acts,
-                venue_entity=venue_entity if venue_entity and venue_entity.entity_id else None,
-                profile=profile,
-                venue_id=body.venue_id,
+                acts=target.acts,
+                venue_entity=target.venue_entity,
+                profile=target.profile,
+                venue_id=target.venue_id,
                 model=deps.model_factory() if deps.model_factory else None,
                 token_counter=deps.llm_counter,
                 token_cap=deps.llm_cap,
@@ -224,6 +287,8 @@ async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
         "steps": result.steps,
         "profile_id": result.profile_id,
     }
+    if finish is not None:
+        stored = finish(stored)
     async with deps.sessions.begin() as session:
         row = await session.get(RunRow, run_id)
         assert row is not None
@@ -235,6 +300,72 @@ async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
         row = await session.get(RunRow, run_id)
         assert row is not None
         return _out(row)
+
+
+@router.post("")
+async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
+    async with deps.sessions() as session:
+        target = await _venue_for_run(session, body.venue_id)
+    return await _execute_run(deps, new_id("run"), target, body.constraints, body.message)
+
+
+def _shortlist_names(result: dict[str, Any] | None) -> list[str]:
+    return [str(e.get("name", "")) for e in (result or {}).get("shortlist") or []]
+
+
+@router.post("/{run_id}/refine")
+async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
+    """A new run under the parent's constraints changed as the message asks.
+
+    404 for an unknown parent; 422 when no change can be read from the message (nothing is
+    spent on Qloo then); 429 at the LLM token cap. The parse is one model call, the re-run a
+    normal agent run with every cap of `POST /runs`.
+    """
+    async with deps.sessions() as session:
+        parent = await session.get(RunRow, run_id)
+        if parent is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
+        target = await _venue_for_run(session, parent.venue_id)
+    previous = Constraints.model_validate(parent.constraints)
+    before = _shortlist_names(parent.result)
+
+    parsed = await parse_delta(
+        body.message,
+        previous,
+        before,
+        model_factory=deps.model_factory,
+        token_counter=deps.llm_counter,
+        token_cap=deps.llm_cap,
+    )
+    if parsed.delta is None:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, parsed.error)
+    delta = parsed.delta
+    merged = merge(previous, delta)
+    if merged == previous and not delta.hints:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "The message asks for no change to the constraints; say what to change "
+            "(genres, size of act, recent bookings, how many candidates).",
+        )
+
+    def finish(stored: dict[str, Any]) -> dict[str, Any]:
+        refinement = Refinement(
+            message=body.message,
+            delta=delta,
+            explanation=explain(delta, previous, merged, before, _shortlist_names(stored)),
+            token_usage=parsed.token_usage,
+        )
+        return {**stored, "refinement": refinement.model_dump(mode="json")}
+
+    return await _execute_run(
+        deps,
+        new_id("run"),
+        target,
+        merged,
+        refine_request(body.message, delta, before),
+        parent_run_id=run_id,
+        finish=finish,
+    )
 
 
 @router.get("/{run_id}")

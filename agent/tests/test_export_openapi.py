@@ -6,7 +6,16 @@ import json
 
 from conftest import load_script
 
-ROUTE_MODELS = {"VenueOut", "Resolutions", "ResolutionItem", "RunOut", "Evidence", "QlooCall"}
+ROUTE_MODELS = {
+    "VenueOut",
+    "Resolutions",
+    "ResolutionItem",
+    "RunOut",
+    "Evidence",
+    "QlooCall",
+    "Refinement",
+    "ConstraintsDelta",
+}
 
 
 def test_openapi_lists_every_route_model() -> None:

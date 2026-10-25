@@ -130,6 +130,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{run_id}/refine": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refine Run
+         * @description A new run under the parent's constraints changed as the message asks.
+         *
+         *     404 for an unknown parent; 422 when no change can be read from the message (nothing is
+         *     spent on Qloo then); 429 at the LLM token cap. The parse is one model call, the re-run a
+         *     normal agent run with every cap of `POST /runs`.
+         */
+        post: operations["refine_run_runs__run_id__refine_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/venues": {
         parameters: {
             query?: never;
@@ -305,6 +329,29 @@ export interface components {
             max_candidates: number;
             size_tier: components["schemas"]["SizeTier"];
         };
+        /**
+         * ConstraintsDelta
+         * @description What a message changes, normalised: lists always present, numbers unset or >= 0.
+         */
+        ConstraintsDelta: {
+            /** Draw Cap */
+            draw_cap?: number | null;
+            /** Exclude Recent Months */
+            exclude_recent_months?: number | null;
+            /** Exclude Tags Add */
+            exclude_tags_add?: string[];
+            /** Exclude Tags Remove */
+            exclude_tags_remove?: string[];
+            /** Hints */
+            hints?: string[];
+            /** Include Tags Add */
+            include_tags_add?: string[];
+            /** Include Tags Remove */
+            include_tags_remove?: string[];
+            /** Max Candidates */
+            max_candidates?: number | null;
+            size_tier?: components["schemas"]["SizeTier"] | null;
+        };
         /** Counter */
         Counter: {
             /** Cap */
@@ -470,6 +517,27 @@ export interface components {
             /** Workflow */
             workflow: string;
         };
+        /** RefineBody */
+        RefineBody: {
+            /** Message */
+            message: string;
+        };
+        /**
+         * Refinement
+         * @description How a refined run came to be: the booker's message, the delta read from it (as
+         *     applied) and the explanation of what changed against the parent run.
+         */
+        Refinement: {
+            delta: components["schemas"]["ConstraintsDelta"];
+            /** Explanation */
+            explanation: string;
+            /** Message */
+            message: string;
+            /** Token Usage */
+            token_usage?: {
+                [key: string]: number;
+            };
+        };
         /** ResolutionItem */
         ResolutionItem: {
             /** Candidates */
@@ -511,6 +579,8 @@ export interface components {
             constraints: components["schemas"]["Constraints"];
             /** Created At */
             created_at?: string | null;
+            /** Parent Run Id */
+            parent_run_id?: string | null;
             result: components["schemas"]["RunResult"] | null;
             /** Run Id */
             run_id: string;
@@ -538,6 +608,7 @@ export interface components {
             notes?: string[];
             /** Profile Id */
             profile_id?: string | null;
+            refinement?: components["schemas"]["Refinement"] | null;
             /** Shortlist */
             shortlist?: components["schemas"]["ShortlistEntry"][];
             /** Steps */
@@ -892,6 +963,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompareOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refine_run_runs__run_id__refine_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefineBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
                 };
             };
             /** @description Validation Error */

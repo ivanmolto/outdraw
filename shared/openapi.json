@@ -188,6 +188,95 @@
         "title": "Constraints",
         "type": "object"
       },
+      "ConstraintsDelta": {
+        "additionalProperties": false,
+        "description": "What a message changes, normalised: lists always present, numbers unset or >= 0.",
+        "properties": {
+          "draw_cap": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draw Cap"
+          },
+          "exclude_recent_months": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Recent Months"
+          },
+          "exclude_tags_add": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude Tags Add",
+            "type": "array"
+          },
+          "exclude_tags_remove": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude Tags Remove",
+            "type": "array"
+          },
+          "hints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hints",
+            "type": "array"
+          },
+          "include_tags_add": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Include Tags Add",
+            "type": "array"
+          },
+          "include_tags_remove": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Include Tags Remove",
+            "type": "array"
+          },
+          "max_candidates": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Candidates"
+          },
+          "size_tier": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SizeTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ConstraintsDelta",
+        "type": "object"
+      },
       "Counter": {
         "properties": {
           "cap": {
@@ -650,6 +739,51 @@
         "title": "QlooCall",
         "type": "object"
       },
+      "RefineBody": {
+        "properties": {
+          "message": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "RefineBody",
+        "type": "object"
+      },
+      "Refinement": {
+        "description": "How a refined run came to be: the booker's message, the delta read from it (as\napplied) and the explanation of what changed against the parent run.",
+        "properties": {
+          "delta": {
+            "$ref": "#/components/schemas/ConstraintsDelta"
+          },
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "token_usage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Token Usage",
+            "type": "object"
+          }
+        },
+        "required": [
+          "message",
+          "delta",
+          "explanation"
+        ],
+        "title": "Refinement",
+        "type": "object"
+      },
       "ResolutionItem": {
         "properties": {
           "candidates": {
@@ -763,6 +897,17 @@
             ],
             "title": "Created At"
           },
+          "parent_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Run Id"
+          },
           "result": {
             "anyOf": [
               {
@@ -854,6 +999,16 @@
               }
             ],
             "title": "Profile Id"
+          },
+          "refinement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Refinement"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "shortlist": {
             "items": {
@@ -1735,6 +1890,72 @@
           }
         },
         "summary": "Get Compare"
+      }
+    },
+    "/runs/{run_id}/refine": {
+      "post": {
+        "description": "A new run under the parent's constraints changed as the message asks.\n\n404 for an unknown parent; 422 when no change can be read from the message (nothing is\nspent on Qloo then); 429 at the LLM token cap. The parse is one model call, the re-run a\nnormal agent run with every cap of `POST /runs`.",
+        "operationId": "refine_run_runs__run_id__refine_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefineBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Refine Run"
       }
     },
     "/venues": {
