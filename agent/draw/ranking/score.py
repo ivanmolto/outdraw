@@ -55,6 +55,7 @@ __all__ = [
     "WEIGHTS",
     "SourceLabel",
     "SubScore",
+    "band_of",
     "baseline_of",
     "distinctive_reason",
     "fallbacks_of",
@@ -128,6 +129,11 @@ def _band_index(popularity: float) -> int:
         if low <= popularity < high or (high >= 1.0 and popularity >= high):
             return i
     return len(_TIER_ORDER) - 1  # popularity > 1 after clamping cannot happen; be safe
+
+
+def band_of(popularity: float) -> SizeTier:
+    """The size tier whose popularity band holds `popularity` (`POPULARITY_BANDS`)."""
+    return _TIER_ORDER[_band_index(_clamp(popularity))]
 
 
 def size_fit_of(popularity: float, size_tier: SizeTier) -> float:

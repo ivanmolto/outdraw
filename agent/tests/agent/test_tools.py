@@ -183,13 +183,8 @@ async def test_pipeline_end_to_end(seeded: tuple[DrawTools, RunStore, str, str])
     full = tools.evidence_trail(top)
     assert {c["call_id"] for c in full["qloo_calls"]} == call_ids
     assert set(full["source_labels"]) > set(evidence["source_labels"])
-
-    brief = await tools.draft_brief(top)
-    check(brief)
-    assert brief["status"] == "stub" and brief["name"] == shortlist[0]["name"]
-    assert brief["why_it_fits"] == [
-        {"text": evidence["top_reason"], "evidence_ref": evidence["qloo_calls"][0]["call_id"]}
-    ]
+    assert full["popularity"] == store.run(run["run_id"]).ranked[0].candidate.popularity  # type: ignore[index]
+    # draft_brief (the one tool with a model call of its own) is covered by test_brief.py.
 
 
 async def test_score_and_rank_without_signals_is_neutral(

@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime as dt
 import uuid
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from draw.qloo.envelope import QlooResult
 from draw.ranking.candidates import CandidateList
@@ -26,6 +27,9 @@ from draw.schemas import (
     ResolvedEntity,
     VenueInput,
 )
+
+if TYPE_CHECKING:
+    from draw.agent.brief import BriefOut
 
 __all__ = ["Run", "RunStore", "new_id"]
 
@@ -51,6 +55,8 @@ class Run:
     """entity_id -> candidate_id, assigned by `score_and_rank`."""
     trails: dict[str, EvidenceTrail] = field(default_factory=dict)
     """candidate_id -> the evidence trail behind its score, built by `score_and_rank`."""
+    briefs: dict[str, BriefOut] = field(default_factory=dict)
+    """candidate_id -> its brief, cached by `draft_brief` (one model call per candidate and run)."""
 
 
 @dataclass

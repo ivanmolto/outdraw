@@ -10,22 +10,27 @@ agent, which reads each docstring as the tool description.
 The order the agent follows: `confirm_entity` (for each unconfirmed act) → `build_crowd_profile`
 → `generate_candidates` → `gather_signals` → `score_and_rank` → `get_evidence` / `draft_brief`.
 Ranking is the deterministic function in `draw.ranking` (`score_and_rank` only calls it);
-the model never orders candidates itself.
+the model never orders candidates itself. `draft_brief` is the one tool with a model call of
+its own (`draw.agent.brief`); its brief is cached on the run per candidate.
 """
 
 from __future__ import annotations
 
 import datetime as dt
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from typing import Any, Final
 
 from pydantic import ValidationError
 from strands import tool
+from strands.models import Model
 from strands.types.tools import AgentTool
 
+from draw.agent import brief as brief_mod
+from draw.agent.brief import BriefAct, BriefContext, BriefOut
 from draw.agent.store import Run, RunStore, new_id
 from draw.profile import crowd, resolve
+from draw.qloo.budget import DailyCounter
 from draw.qloo.exec_client import QlooExec
 from draw.ranking import candidates as candidates_mod
 from draw.ranking import signals as signals_mod
@@ -53,6 +58,8 @@ TOOL_NAMES: Final = (
 SHORTLIST: Final = 8
 REASONS: Final = 5
 TOP_ITEMS: Final = 5
+EMAIL_PREVIEW: Final = 200
+"""Characters of the outreach email the model sees; the API serves the whole brief."""
 QUALITY_ORDER: Final[dict[DataQuality, int]] = {"ok": 0, "partial": 1, "degraded": 2}
 
 
@@ -69,12 +76,28 @@ def _r(value: float | None) -> float | None:
 
 
 class DrawTools:
-    """The seven tools, bound to a run store and a gateway (`qloo` is `QlooExec` or `QlooMCP`)."""
+    """The seven tools, bound to a run store and a gateway (`qloo` is `QlooExec` or `QlooMCP`).
 
-    def __init__(self, store: RunStore, qloo: QlooExec, *, today: dt.date | None = None) -> None:
+    `model_factory`, `token_counter` and `token_cap` are for `draft_brief`'s own model call
+    (None: Haiku 5.5 and the counter from the environment, as every model call).
+    """
+
+    def __init__(
+        self,
+        store: RunStore,
+        qloo: QlooExec,
+        *,
+        today: dt.date | None = None,
+        model_factory: Callable[[], Model] | None = None,
+        token_counter: DailyCounter | None = None,
+        token_cap: int | None = None,
+    ) -> None:
         self.store = store
         self.qloo = qloo
         self.today = today
+        self.model_factory = model_factory
+        self.token_counter = token_counter
+        self.token_cap = token_cap
         if qloo.observer is None:
             qloo.observer = store.observe
 
@@ -320,7 +343,8 @@ class DrawTools:
         }
 
     def evidence_trail(self, candidate_id: str) -> dict[str, Any]:
-        """The full stored EvidenceTrail plus the candidate's ids (what the API stores)."""
+        """The full stored EvidenceTrail plus the candidate's ids and popularity (what the
+        API stores; the brief reads the popularity band back from here)."""
         run, entity_id, item = self._ranked(candidate_id)
         trail = self.store.trail(candidate_id)
         return {
@@ -328,6 +352,7 @@ class DrawTools:
             "run_id": run.run_id,
             "entity_id": entity_id,
             "name": item.candidate.name,
+            "popularity": item.candidate.popularity,
             "top_reason": item.score.top_reason,
             "neutral": sorted(item.score.neutral or []),
             **trail.model_dump(mode="json", exclude_none=True),
@@ -357,31 +382,81 @@ class DrawTools:
             run.trails[candidate_id] = trail
 
     async def draft_brief(self, candidate_id: str) -> dict[str, Any]:
-        """Draft the one-page booking brief for a candidate (stub: templated reasons only).
+        """Draft the one-page booking brief for a candidate: why it fits, night, support, pitch.
 
-        Returns the templated `top_reason` as the first fit reason; the night format,
-        partners and outreach email arrive with the brief writer (T18).
+        Costs one Qloo call (the support-act comparison) and one model call the first time;
+        the brief is cached for the run. Report it as returned: every fit reason cites an
+        evidence ref, the support act is the smaller act Qloo's audiences overlap most with,
+        and `error` is set when the writer fell back to Outdraw's template.
 
         Args:
             candidate_id: A candidate id from score_and_rank's shortlist.
 
         Returns:
             {candidate_id, name, why_it_fits: [{text, evidence_ref}], night_format,
-            support_act, partners, outreach_email, status}.
+            support_act, partners, outreach_subject, outreach_preview, notes, error, cached}.
         """
-        _run, entity_id, item = self._ranked(candidate_id)
-        score = item.score
-        evidence_ref = score.evidence[0].call_id if score.evidence else f"draw:{entity_id}"
+        out, cached = await self._brief(candidate_id)
+        brief = out.brief
         return {
             "candidate_id": candidate_id,
-            "name": item.candidate.name,
-            "why_it_fits": [{"text": score.top_reason, "evidence_ref": evidence_ref}],
-            "night_format": None,
-            "support_act": None,
-            "partners": [],
-            "outreach_email": None,
-            "status": "stub",
+            "name": out.name,
+            "why_it_fits": [r.model_dump() for r in brief.why_it_fits],
+            "night_format": brief.night_format,
+            "support_act": brief.support_act,
+            "partners": list(brief.partners),
+            "outreach_subject": brief.outreach_email.subject,
+            "outreach_preview": brief.outreach_email.body[:EMAIL_PREVIEW],
+            "notes": list(out.notes),
+            "error": out.error,
+            "cached": cached,
         }
+
+    def brief(self, candidate_id: str) -> BriefOut:
+        """The full cached brief (what the API serves); `draft_brief` first."""
+        run, _, _ = self._ranked(candidate_id)
+        try:
+            return run.briefs[candidate_id]
+        except KeyError:
+            raise ValueError(
+                f"No brief for candidate {candidate_id!r}; draft_brief first."
+            ) from None
+
+    async def _brief(self, candidate_id: str) -> tuple[BriefOut, bool]:
+        run, entity_id, item = self._ranked(candidate_id)
+        if candidate_id in run.briefs:
+            return run.briefs[candidate_id], True
+        profile = self.store.profile(run.profile_id)
+        ranked = [
+            BriefAct(
+                entity_id=r.candidate.entity_id,
+                name=r.candidate.name,
+                popularity=r.candidate.popularity,
+                total=r.score.total,
+            )
+            for r in run.ranked or []
+        ]
+        act = next(a for a in ranked if a.entity_id == entity_id)
+        ctx = BriefContext(
+            run_id=run.run_id,
+            venue=self.store.venue(run.venue_id),
+            act=act,
+            top_reason=item.score.top_reason,
+            trail=self.store.trail(candidate_id),
+            profile=profile,
+            constraints=run.constraints,
+            ranked=ranked,
+        )
+        out = await brief_mod.draft_brief(
+            ctx,
+            qloo=self.qloo,
+            model_factory=self.model_factory,
+            token_counter=self.token_counter,
+            token_cap=self.token_cap,
+        )
+        if out.error is None:
+            run.briefs[candidate_id] = out
+        return out, False
 
     def _ranked(self, candidate_id: str) -> tuple[Run, str, RankedCandidate]:
         run, entity_id = self.store.candidate(candidate_id)
