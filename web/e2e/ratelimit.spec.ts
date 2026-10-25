@@ -19,6 +19,16 @@ const RUN = {
   message: "",
 };
 
+const MINUTE = 60_000;
+
+/** Wait out the tail of the current minute, so a test's burst lands in one window. The
+ * sliding window discounts the previous minute (3 earlier requests count as 2 right after
+ * the boundary), so a boundary between the 3rd and 4th request would let the 4th through. */
+async function freshMinute(): Promise<void> {
+  const into = Date.now() % MINUTE;
+  if (into > MINUTE - 10_000) await new Promise((r) => setTimeout(r, MINUTE - into));
+}
+
 /** A documentation-range IP unique to this test attempt. */
 function ipFor(info: { workerIndex: number; retry: number }, base: number): string {
   return `198.51.100.${base + info.retry * 10 + info.workerIndex}`;
@@ -34,6 +44,7 @@ async function agentRuns(request: APIRequestContext): Promise<number> {
 
 test("the 4th run in a minute gets 429 and never reaches the agent", async ({ request }, info) => {
   const headers = { "x-forwarded-for": `${ipFor(info, 1)}, 10.0.0.1` };
+  await freshMinute();
 
   for (let i = 0; i < 3; i++) {
     const res = await request.post("/api/runs", { data: RUN, headers });
@@ -61,6 +72,7 @@ test("the 4th run in a minute gets 429 and never reaches the agent", async ({ re
 test("a limited visitor sees the busy message on the shortlist", async ({ page, request }, info) => {
   const ip = ipFor(info, 51);
   const headers = { "x-forwarded-for": ip };
+  await freshMinute();
   // A venue with a profile for the shortlist page; the profile build counts as one run.
   await request.post("/api/venues", {
     data: { name: "Synthetic Room", city: "New York", country: "US", capacity: 150, past_shows: [] },
