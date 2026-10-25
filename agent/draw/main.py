@@ -2,9 +2,9 @@
 
 `create_app(deps_factory)` builds the service; tests pass a factory over their own database
 and fakes. Every route except /health needs `X-Draw-Internal-Key` (see `draw.api.auth`).
-Gateway exceptions map to HTTP: `BudgetExceeded` → 429, `QlooError` → 502 with its
-`code`, `retryable` and `recovery`, any other gateway error → 502; `NotModified` (a seed
-read whose `If-None-Match` matched) → 304 with the `ETag`.
+Gateway exceptions map to HTTP: `BudgetExceeded` → 429 `{reason: "budget"}`, `QlooError` →
+502 with its `code`, `retryable` and `recovery`, any other gateway error → 502;
+`NotModified` (a seed read whose `If-None-Match` matched) → 304 with the `ETag`.
 """
 
 from __future__ import annotations
@@ -36,7 +36,13 @@ class Health(BaseModel):
 async def _budget_exceeded(request: Request, exc: Exception) -> Response:
     assert isinstance(exc, BudgetExceeded)
     return JSONResponse(
-        {"detail": str(exc), "what": exc.what, "used": exc.used, "cap": exc.cap},
+        {
+            "reason": "budget",
+            "detail": str(exc),
+            "what": exc.what,
+            "used": exc.used,
+            "cap": exc.cap,
+        },
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
     )
 

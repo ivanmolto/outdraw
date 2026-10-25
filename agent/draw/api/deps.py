@@ -23,6 +23,7 @@ from tenacity.wait import wait_base
 
 from draw.agent.agent import AgentSettings, token_counter_from_env
 from draw.db.engine import make_engine, make_sessionmaker
+from draw.guard import BudgetGuard, MemoryLatch, RedisLatch, alerter_from_env
 from draw.qloo.budget import DailyCounter, NullCounter, RedisCounter
 from draw.qloo.cache import CacheBackend, PostgresCache
 from draw.qloo.config import QlooConfig
@@ -83,6 +84,8 @@ class Deps:
     gateways: Gateways
     llm_counter: DailyCounter
     llm_cap: int
+    guard: BudgetGuard
+    """Checked before every run; its 70% alert rides on both counters' `on_spend`."""
     model_factory: Callable[[], Model] | None = None
     """None: the agent builds Haiku 5.5 from the environment."""
     pool: asyncpg.Pool | None = field(default=None, repr=False)
@@ -116,6 +119,15 @@ class Deps:
                 if config.redis_url
                 else NullCounter()
             )
+        llm_counter = llm_counter or token_counter_from_env(settings)
+        guard = BudgetGuard(
+            qloo=qloo_counter,
+            qloo_cap=config.daily_cap,
+            llm=llm_counter,
+            llm_cap=settings.token_cap,
+            latch=RedisLatch(config.redis_url) if config.redis_url else MemoryLatch(),
+            alerter=alerter_from_env(),
+        )
         engine = make_engine(database_url)
         return cls(
             engine=engine,
@@ -128,8 +140,9 @@ class Deps:
                 mcp_command=mcp_command,
                 retry_wait=retry_wait,
             ),
-            llm_counter=llm_counter or token_counter_from_env(settings),
+            llm_counter=llm_counter,
             llm_cap=settings.token_cap,
+            guard=guard,
             model_factory=model_factory,
             pool=pool,
         )
@@ -143,6 +156,7 @@ class Deps:
         for counter in (self.gateways.counter, self.llm_counter):
             if isinstance(counter, RedisCounter):
                 await counter.aclose()
+        await self.guard.aclose()
         await self.engine.dispose()
         if self.pool is not None:
             await self.pool.close()

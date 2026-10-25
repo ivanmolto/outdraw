@@ -187,7 +187,7 @@ export interface paths {
          * @description A new run under the parent's constraints changed as the message asks.
          *
          *     404 for an unknown parent; 422 when no change can be read from the message (nothing is
-         *     spent on Qloo then); 429 at the LLM token cap. The parse is one model call, the re-run a
+         *     spent on Qloo then); 429 at either daily cap. The parse is one model call, the re-run a
          *     normal agent run with every cap of `POST /runs`.
          */
         post: operations["refine_run_runs__run_id__refine_post"];

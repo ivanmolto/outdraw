@@ -361,6 +361,7 @@ async def execute_run(
 
 @router.post("")
 async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
+    await deps.guard.check()
     async with deps.sessions() as session:
         target = await venue_for_run(session, body.venue_id)
     return await execute_run(deps, new_id("run"), target, body.constraints, body.message)
@@ -375,9 +376,10 @@ async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
     """A new run under the parent's constraints changed as the message asks.
 
     404 for an unknown parent; 422 when no change can be read from the message (nothing is
-    spent on Qloo then); 429 at the LLM token cap. The parse is one model call, the re-run a
+    spent on Qloo then); 429 at either daily cap. The parse is one model call, the re-run a
     normal agent run with every cap of `POST /runs`.
     """
+    await deps.guard.check()
     async with deps.sessions() as session:
         parent = await session.get(RunRow, run_id)
         if parent is None:

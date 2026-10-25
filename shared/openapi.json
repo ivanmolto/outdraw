@@ -2551,7 +2551,7 @@
     },
     "/runs/{run_id}/refine": {
       "post": {
-        "description": "A new run under the parent's constraints changed as the message asks.\n\n404 for an unknown parent; 422 when no change can be read from the message (nothing is\nspent on Qloo then); 429 at the LLM token cap. The parse is one model call, the re-run a\nnormal agent run with every cap of `POST /runs`.",
+        "description": "A new run under the parent's constraints changed as the message asks.\n\n404 for an unknown parent; 422 when no change can be read from the message (nothing is\nspent on Qloo then); 429 at either daily cap. The parse is one model call, the re-run a\nnormal agent run with every cap of `POST /runs`.",
         "operationId": "refine_run_runs__run_id__refine_post",
         "parameters": [
           {

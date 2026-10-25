@@ -10,7 +10,8 @@ from draw.qloo.harness import AGENT_DIR, qloo_bin
 
 RECORDINGS_DIR = AGENT_DIR / "recordings"
 EXEC_TIMEOUT_S = 20.0
-# Roughly a third of the 10,000/month key quota per day; T32 tunes this from the real usage.
+# Set by hand from the 10,000/month key quota (T32): the harness reports no quota (decision
+# 001), and local `qloo explore` sessions spend the same key.
 DEFAULT_DAILY_CAP = 300
 DEFAULT_CONCURRENCY = 3
 CACHE_TTL_S = 7 * 24 * 3600

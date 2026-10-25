@@ -202,7 +202,7 @@ def client(
     async def deps() -> Deps:
         return await Deps.create(
             db_url,
-            config=QlooConfig(qloo_bin="/fake/qloo", api_key=FAKE_QLOO_KEY),
+            config=QlooConfig(qloo_bin="/fake/qloo", api_key=FAKE_QLOO_KEY, daily_cap=300),
             qloo_counter=MemoryCounter(300),
             llm_counter=MemoryCounter(
                 10_000_000, prefix=LLM_PREFIX, what="LLM token", charge_over=True
@@ -402,6 +402,18 @@ def test_run_needs_a_profile(client: TestClient) -> None:
     venue_id = create_venue(client)
     assert post_run(client, venue_id).status_code == 409
     assert post_run(client, "ven_missing").status_code == 404
+
+
+def test_run_blocked_at_the_daily_cap(client: TestClient) -> None:
+    """The before-run guard (T32): 429 {reason: "budget"} before anything is stored."""
+    venue_id = profiled_venue(client)
+    deps = client.app.state.deps  # type: ignore[attr-defined]
+    counter = deps.gateways.counter
+    asyncio.run(counter.reserve(300 - asyncio.run(counter.used())))
+    res = post_run(client, venue_id)
+    assert res.status_code == 429
+    assert res.json()["reason"] == "budget" and res.json()["what"] == "Qloo"
+    assert client.get("/limits").json()["qloo"] == {"used": 300, "cap": 300, "remaining": 0}
 
 
 def test_run_returns_ask_on_needs_input(client: TestClient, scripts: Scripts) -> None:
