@@ -653,6 +653,29 @@ def test_a_failed_run_is_redone_and_a_changed_venue_rebuilt(
     assert with_deps(make_deps, capacity) == 200
 
 
+def test_changed_constraints_redo_the_run_but_keep_resolve_and_profile(
+    make_deps: MakeDeps, harness: RouterHarness, models: Models, tmp_path: Path
+) -> None:
+    seeds_file = write_seeds(tmp_path, SEEDS[1:])
+    assert run_main(seeds_file) == 0
+    spawns, built = harness.spawns, len(models.built)
+
+    changed = SEEDS[1].model_copy(
+        update={"constraints": SEEDS[1].constraints.model_copy(update={"max_candidates": 12})}
+    )
+    write_seeds(tmp_path, [changed])
+    est = with_deps(make_deps, lambda deps: precompute.estimate(deps, [changed]))
+    assert est.seeds[0].stored == ["resolve", "profile"]
+    assert (est.seeds[0].candidates, est.seeds[0].signals, est.seeds[0].briefs) == (3, 33, 5)
+    assert run_main(seeds_file) == 0
+    assert harness.spawns == spawns, "no qloo exec spawn: resolve and profile were kept"
+    assert len(models.built) == built + 1 + 1 + BRIEFS, "a new run, compare and briefs"
+    counts = all_counts(make_deps, [changed])[0]
+    assert counts["runs"] == 1 and counts["briefs"] == BRIEFS and counts["candidates"] <= 12
+    est = with_deps(make_deps, lambda deps: precompute.estimate(deps, [changed]))
+    assert est.total == 0
+
+
 def test_seed_flag_limits_the_batch(
     make_deps: MakeDeps, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

@@ -10,7 +10,8 @@ LLM-only compare and the briefs for the top five, then mark the run ``is_seed`` 
 
 Idempotent: every stage reads what is stored first, so a second run makes zero Qloo calls
 and zero model calls, and a run interrupted midway resumes where it stopped. A seed whose
-venue changed in the file is rebuilt from scratch. The pipeline itself needs no model (the
+venue changed in the file is rebuilt from scratch; one whose constraints or message changed
+gets a new run (resolve and profile are kept). The pipeline itself needs no model (the
 resolve and profile stages are ``QlooExec`` only); the agent, the compare and the briefs do.
 
 Quota guard, before any Qloo call: the uncached calls are estimated per seed and overall
@@ -77,6 +78,7 @@ from draw.qloo.envelope import QlooEnvelope, QlooGatewayError  # noqa: E402
 from draw.qloo.exec_client import QlooExec  # noqa: E402
 from draw.ranking import candidates as candidates_mod  # noqa: E402
 from draw.ranking import signals as signals_mod  # noqa: E402
+from draw.schemas import Constraints  # noqa: E402
 from draw.seeds import SEEDS_FILE, Seed, load_seeds, run_id_for, venue_id_for  # noqa: E402
 
 AGENT_DIR = Path(__file__).resolve().parents[1]
@@ -147,13 +149,15 @@ class SeedState:
     """Stored acts the resolver could not auto-confirm: the seed cannot proceed."""
     profile_stored: bool = False
     run: RunRow | None = None
+    run_stale: bool = False
+    """The stored run was made under other constraints than the file's: redo it."""
     top: list[str] = field(default_factory=list)
     """Entity ids of the shortlist's top five, when the run finished ok."""
     briefed: set[str] = field(default_factory=set)
 
     @property
     def run_ok(self) -> bool:
-        return self.run is not None and self.run.status == "ok"
+        return self.run is not None and self.run.status == "ok" and not self.run_stale
 
     @property
     def fresh(self) -> bool:
@@ -184,7 +188,10 @@ async def inspect(deps: Deps, seed: Seed) -> SeedState:
         state.unconfirmed = [a.query for a in acts if not a.confirmed]
         state.profile_stored = await session.get(CrowdProfileRow, venue_id) is not None
         state.run = await session.get(RunRow, run_id)
-        state.top = _shortlist_ids(state.run)
+        if state.run is not None:
+            stored_constraints = Constraints.model_validate(state.run.constraints)
+            state.run_stale = stored_constraints != seed.constraints
+        state.top = _shortlist_ids(state.run) if not state.run_stale else []
         if state.run is not None:
             rows = await session.scalars(
                 select(CandidateRow).where(
@@ -425,7 +432,8 @@ async def _ensure_run(deps: Deps, seed: Seed, state: SeedState, notes: list[str]
     async with deps.sessions.begin() as session:
         stale = await session.get(RunRow, run_id)
         if stale is not None:
-            notes.append(f"previous run ended {stale.status!r}; rerun")
+            why = "constraints changed" if state.run_stale else f"ended {stale.status!r}"
+            notes.append(f"previous run {why}; rerun")
             await session.delete(stale)
     async with deps.sessions() as session:
         target = await venue_for_run(session, venue_id)

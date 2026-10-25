@@ -52,7 +52,7 @@
     "constraints": {
       "include_tags": [],
       "exclude_tags": [],
-      "size_tier": "mid",
+      "size_tier": "emerging",
       "exclude_recent_months": 12,
       "max_candidates": 25
     },
@@ -73,14 +73,14 @@
         {"act": "Flight of the Conchords", "date": "2026-03-20", "tickets_sold": 250, "capacity": 250, "ticket_price": 32.0},
         {"act": "Garfunkel and Oates", "date": "2026-04-24", "tickets_sold": 185, "capacity": 250, "ticket_price": 22.0},
         {"act": "Reggie Watts", "date": "2026-05-29", "tickets_sold": 212, "capacity": 250, "ticket_price": 25.0},
-        {"act": "Bill Bailey", "date": "2026-06-26", "tickets_sold": 250, "capacity": 250, "ticket_price": 30.0},
+        {"act": "The Lonely Island", "date": "2026-06-26", "tickets_sold": 250, "capacity": 250, "ticket_price": 30.0},
         {"act": "Tim Minchin", "date": "2026-09-11", "tickets_sold": 250, "capacity": 250, "ticket_price": 30.0}
       ]
     },
     "constraints": {
       "include_tags": [],
       "exclude_tags": [],
-      "size_tier": "mid",
+      "size_tier": "emerging",
       "exclude_recent_months": 6,
       "max_candidates": 20
     },
