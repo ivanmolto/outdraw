@@ -108,6 +108,8 @@ class CandidateRow(Base):
     score: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     evidence: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     pencilled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # The booking brief, cached by GET /runs/{id}/candidates/{entity_id}/brief (BriefOut).
+    brief: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 
 
 class QlooCacheRow(Base):

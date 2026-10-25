@@ -102,7 +102,7 @@ def test_upgrade_downgrade_upgrade(fresh_db: str) -> None:
     state = _inspect(fresh_db)
     assert state["tables"] == TABLES
     assert state["vector"]
-    assert state["version"] == "0002"
+    assert state["version"] == "0003"
 
     command.downgrade(cfg, "base")
     assert _tables(fresh_db) == set()

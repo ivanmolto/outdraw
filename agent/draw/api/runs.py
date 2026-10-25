@@ -15,6 +15,11 @@ sub-scores, `top_reason`, neutral fallbacks and source labels, and the result th
 call), merged into the parent's constraints, and the agent re-runs under the merged
 constraints with the same caps as any run. The stored result also carries `refinement`:
 the message, the delta and a one-sentence explanation of what changed.
+
+`GET /runs/{id}/candidates/{entity_id}/brief` (T27) writes the candidate's booking brief
+from the stored run (`draw.agent.brief`): one Qloo call for the support act through a
+scripted gateway under the run's id, one model call (plus one retry), then the brief is
+cached on the candidate row and served from there with `cached: true`.
 """
 
 from __future__ import annotations
@@ -31,6 +36,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from draw.agent.agent import AgentResult, run_venue_agent
+from draw.agent.brief import BriefAct, BriefContext, BriefOut, draft_brief
 from draw.agent.compare import CompareOut, llm_only_shortlist
 from draw.agent.refine import ConstraintsDelta, explain, merge, parse_delta, refine_request
 from draw.agent.store import new_id
@@ -45,6 +51,7 @@ from draw.schemas import (
     Constraints,
     CrowdProfile,
     DataQuality,
+    EvidenceTrail,
     ResolvedEntity,
     ScoreBreakdown,
     ScoreWeights,
@@ -434,6 +441,93 @@ async def get_compare(run_id: str, deps: DepsDep) -> CompareOut:
                 row.compare = out.model_dump(mode="json", exclude={"cached"})
     if not lock.locked():
         _compare_locks.pop(run_id, None)
+    return out
+
+
+_brief_locks: dict[tuple[str, str], asyncio.Lock] = {}
+"""One lock per candidate around its first brief, as `_compare_locks` for the compare call."""
+
+
+def _brief_act(row: CandidateRow) -> BriefAct:
+    """A stored candidate as the brief sees it: name and popularity from its evidence."""
+    evidence = row.evidence
+    popularity = evidence.get("popularity")
+    return BriefAct(
+        entity_id=row.entity_id,
+        name=str(evidence.get("name") or row.entity_id),
+        popularity=float(popularity) if isinstance(popularity, int | float) else 0.0,
+        total=float(row.score.get("total") or 0.0),
+    )
+
+
+async def _cached_brief(
+    deps: Deps, run_id: str, entity_id: str
+) -> BriefOut | tuple[CandidateRow, BriefContext]:
+    """The candidate's cached brief, or the context for the first call; 404 when unknown."""
+    async with deps.sessions() as session:
+        run = await session.get(RunRow, run_id)
+        if run is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
+        row = await session.get(CandidateRow, (run_id, entity_id))
+        if row is None:
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND, f"No candidate {entity_id!r} in run {run_id!r}."
+            )
+        if row.brief is not None:
+            return BriefOut.model_validate({**row.brief, "cached": True})
+        _, venue = await load_venue(session, run.venue_id)
+        profile_row = await session.get(CrowdProfileRow, run.venue_id)
+        if profile_row is None:
+            raise HTTPException(
+                status.HTTP_409_CONFLICT, "The run's venue has no crowd profile any more."
+            )
+        rows = (
+            await session.scalars(select(CandidateRow).where(CandidateRow.run_id == run_id))
+        ).all()
+    ranked = sorted((_brief_act(r) for r in rows), key=lambda a: -a.total)
+    act = next(a for a in ranked if a.entity_id == entity_id)
+    trail_fields = {k: v for k, v in row.evidence.items() if k in EvidenceTrail.model_fields}
+    ctx = BriefContext(
+        run_id=run_id,
+        venue=venue,
+        act=act,
+        top_reason=str(row.score.get("top_reason") or ""),
+        trail=EvidenceTrail.model_validate(trail_fields),
+        profile=CrowdProfile.model_validate(profile_row.profile),
+        constraints=Constraints.model_validate(run.constraints),
+        ranked=ranked,
+    )
+    return row, ctx
+
+
+@router.get("/{run_id}/candidates/{entity_id}/brief")
+async def get_brief(run_id: str, entity_id: str, deps: DepsDep) -> BriefOut:
+    """The candidate's booking brief: one Qloo call and one model call (one retry) the first
+    time, then the copy cached on the candidate. Every `why_it_fits` ref exists in `evidence`;
+    a brief with `error` set is Outdraw's template and is not cached. 429 at the token cap."""
+    found = await _cached_brief(deps, run_id, entity_id)
+    if isinstance(found, BriefOut):
+        return found
+    lock = _brief_locks.setdefault((run_id, entity_id), asyncio.Lock())
+    async with lock:
+        found = await _cached_brief(deps, run_id, entity_id)
+        if isinstance(found, BriefOut):
+            return found
+        _, ctx = found
+        out = await draft_brief(
+            ctx,
+            qloo=deps.gateways.scripted(run_id),
+            model_factory=deps.model_factory,
+            token_counter=deps.llm_counter,
+            token_cap=deps.llm_cap,
+        )
+        if out.error is None:
+            async with deps.sessions.begin() as session:
+                row = await session.get(CandidateRow, (run_id, entity_id))
+                assert row is not None
+                row.brief = out.model_dump(mode="json", exclude={"cached"})
+    if not lock.locked():
+        _brief_locks.pop((run_id, entity_id), None)
     return out
 
 

@@ -92,6 +92,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{run_id}/candidates/{entity_id}/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Brief
+         * @description The candidate's booking brief: one Qloo call and one model call (one retry) the first
+         *     time, then the copy cached on the candidate. Every `why_it_fits` ref exists in `evidence`;
+         *     a brief with `error` set is Outdraw's template and is not cached. 429 at the token cap.
+         */
+        get: operations["get_brief_runs__run_id__candidates__entity_id__brief_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{run_id}/candidates/{entity_id}/evidence": {
         parameters: {
             query?: never;
@@ -260,6 +282,65 @@ export interface components {
             }[];
             /** Question */
             question: string;
+        };
+        /** BookingBrief */
+        BookingBrief: {
+            /** Night Format */
+            night_format: string;
+            outreach_email: components["schemas"]["OutreachEmail"];
+            /** Partners */
+            partners: string[];
+            /** Support Act */
+            support_act?: string | null;
+            /** Why It Fits */
+            why_it_fits: components["schemas"]["FitReason"][];
+        };
+        /**
+         * BriefOut
+         * @description `GET /runs/{id}/candidates/{entity_id}/brief`, as cached on the candidate.
+         */
+        BriefOut: {
+            /**
+             * Attempts
+             * @default 0
+             */
+            attempts: number;
+            brief: components["schemas"]["BookingBrief"];
+            /**
+             * Cached
+             * @default false
+             */
+            cached: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Entity Id */
+            entity_id: string;
+            /** Error */
+            error?: string | null;
+            /** Evidence */
+            evidence?: {
+                [key: string]: components["schemas"]["EvidenceItem"];
+            };
+            /** Model */
+            model: string;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes?: string[];
+            /** Run Id */
+            run_id: string;
+            /** Source Labels */
+            source_labels?: {
+                [key: string]: "qloo" | "draw";
+            };
+            support: components["schemas"]["SupportPick"];
+            /** Token Usage */
+            token_usage?: {
+                [key: string]: number;
+            };
         };
         /** CompareAct */
         CompareAct: {
@@ -430,6 +511,16 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** EvidenceItem */
+        EvidenceItem: {
+            /** Label */
+            label: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "qloo" | "draw";
+        };
         /** EvidenceRef */
         EvidenceRef: {
             /**
@@ -442,6 +533,13 @@ export interface components {
              * @description Which item this evidence supports, e.g. 'genres[0]' or an entity ID.
              */
             item_ref: string;
+        };
+        /** FitReason */
+        FitReason: {
+            /** Evidence Ref */
+            evidence_ref: string;
+            /** Text */
+            text: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -465,6 +563,13 @@ export interface components {
             date: string;
             llm: components["schemas"]["Counter"];
             qloo: components["schemas"]["Counter"];
+        };
+        /** OutreachEmail */
+        OutreachEmail: {
+            /** Body */
+            body: string;
+            /** Subject */
+            subject: string;
         };
         /** PastShow */
         PastShow: {
@@ -685,6 +790,29 @@ export interface components {
          * @enum {string}
          */
         SizeTier: "emerging" | "mid" | "established";
+        /**
+         * SupportPick
+         * @description The support pick and the call behind it; `act` None when there is none to suggest.
+         */
+        SupportPick: {
+            /** Call Id */
+            call_id?: string | null;
+            /** Entity Id */
+            entity_id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Note */
+            note?: string | null;
+            /** Overlap */
+            overlap?: number | null;
+            /**
+             * Pool
+             * @default 0
+             */
+            pool: number;
+            /** Status */
+            status?: string | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -896,6 +1024,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QlooCall"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_brief_runs__run_id__candidates__entity_id__brief_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                run_id: string;
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefOut"];
                 };
             };
             /** @description Validation Error */

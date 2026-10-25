@@ -23,6 +23,157 @@
         "title": "AskOut",
         "type": "object"
       },
+      "BookingBrief": {
+        "additionalProperties": false,
+        "properties": {
+          "night_format": {
+            "title": "Night Format",
+            "type": "string"
+          },
+          "outreach_email": {
+            "$ref": "#/components/schemas/OutreachEmail"
+          },
+          "partners": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Partners",
+            "type": "array"
+          },
+          "support_act": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Support Act"
+          },
+          "why_it_fits": {
+            "items": {
+              "$ref": "#/components/schemas/FitReason"
+            },
+            "minItems": 1,
+            "title": "Why It Fits",
+            "type": "array"
+          }
+        },
+        "required": [
+          "why_it_fits",
+          "night_format",
+          "partners",
+          "outreach_email"
+        ],
+        "title": "BookingBrief",
+        "type": "object"
+      },
+      "BriefOut": {
+        "description": "`GET /runs/{id}/candidates/{entity_id}/brief`, as cached on the candidate.",
+        "properties": {
+          "attempts": {
+            "default": 0,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "brief": {
+            "$ref": "#/components/schemas/BookingBrief"
+          },
+          "cached": {
+            "default": false,
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "evidence": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/EvidenceItem"
+            },
+            "title": "Evidence",
+            "type": "object"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source_labels": {
+            "additionalProperties": {
+              "enum": [
+                "qloo",
+                "draw"
+              ],
+              "type": "string"
+            },
+            "propertyNames": {
+              "enum": [
+                "why_it_fits",
+                "night_format",
+                "support_act",
+                "partners",
+                "outreach_email"
+              ]
+            },
+            "title": "Source Labels",
+            "type": "object"
+          },
+          "support": {
+            "$ref": "#/components/schemas/SupportPick"
+          },
+          "token_usage": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Token Usage",
+            "type": "object"
+          }
+        },
+        "required": [
+          "run_id",
+          "entity_id",
+          "name",
+          "brief",
+          "support",
+          "model",
+          "created_at"
+        ],
+        "title": "BriefOut",
+        "type": "object"
+      },
       "CompareAct": {
         "properties": {
           "label": {
@@ -492,6 +643,28 @@
         "title": "Evidence",
         "type": "object"
       },
+      "EvidenceItem": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "qloo",
+              "draw"
+            ],
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "source"
+        ],
+        "title": "EvidenceItem",
+        "type": "object"
+      },
       "EvidenceRef": {
         "additionalProperties": false,
         "properties": {
@@ -513,6 +686,27 @@
           "call_id"
         ],
         "title": "EvidenceRef",
+        "type": "object"
+      },
+      "FitReason": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence_ref": {
+            "minLength": 1,
+            "title": "Evidence Ref",
+            "type": "string"
+          },
+          "text": {
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "evidence_ref"
+        ],
+        "title": "FitReason",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -589,6 +783,27 @@
           "llm"
         ],
         "title": "Limits",
+        "type": "object"
+      },
+      "OutreachEmail": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "subject": {
+            "minLength": 1,
+            "title": "Subject",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subject",
+          "body"
+        ],
+        "title": "OutreachEmail",
         "type": "object"
       },
       "PastShow": {
@@ -1295,6 +1510,84 @@
         "title": "SizeTier",
         "type": "string"
       },
+      "SupportPick": {
+        "description": "The support pick and the call behind it; `act` None when there is none to suggest.",
+        "properties": {
+          "call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Call Id"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "overlap": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overlap"
+          },
+          "pool": {
+            "default": 0,
+            "title": "Pool",
+            "type": "integer"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "title": "SupportPick",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1770,6 +2063,71 @@
           }
         },
         "summary": "Get Calls"
+      }
+    },
+    "/runs/{run_id}/candidates/{entity_id}/brief": {
+      "get": {
+        "description": "The candidate's booking brief: one Qloo call and one model call (one retry) the first\ntime, then the copy cached on the candidate. Every `why_it_fits` ref exists in `evidence`;\na brief with `error` set is Outdraw's template and is not cached. 429 at the token cap.",
+        "operationId": "get_brief_runs__run_id__candidates__entity_id__brief_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "entity_id",
+            "required": true,
+            "schema": {
+              "title": "Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BriefOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Brief"
       }
     },
     "/runs/{run_id}/candidates/{entity_id}/evidence": {

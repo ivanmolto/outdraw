@@ -15,6 +15,8 @@ ROUTE_MODELS = {
     "QlooCall",
     "Refinement",
     "ConstraintsDelta",
+    "BriefOut",
+    "BookingBrief",
 }
 
 
