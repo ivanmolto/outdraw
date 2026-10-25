@@ -5,7 +5,9 @@ import { unstable_doesMiddlewareMatch } from "next/experimental/testing/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import nextConfig from "@/next.config";
-import { config } from "@/proxy";
+import { NextRequest } from "next/server";
+
+import { config, proxy } from "@/proxy";
 import { createFakeRedis } from "./fake-redis.mjs";
 import {
   checkRateLimit,
@@ -206,11 +208,32 @@ describe("proxy matcher", () => {
     ["/api/runs", true],
     ["/api/runs/run_1/compare", true],
     ["/api/venues/ven_1/resolve", true],
-    ["/v/nola-jazz", false],
+    ["/v/nola-jazz", true],
+    ["/v/nope", true],
+    ["/v/nola-jazz/deeper", false],
     ["/", false],
     ["/venue/ven_1/shortlist", false],
     ["/api/health", false],
   ])("%s → %s", (url, expected) => {
     expect(unstable_doesMiddlewareMatch({ config, nextConfig, url })).toBe(expected);
+  });
+});
+
+describe("demo pages in the proxy", () => {
+  // No Redis env: a seed page must pass without touching the limiter anyway.
+  const request = (path: string) => new NextRequest(new URL(path, "http://web.test"));
+
+  it("lets a seed slug through, never limited", async () => {
+    const res = await proxy(request("/v/nola-jazz"));
+    expect(res.status).toBe(200);
+    expect(res.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("answers any other slug with the not-found page as a 404", async () => {
+    for (const path of ["/v/nope", "/v/Not%20A%20Slug", "/v/NOLA-JAZZ"]) {
+      const res = await proxy(request(path));
+      expect(res.status, path).toBe(404);
+      expect(res.headers.get("x-middleware-rewrite"), path).toBe("http://web.test/_not-found");
+    }
   });
 });

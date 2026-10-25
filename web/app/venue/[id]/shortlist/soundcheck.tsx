@@ -10,6 +10,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Spinner } from "@/src/components/progress";
 import { ApiError, api, reasonText, type Reason } from "@/src/lib/api-client";
+import { usePrecomputed } from "@/src/lib/precomputed";
 import { SUB_SCORES, SUB_SCORE_LABELS, type SubScore } from "@/src/lib/run-result";
 import {
   REF,
@@ -396,14 +397,16 @@ export function resetSoundcheckCache() {
   loaded.clear();
 }
 
+/** A seed run's trail comes precomputed with the page (src/lib/precomputed.tsx): no fetch. */
 function useTrail(runId: string, entityId: string, attempt: number): Load {
   const key = `${runId} ${entityId}`;
+  const pre = usePrecomputed(runId)?.soundcheck[entityId];
   const [state, setState] = useState<{ key: string; load: Load }>(() => {
     const hit = loaded.get(key);
     return { key, load: hit ? { name: "done", data: hit } : { name: "loading" } };
   });
   useEffect(() => {
-    if (loaded.has(key)) return;
+    if (pre || loaded.has(key)) return;
     let active = true;
     api.getSoundcheck(runId, entityId).then(
       (data) => {
@@ -420,7 +423,8 @@ function useTrail(runId: string, entityId: string, attempt: number): Load {
     return () => {
       active = false;
     };
-  }, [key, runId, entityId, attempt]);
+  }, [key, runId, entityId, attempt, pre]);
+  if (pre) return { name: "done", data: pre };
   return state.key === key ? state.load : { name: "loading" };
 }
 
@@ -452,6 +456,8 @@ function Panel({
   const tabsId = useId();
   const [attempt, setAttempt] = useState(0);
   const load = useTrail(runId, entityId, attempt);
+  /** Seed runs are read-only: no pencil hold to set. */
+  const seed = usePrecomputed(runId) !== null;
   const [tab, setTab] = useState<Tab>("evidence");
   /** The trail item an evidence link asked for, focused once the Evidence tab is drawn. */
   const [target, setTarget] = useState<string | null>(null);
@@ -532,7 +538,12 @@ function Panel({
             <h2 id={titleId} className="mt-0.5 font-semibold break-words text-ink">
               {name}
             </h2>
-            {load.name === "done" && (
+            {load.name === "done" && seed && (
+              <p className="mt-2 text-xs text-ink/60">
+                Pencil holds are off on the demo. Refine the shortlist for a live copy.
+              </p>
+            )}
+            {load.name === "done" && !seed && (
               <div className="mt-2">
                 <PencilToggle
                   runId={runId}

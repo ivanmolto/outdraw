@@ -16,6 +16,7 @@ export function RunOutcome({
   run,
   crossDomain,
   diff,
+  profileHref = `/venue/${encodeURIComponent(venueId)}`,
   children,
 }: {
   venueId: string;
@@ -23,6 +24,7 @@ export function RunOutcome({
   run: ParsedRun;
   crossDomain?: CrossDomain;
   diff?: ShortlistDiff;
+  profileHref?: string;
   children?: ReactNode;
 }) {
   if (run.kind === "shortlist") {
@@ -34,16 +36,14 @@ export function RunOutcome({
         result={run}
         crossDomain={crossDomain}
         diff={diff}
+        profileHref={profileHref}
       >
         {children}
       </ShortlistView>
     );
   }
   const back = (
-    <Link
-      href={`/venue/${encodeURIComponent(venueId)}`}
-      className="mt-4 inline-block text-sm font-medium underline"
-    >
+    <Link href={profileHref} className="mt-4 inline-block text-sm font-medium underline">
       Back to crowd profile
     </Link>
   );

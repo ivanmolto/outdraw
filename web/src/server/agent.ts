@@ -15,6 +15,8 @@ import type {
   ResolutionItem,
   Resolutions,
   RunOut,
+  SeedPageOut,
+  SeedsOut,
   VenueId,
   VenueOut,
 } from "@/types/agent";
@@ -38,6 +40,8 @@ export type {
   ResolutionItem,
   Resolutions,
   RunOut,
+  SeedPageOut,
+  SeedsOut,
   VenueId,
   VenueOut,
 };
@@ -106,16 +110,13 @@ function config(): { url: string; key: string } {
   return { url: url.replace(/\/+$/, ""), key };
 }
 
-async function call<T>(
+/** One request to the agent, with the key, a timeout and the error mapping. */
+async function transport<T>(
   method: "GET" | "POST" | "PATCH",
   path: string,
-  body?: unknown,
-  timeoutMs = TIMEOUT_MS,
+  body: unknown,
+  timeoutMs: number,
 ): Promise<T> {
-  // Agent data is per request. With cacheComponents, Next prerenders a static shell of each
-  // page; this stops that prerender here, before a fetch it would abort (and we'd log as an
-  // agent failure).
-  await connection();
   const { url, key } = config();
   let res: Response;
   try {
@@ -140,6 +141,19 @@ async function call<T>(
     throw toAgentError(res.status, data);
   }
   return data as T;
+}
+
+/** A live call: agent data is per request. With cacheComponents, Next prerenders a static
+ * shell of each page; `connection()` stops that prerender here, before a fetch it would
+ * abort (and we'd log as an agent failure). */
+async function call<T>(
+  method: "GET" | "POST" | "PATCH",
+  path: string,
+  body?: unknown,
+  timeoutMs = TIMEOUT_MS,
+): Promise<T> {
+  await connection();
+  return transport<T>(method, path, body, timeoutMs);
 }
 
 const seg = encodeURIComponent;
@@ -176,4 +190,16 @@ export const agent = {
   /** One tool-less model call the first time per run, then the cached copy. */
   getCompare: (runId: string) =>
     call<CompareOut>("GET", `/runs/${seg(runId)}/compare`, undefined, SLOW_TIMEOUT_MS),
+};
+
+/** A seed read runs inside a `use cache` scope (src/server/seeds.ts), where `connection()`
+ * is not allowed: the caller is already request-bound. */
+const seedRead = <T>(path: string) => transport<T>("GET", path, undefined, TIMEOUT_MS);
+
+/** Reads of precomputed seed data for the cached seed pages. Both are reads the agent
+ * serves free for a seed; a page not precomputed yet is a 409 (`conflict`), never a call
+ * spent. */
+export const seedAgent = {
+  getSeeds: () => seedRead<SeedsOut>("/seeds"),
+  getSeedPage: (slug: string) => seedRead<SeedPageOut>(`/seeds/${seg(slug)}/page`),
 };

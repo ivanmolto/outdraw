@@ -8,6 +8,7 @@ import { useEffect, useId, useState, useSyncExternalStore } from "react";
 
 import { Spinner } from "@/src/components/progress";
 import { ApiError, api, reasonText, type CompareOut, type Reason } from "@/src/lib/api-client";
+import { usePrecomputed } from "@/src/lib/precomputed";
 
 /** Below Tailwind's `md`: two lists don't fit side by side. */
 const MOBILE = "(max-width: 767px)";
@@ -33,7 +34,9 @@ export function useMobile(): boolean {
 type Load =
   | { name: "loading" }
   | { name: "done"; out: CompareOut }
-  | { name: "failed"; reason: Reason };
+  | { name: "failed"; reason: Reason }
+  /** A seed run precompute made no comparison for: the agent would refuse it, so no fetch. */
+  | { name: "absent" };
 
 /** Compare lists by run: the agent caches them, so one fetch per page is enough. */
 const loaded = new Map<string, CompareOut>();
@@ -43,13 +46,15 @@ export function resetCompareCache() {
   loaded.clear();
 }
 
+/** A seed run's list comes precomputed with the page (src/lib/precomputed.tsx): no fetch. */
 function useCompare(runId: string, on: boolean): Load {
+  const seed = usePrecomputed(runId);
   const [state, setState] = useState<Load>(() => {
     const hit = loaded.get(runId);
     return hit ? { name: "done", out: hit } : { name: "loading" };
   });
   useEffect(() => {
-    if (!on || loaded.has(runId)) return;
+    if (!on || seed || loaded.has(runId)) return;
     let active = true;
     api.getCompare(runId).then(
       (out) => {
@@ -65,7 +70,8 @@ function useCompare(runId: string, on: boolean): Load {
     return () => {
       active = false;
     };
-  }, [runId, on]);
+  }, [runId, on, seed]);
+  if (seed) return seed.compare ? { name: "done", out: seed.compare } : { name: "absent" };
   return state;
 }
 
@@ -83,6 +89,13 @@ function LlmList({ load, qlooNames }: { load: Load; qlooNames: string[] }) {
     return (
       <p role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-4 text-sm text-ink/70">
         {reasonText(load.reason)}
+      </p>
+    );
+  }
+  if (load.name === "absent") {
+    return (
+      <p role="status" className="rounded-lg border border-ink/15 bg-white/60 p-4 text-sm text-ink/70">
+        This demo has no LLM-only list. Refine the shortlist for a live run to compare one.
       </p>
     );
   }

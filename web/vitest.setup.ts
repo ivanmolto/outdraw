@@ -6,3 +6,11 @@ vi.mock("next/server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("next/server")>()),
   connection: async () => {},
 }));
+
+// `cacheLife` and `cacheTag` throw outside a `use cache` scope, and vitest compiles no
+// directives: the cached seed reads (src/server/seeds.ts) run as plain functions.
+vi.mock("next/cache", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/cache")>()),
+  cacheLife: () => {},
+  cacheTag: () => {},
+}));

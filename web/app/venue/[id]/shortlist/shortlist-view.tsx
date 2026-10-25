@@ -20,6 +20,7 @@ import type { ActChange, ShortlistDiff } from "@/src/lib/shortlist-diff";
 import type { CrossDomain } from "@/src/lib/soundcheck";
 import { SourceBadge } from "../profile-view";
 import { CompareToggle } from "./compare-toggle";
+import { PrecomputedLabel } from "./precomputed-label";
 import { ChangeBadge, LeftList } from "./shortlist-diff";
 import { SoundcheckButton } from "./soundcheck";
 
@@ -169,10 +170,13 @@ function QualityBanner({ result }: { result: ShortlistResult }) {
   );
 }
 
-function Header({ venueName }: { venueName: string }) {
+function Header({ venueName, runId }: { venueName: string; runId: string }) {
   return (
     <header className="mb-6">
-      <p className="text-sm font-medium text-ink/60">Shortlist</p>
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm font-medium text-ink/60">Shortlist</p>
+        <PrecomputedLabel runId={runId} />
+      </div>
       <h1 className="mt-1 text-2xl font-semibold tracking-tight break-words">{venueName}</h1>
       <p className="mt-2 text-sm text-ink/70">
         Acts ranked by Outdraw&apos;s score: a fixed weighting of Qloo signals and your
@@ -189,6 +193,7 @@ export function ShortlistView({
   result,
   crossDomain,
   diff,
+  profileHref = `/venue/${encodeURIComponent(venueId)}`,
   children,
 }: {
   venueId: string;
@@ -199,12 +204,14 @@ export function ShortlistView({
   crossDomain?: CrossDomain;
   /** Changes against the parent run, for a refined run. */
   diff?: ShortlistDiff;
+  /** Where "Back to crowd profile" goes: the venue page, or the profile above on a seed page. */
+  profileHref?: string;
   /** Shown under the list: the refinement box. */
   children?: ReactNode;
 }) {
   return (
     <>
-      <Header venueName={venueName} />
+      <Header venueName={venueName} runId={runId} />
       <QualityBanner result={result} />
       {result.shortlist.length === 0 ? (
         <div role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-6">
@@ -252,10 +259,7 @@ export function ShortlistView({
       )}
       <LeftList diff={diff} />
       {children}
-      <Link
-        href={`/venue/${encodeURIComponent(venueId)}`}
-        className="mt-8 inline-block text-sm font-medium underline"
-      >
+      <Link href={profileHref} className="mt-8 inline-block text-sm font-medium underline">
         Back to crowd profile
       </Link>
     </>

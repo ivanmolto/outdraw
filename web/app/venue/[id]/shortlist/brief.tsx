@@ -8,6 +8,7 @@ import { useEffect, useId, useState } from "react";
 
 import { Spinner } from "@/src/components/progress";
 import { ApiError, api, reasonText, type BriefOut, type Reason } from "@/src/lib/api-client";
+import { usePrecomputed } from "@/src/lib/precomputed";
 import type { SourceLabel } from "@/types/schemas";
 import { Provenance } from "./provenance";
 
@@ -196,7 +197,11 @@ export function Brief({
 // --- loading -----------------------------------------------------------------------------
 
 type Load =
-  { name: "loading" } | { name: "done"; data: BriefOut } | { name: "failed"; reason: Reason };
+  | { name: "loading" }
+  | { name: "done"; data: BriefOut }
+  | { name: "failed"; reason: Reason }
+  /** A seed act precompute drafted no brief for: the agent would refuse it, so no fetch. */
+  | { name: "absent" };
 
 /** Briefs by run and act. The agent caches a usable brief, so this does too; a template
  * (`error` set) is drafted again next time, as the agent would. */
@@ -206,8 +211,10 @@ export function resetBriefCache() {
   loaded.clear();
 }
 
+/** A seed run's briefs come precomputed with the page (src/lib/precomputed.tsx): no fetch. */
 function useBrief(runId: string, entityId: string, attempt: number): Load {
   const key = `${runId} ${entityId}`;
+  const seed = usePrecomputed(runId);
   const [state, setState] = useState<{ key: string; load: Load }>(() => {
     const hit = loaded.get(key);
     return {
@@ -216,7 +223,7 @@ function useBrief(runId: string, entityId: string, attempt: number): Load {
     };
   });
   useEffect(() => {
-    if (loaded.has(key)) return;
+    if (seed || loaded.has(key)) return;
     let active = true;
     api.getBrief(runId, entityId).then(
       (data) => {
@@ -233,7 +240,11 @@ function useBrief(runId: string, entityId: string, attempt: number): Load {
     return () => {
       active = false;
     };
-  }, [key, runId, entityId, attempt]);
+  }, [key, runId, entityId, attempt, seed]);
+  if (seed) {
+    const pre = seed.briefs[entityId];
+    return pre ? { name: "done", data: pre } : { name: "absent" };
+  }
   return state.key === key ? state.load : { name: "loading" };
 }
 
@@ -256,6 +267,14 @@ export function BriefTab({
     return (
       <p role="status" className="flex items-center gap-2 text-sm text-ink/70">
         <Spinner /> Drafting the booking brief…
+      </p>
+    );
+  }
+  if (load.name === "absent") {
+    return (
+      <p role="status" className="text-sm text-ink/70">
+        The demo has briefs for its top acts only. Refine the shortlist for a live run to draft
+        this one.
       </p>
     );
   }

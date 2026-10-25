@@ -3,7 +3,9 @@
 // A finished run with its refinements: the run on screen (with its diff against its
 // parent), the refinement box under it and the run-history sidebar beside it. A refinement
 // chains to the run on screen, so refining an earlier run drops the later ones from the
-// chain shown. The latest run's id goes into the URL (`?run=`), like a fresh run's.
+// chain shown. The latest run's id goes into the URL (`?run=`), like a fresh run's. On a seed
+// page (/v/[slug]) a refinement forks the read-only seed into a live run, and the URL moves to
+// that run's live shortlist page, where a reload or a shared link finds it.
 import { useState } from "react";
 
 import { ApiError, api, type Reason } from "@/src/lib/api-client";
@@ -27,9 +29,19 @@ interface Props {
   /** Oldest first; the last is the run to show. */
   chain: ParsedRun[];
   crossDomain?: CrossDomain;
+  /** The path a refined run's `?run=` goes on; the current page when absent. */
+  shortlistPath?: string;
+  profileHref?: string;
 }
 
-export function RefinableRun({ venueId, venueName, chain: initial, crossDomain }: Props) {
+export function RefinableRun({
+  venueId,
+  venueName,
+  chain: initial,
+  crossDomain,
+  shortlistPath = "",
+  profileHref,
+}: Props) {
   const [chain, setChain] = useState(initial);
   const [selected, setSelected] = useState(initial.length - 1);
   const [pending, setPending] = useState(false);
@@ -51,7 +63,11 @@ export function RefinableRun({ venueId, venueName, chain: initial, crossDomain }
           const kept = chain.slice(0, base + 1);
           setChain([...kept, next]);
           setSelected(kept.length);
-          window.history.replaceState(null, "", `?run=${encodeURIComponent(next.runId)}`);
+          window.history.replaceState(
+            null,
+            "",
+            `${shortlistPath}?run=${encodeURIComponent(next.runId)}`,
+          );
         },
         (err: unknown) => setError(err instanceof ApiError ? err.reason : "unavailable"),
       )
@@ -67,6 +83,7 @@ export function RefinableRun({ venueId, venueName, chain: initial, crossDomain }
           run={run}
           crossDomain={crossDomain}
           diff={diff}
+          profileHref={profileHref}
         >
           {/* Keyed by run: a new run on screen starts with an empty box. */}
           <RefineBox key={run.runId} pending={pending} error={error} onRefine={refine} />

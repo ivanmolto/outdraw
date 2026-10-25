@@ -14,6 +14,8 @@ interface Props {
   venueId: string;
   venueName: string;
   profile: Profile;
+  /** The "Build shortlist" footer; off on a seed page, whose shortlist is already below. */
+  action?: boolean;
 }
 
 const LISTS = [
@@ -175,7 +177,7 @@ function QualityBanner({ profile }: { profile: Profile }) {
   );
 }
 
-export function ProfileView({ venueId, venueName, profile }: Props) {
+export function ProfileView({ venueId, venueName, profile, action = true }: Props) {
   return (
     <>
       <header className="mb-6">
@@ -193,14 +195,16 @@ export function ProfileView({ venueId, venueName, profile }: Props) {
         ))}
         {profile.demographics && <DemographicsCard demographics={profile.demographics} />}
       </div>
-      <div className="sticky bottom-0 mt-8 -mx-4 border-t border-ink/10 bg-paper px-4 py-4">
-        <Link
-          href={`/venue/${encodeURIComponent(venueId)}/shortlist`}
-          className="block w-full rounded-md bg-ink px-4 py-3 text-center font-semibold text-paper sm:inline-block sm:w-auto"
-        >
-          Build shortlist
-        </Link>
-      </div>
+      {action && (
+        <div className="sticky bottom-0 mt-8 -mx-4 border-t border-ink/10 bg-paper px-4 py-4">
+          <Link
+            href={`/venue/${encodeURIComponent(venueId)}/shortlist`}
+            className="block w-full rounded-md bg-ink px-4 py-3 text-center font-semibold text-paper sm:inline-block sm:w-auto"
+          >
+            Build shortlist
+          </Link>
+        </div>
+      )}
     </>
   );
 }

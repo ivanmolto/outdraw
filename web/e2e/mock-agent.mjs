@@ -2,7 +2,9 @@
 // answered with the synthetic fixtures the component tests use (no Qloo data). The Next
 // server reaches it through AGENT_URL exactly as it reaches Render, so the /api proxy,
 // server components and the internal key all run for real. `GET /__requests` lists what
-// it received, for the spec to assert on.
+// it received, for the spec to assert on, and `GET /__counters` how many Qloo and model calls
+// the real agent would have spent on it (the daily counters of agent/draw/qloo/budget.py).
+// Three seed venues (T29) are stored from the start, read-only as the agent keeps them.
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 
@@ -15,6 +17,7 @@ const runFixture = fixture("../app/venue/[id]/shortlist/fixtures/run.json");
 const refinedFixture = fixture("../app/venue/[id]/shortlist/fixtures/refined-run.json");
 const soundcheckFixture = fixture("../app/venue/[id]/shortlist/fixtures/soundcheck.json");
 const briefFixture = fixture("../app/venue/[id]/shortlist/fixtures/brief.json");
+const compareFixture = fixture("../app/venue/[id]/shortlist/fixtures/compare.json");
 
 const VENUE_ID = venueFixture.id;
 /** How long a run "takes", so the skeleton is visible. */
@@ -25,7 +28,7 @@ const requests = [];
 /** @type {Record<string, unknown> | null} */
 let venue = null;
 let profiled = false;
-/** Stored runs by id, fresh and refined. @type {Map<string, any>} */
+/** Stored runs by id: the seeds', fresh and refined. @type {Map<string, any>} */
 const runs = new Map();
 /** Pencil holds by `${run_id} ${entity_id}`, as the real agent stores them on the row. */
 const pencilled = new Map();
@@ -35,6 +38,67 @@ const BRIEF_DELAY_MS = 600;
 const briefed = new Set();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** What a call would have spent on the real agent's daily counters. */
+const counters = { qloo: 0, llm: 0 };
+const spend = (qloo, llm) => {
+  counters.qloo += qloo;
+  counters.llm += llm;
+};
+/** Runs compared once, so a second compare is the cached copy. @type {Set<string>} */
+const compared = new Set();
+
+// --- seeds ------------------------------------------------------------------------------
+
+/** The seed venues: synthetic copies of the venue fixture, each with the run fixture as its
+ * precomputed run, a brief for its headliner only and its compare. */
+const SEEDS = [
+  ["nola-jazz", "Synthetic jazz bar", 150],
+  ["brooklyn-indie", "Synthetic indie room", 400],
+  ["london-comedy", "Synthetic comedy club", 250],
+].map(([slug, title, capacity], i) => {
+  const venueId = `ven_seed_${slug}`;
+  const runId = `run_seed_${slug}`;
+  const input = { ...venueFixture.venue, name: `Synthetic Room ${i + 1}`, capacity };
+  return {
+    slug,
+    title,
+    description: `A ${capacity}-capacity synthetic room for the e2e suite.`,
+    venue_id: venueId,
+    run_id: runId,
+    venue: input,
+    constraints: runFixture.constraints,
+    message: "",
+    ready: true,
+    venue_stored: true,
+    profile_stored: true,
+    run_status: "ok",
+    compare_ready: true,
+    brief_entity_ids: [runFixture.result.shortlist[0].entity_id],
+    created_at: runFixture.created_at,
+  };
+});
+const seedVenues = new Map(
+  SEEDS.map((s) => [
+    s.venue_id,
+    {
+      id: s.venue_id,
+      venue: s.venue,
+      resolutions: [],
+      profile: { ...venueFixture.profile, venue_id: s.venue_id },
+    },
+  ]),
+);
+const seedByRun = new Map(SEEDS.map((s) => [s.run_id, s]));
+for (const s of SEEDS) {
+  runs.set(s.run_id, {
+    ...runFixture,
+    run_id: s.run_id,
+    venue_id: s.venue_id,
+    is_seed: true,
+    seed_slug: s.slug,
+  });
+}
 
 function resolutions(input) {
   return {
@@ -95,14 +159,58 @@ function refine(parent, message) {
 }
 
 async function route(method, path, body) {
+  if (method === "GET" && path === "/seeds") return [200, { seeds: SEEDS }];
+  const seedPage = method === "GET" && /^\/seeds\/([^/]+)\/page$/.exec(path);
+  if (seedPage) {
+    const seed = SEEDS.find((s) => s.slug === decodeURIComponent(seedPage[1]));
+    if (!seed) return [404, { detail: "Unknown seed." }];
+    const run = runs.get(seed.run_id);
+    const candidates = run.result.shortlist
+      .filter((e) => e.sub_scores)
+      .map((e) => ({
+        run_id: seed.run_id,
+        entity_id: e.entity_id,
+        score: {},
+        evidence: { ...soundcheckFixture.trail, run_id: seed.run_id, entity_id: e.entity_id, name: e.name },
+        pencilled: false,
+      }));
+    const briefs = seed.brief_entity_ids.map((entityId) => ({
+      ...briefFixture,
+      run_id: seed.run_id,
+      entity_id: entityId,
+      name: run.result.shortlist.find((e) => e.entity_id === entityId)?.name,
+      cached: true,
+    }));
+    return [
+      200,
+      {
+        seed,
+        venue: seedVenues.get(seed.venue_id),
+        run,
+        candidates,
+        calls: [],
+        briefs,
+        compare: seed.compare_ready ? { ...compareFixture, run_id: seed.run_id, cached: true } : null,
+      },
+    ];
+  }
+  const seedVenue = method === "GET" && /^\/venues\/([^/]+)$/.exec(path);
+  if (seedVenue && seedVenues.has(decodeURIComponent(seedVenue[1]))) {
+    return [200, seedVenues.get(decodeURIComponent(seedVenue[1]))];
+  }
   if (method === "POST" && path === "/venues") {
     venue = { ...body };
     delete venue.id;
     return [200, { id: VENUE_ID }];
   }
-  if (!venue) return [404, { detail: "Unknown venue." }];
-  if (method === "POST" && path === `/venues/${VENUE_ID}/resolve`) return [200, resolutions(venue)];
+  // The seeds are stored from the start; the live venue only once it is posted.
+  if (!venue && path.startsWith("/venues/")) return [404, { detail: "Unknown venue." }];
+  if (method === "POST" && path === `/venues/${VENUE_ID}/resolve`) {
+    spend(1, 0);
+    return [200, resolutions(venue)];
+  }
   if (method === "POST" && path === `/venues/${VENUE_ID}/profile`) {
+    spend(1, 0);
     profiled = true;
     return [200, venueFixture.profile];
   }
@@ -113,6 +221,7 @@ async function route(method, path, body) {
     ];
   }
   if (method === "POST" && path === "/runs") {
+    spend(1, 1);
     await sleep(RUN_DELAY_MS);
     const run = { ...runFixture, venue_id: body.venue_id, constraints: body.constraints };
     runs.set(run.run_id, run);
@@ -122,10 +231,21 @@ async function route(method, path, body) {
   if (refining) {
     const parent = runs.get(decodeURIComponent(refining[1]));
     if (!parent) return [404, { detail: "Unknown run." }];
+    spend(1, 1);
     await sleep(RUN_DELAY_MS);
     const run = refine(parent, body.message);
     runs.set(run.run_id, run);
     return [200, run];
+  }
+  const comparing = method === "GET" && /^\/runs\/([^/]+)\/compare$/.exec(path);
+  if (comparing && runs.has(decodeURIComponent(comparing[1]))) {
+    const runId = decodeURIComponent(comparing[1]);
+    const seed = seedByRun.get(runId);
+    if (seed && !seed.compare_ready) return [409, { detail: { reason: "seed_not_precomputed" } }];
+    const cached = !!seed || compared.has(runId);
+    if (!cached) spend(0, 1);
+    compared.add(runId);
+    return [200, { ...compareFixture, run_id: runId, cached }];
   }
   const reading = method === "GET" && /^\/runs\/([^/]+)$/.exec(path);
   if (reading && runs.has(decodeURIComponent(reading[1]))) {
@@ -159,9 +279,16 @@ async function route(method, path, body) {
         },
       ];
     }
+    const seed = seedByRun.get(runId);
     if (method === "GET" && candidate[3] === "/brief") {
-      const cached = briefed.has(key);
-      if (!cached) await sleep(BRIEF_DELAY_MS);
+      if (seed && !seed.brief_entity_ids.includes(entityId)) {
+        return [409, { detail: { reason: "seed_not_precomputed" } }];
+      }
+      const cached = !!seed || briefed.has(key);
+      if (!cached) {
+        spend(1, 1);
+        await sleep(BRIEF_DELAY_MS);
+      }
       briefed.add(key);
       return [
         200,
@@ -175,6 +302,7 @@ async function route(method, path, body) {
       ];
     }
     if (method === "PATCH" && !candidate[3]) {
+      if (seed) return [403, { detail: { reason: "seed_read_only" } }];
       if (typeof body?.pencilled !== "boolean")
         return [422, { detail: "pencilled must be a boolean." }];
       pencilled.set(key, body.pencilled);
@@ -194,6 +322,7 @@ createServer(async (req, res) => {
   };
   if (url.pathname === "/health") return send(200, { ok: true });
   if (url.pathname === "/__requests") return send(200, requests);
+  if (url.pathname === "/__counters") return send(200, counters);
   if (req.headers["x-draw-internal-key"] !== KEY) return send(401, { detail: "Bad key." });
 
   let raw = "";
