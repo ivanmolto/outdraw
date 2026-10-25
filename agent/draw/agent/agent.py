@@ -19,11 +19,12 @@ code:
   run that never ranked is rejected, and a reordered shortlist is restored with a note;
 - `partial`/`degraded` summaries are copied into `notes` whatever the model wrote.
 
-Model limits: `max_tokens` 2000 (thinking counts against it), effort `low`, no sampling
-parameters (Haiku 5.5 rejects non-default `temperature`/`top_p`/`top_k`), prompt caching
-on the system prompt and the tool schemas. `MeteredModel` adds every call's tokens to the
-Redis counter `draw:llm:YYYY-MM-DD` and raises `BudgetExceeded` above
-`LLM_DAILY_TOKEN_CAP`; the cap is also checked before the run. The prompt carries ids,
+Model limits (`draw.agent.model`, re-exported here): `max_tokens` 2000 (thinking counts
+against it), effort `low`, no sampling parameters (Haiku 5.5 rejects non-default
+`temperature`/`top_p`/`top_k`), prompt caching on the system prompt and the tool schemas.
+`MeteredModel` adds every call's tokens to the Redis counter `draw:llm:YYYY-MM-DD` and
+raises `BudgetExceeded` above `LLM_DAILY_TOKEN_CAP`; the cap is also checked before the
+run. The prompt carries ids,
 canonical act names, sell-through ratios and the constraints: no Qloo key, no raw
 envelopes, no personal data.
 """
@@ -33,17 +34,14 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
-import os
 import re
-import threading
 import time
-from collections.abc import AsyncGenerator, AsyncIterable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Final, Literal, TypeVar
+from typing import Any, Final, Literal
 
 from pydantic import BaseModel, Field, ValidationError
 from strands import Agent
-from strands.agent.agent_metadata import AgentMetadata
 from strands.agent.agent_result import AgentResult as StrandsResult
 from strands.hooks import (
     AfterToolCallEvent,
@@ -53,18 +51,24 @@ from strands.hooks import (
     HookRegistry,
 )
 from strands.models import Model
-from strands.models.anthropic import AnthropicModel
-from strands.models.model import CacheConfig
 from strands.tools.executors import SequentialToolExecutor
-from strands.types.content import Message, Messages, SystemContentBlock
+from strands.types.content import Message
 from strands.types.exceptions import EventLoopException, MaxTokensReachedException
-from strands.types.streaming import StreamEvent
-from strands.types.tools import ToolChoice, ToolSpec
 
+from draw.agent.model import (
+    DEFAULT_MODEL,
+    DEFAULT_TOKEN_CAP,
+    EFFORT,
+    MAX_TOKENS,
+    AgentSettings,
+    MeteredModel,
+    build_model,
+    token_counter_from_env,
+)
 from draw.agent.notes import model_notes, plain_notes
 from draw.agent.store import RunStore
 from draw.agent.tools import SHORTLIST, DrawTools
-from draw.qloo.budget import LLM_PREFIX, DailyCounter, NullCounter, RedisCounter
+from draw.qloo.budget import DailyCounter
 from draw.qloo.envelope import BudgetExceeded
 from draw.qloo.exec_client import QlooExec
 from draw.qloo.mcp_client import QlooMCP
@@ -72,6 +76,8 @@ from draw.schemas import Constraints, CrowdProfile, DataQuality, ResolvedEntity,
 
 __all__ = [
     "DEFAULT_MODEL",
+    "DEFAULT_TOKEN_CAP",
+    "EFFORT",
     "MAX_STEPS",
     "MAX_TOKENS",
     "AgentResult",
@@ -88,15 +94,10 @@ __all__ = [
 
 log = logging.getLogger("draw.agent")
 
-DEFAULT_MODEL: Final = "claude-haiku-5-5"
 MAX_STEPS: Final = 8
 """Tool calls per run; the Qloo workflows count one each, like Draw's own tools."""
-MAX_TOKENS: Final = 2000
-EFFORT: Final = "low"
 MAX_BROADENING: Final = 1
 MAX_CANDIDATE_RUNS: Final = 1 + MAX_BROADENING
-DEFAULT_TOKEN_CAP: Final = 2_000_000
-"""Tokens per UTC day across runs; ~50 runs of Haiku 5.5 with cached prompts."""
 TURN_LIMIT: Final = MAX_STEPS + 3
 """Strands' own backstop on model turns: every tool turn spends a step, plus the answer."""
 MAX_INPUT_TEXT: Final = 80
@@ -149,7 +150,6 @@ Final answer: one JSON object and nothing else, no prose around it:
 """
 
 Status = Literal["ok", "ask", "error"]
-T = TypeVar("T", bound=BaseModel)
 
 
 # --- result types ----------------------------------------------------------------------
@@ -230,119 +230,6 @@ class AgentResult:
         if self.error:
             out["error"] = self.error
         return out
-
-
-# --- settings and model ----------------------------------------------------------------
-
-
-def _env_int(name: str, default: int) -> int:
-    raw = os.environ.get(name, "").strip()
-    return int(raw) if raw else default
-
-
-@dataclass(frozen=True)
-class AgentSettings:
-    model_id: str = DEFAULT_MODEL
-    token_cap: int = DEFAULT_TOKEN_CAP
-    redis_url: str | None = None
-
-    @classmethod
-    def from_env(cls) -> AgentSettings:
-        return cls(
-            model_id=os.environ.get("ANTHROPIC_MODEL", "").strip() or DEFAULT_MODEL,
-            token_cap=_env_int("LLM_DAILY_TOKEN_CAP", DEFAULT_TOKEN_CAP),
-            redis_url=os.environ.get("REDIS_URL") or None,
-        )
-
-
-def build_model(settings: AgentSettings | None = None) -> AnthropicModel:
-    """Haiku 5.5 through Strands' Anthropic provider, with the T13 limits baked in."""
-    settings = settings or AgentSettings.from_env()
-    return AnthropicModel(
-        model_id=settings.model_id,
-        max_tokens=MAX_TOKENS,
-        # Effort, not sampling: Haiku 5.5 rejects non-default temperature/top_p/top_k.
-        params={"output_config": {"effort": EFFORT}},
-        cache_config=CacheConfig(strategy="anthropic", system_prompt_ttl=True, tools_ttl=True),
-    )
-
-
-def token_counter_from_env(settings: AgentSettings | None = None) -> DailyCounter:
-    """`draw:llm:YYYY-MM-DD` in Redis when `REDIS_URL` is set, else a no-op."""
-    settings = settings or AgentSettings.from_env()
-    if not settings.redis_url:
-        return NullCounter()
-    return RedisCounter(
-        settings.redis_url,
-        settings.token_cap,
-        prefix=LLM_PREFIX,
-        what="LLM token",
-        charge_over=True,
-    )
-
-
-def _tokens_of(usage: dict[str, Any]) -> int:
-    billed = ("inputTokens", "outputTokens", "cacheReadInputTokens", "cacheWriteInputTokens")
-    return sum(int(usage.get(k) or 0) for k in billed)
-
-
-class MeteredModel(Model):
-    """Wraps any Strands model: after each call, `incrby` the tokens it used; raise above cap."""
-
-    def __init__(self, inner: Model, counter: DailyCounter) -> None:
-        self.inner = inner
-        self.counter = counter
-        self.calls = 0
-        self.tokens = 0
-
-    def update_config(self, **model_config: Any) -> None:
-        self.inner.update_config(**model_config)
-
-    def get_config(self) -> Any:
-        return self.inner.get_config()
-
-    def structured_output(
-        self,
-        output_model: type[T],
-        prompt: Messages,
-        system_prompt: str | None = None,
-        **kwargs: Any,
-    ) -> AsyncGenerator[dict[str, T | Any], None]:
-        return self.inner.structured_output(output_model, prompt, system_prompt, **kwargs)
-
-    async def stream(
-        self,
-        messages: Messages,
-        tool_specs: list[ToolSpec] | None = None,
-        system_prompt: str | None = None,
-        *,
-        tool_choice: ToolChoice | None = None,
-        system_prompt_content: list[SystemContentBlock] | None = None,
-        invocation_state: dict[str, Any] | None = None,
-        cancel_signal: threading.Event | None = None,
-        agent_metadata: AgentMetadata | None = None,
-        **kwargs: Any,
-    ) -> AsyncIterable[StreamEvent]:
-        self.calls += 1
-        events = self.inner.stream(
-            messages,
-            tool_specs,
-            system_prompt,
-            tool_choice=tool_choice,
-            system_prompt_content=system_prompt_content,
-            invocation_state=invocation_state,
-            cancel_signal=cancel_signal,
-            agent_metadata=agent_metadata,
-            **kwargs,
-        )
-        async for event in events:
-            if "metadata" in event:
-                tokens = _tokens_of(dict(event["metadata"].get("usage") or {}))
-                self.tokens += tokens
-                if tokens:
-                    # Raises `BudgetExceeded` above the cap; the spend stays on the counter.
-                    await self.counter.reserve(tokens)
-            yield event
 
 
 # --- the guard: step cap, broadening cap, asks, notes, trace ----------------------------
