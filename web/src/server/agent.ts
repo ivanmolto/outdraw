@@ -3,6 +3,8 @@
 // so the browser reaches the agent only through the /api route handlers.
 import "server-only";
 
+import { connection } from "next/server";
+
 import type {
   CandidateEvidence,
   CompareOut,
@@ -15,7 +17,7 @@ import type {
   VenueOut,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
-import type { ConfirmInput, RunInput, VenueUpsert } from "@/src/lib/schemas";
+import type { ConfirmInput, RefineInput, RunInput, VenueUpsert } from "@/src/lib/schemas";
 
 // Response shapes live in types/agent.ts, shared with the browser client.
 export type {
@@ -100,6 +102,10 @@ async function call<T>(
   body?: unknown,
   timeoutMs = TIMEOUT_MS,
 ): Promise<T> {
+  // Agent data is per request. With cacheComponents, Next prerenders a static shell of each
+  // page; this stops that prerender here, before a fetch it would abort (and we'd log as an
+  // agent failure).
+  await connection();
   const { url, key } = config();
   let res: Response;
   try {
@@ -141,6 +147,9 @@ export const agent = {
     call<CrowdProfile>("POST", `/venues/${seg(id)}/profile`, undefined, SLOW_TIMEOUT_MS),
   createRun: (body: RunInput) => call<RunOut>("POST", "/runs", body, SLOW_TIMEOUT_MS),
   getRun: (id: string) => call<RunOut>("GET", `/runs/${seg(id)}`),
+  /** A new run chained to `id`: one parse call, then a whole agent loop. */
+  refineRun: (id: string, body: RefineInput) =>
+    call<RunOut>("POST", `/runs/${seg(id)}/refine`, body, SLOW_TIMEOUT_MS),
   getEvidence: (runId: string, entityId: string) =>
     call<CandidateEvidence>("GET", `/runs/${seg(runId)}/candidates/${seg(entityId)}/evidence`),
   getCalls: (runId: string) => call<QlooCall[]>("GET", `/runs/${seg(runId)}/calls`),

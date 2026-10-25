@@ -6,6 +6,7 @@ import { GET as getCalls } from "./[id]/calls/route";
 import { GET as getEvidence } from "./[id]/candidates/[entityId]/evidence/route";
 import { GET as getSoundcheck } from "./[id]/candidates/[entityId]/soundcheck/route";
 import { GET as getCompare } from "./[id]/compare/route";
+import { POST as refineRun } from "./[id]/refine/route";
 import { GET as getRun } from "./[id]/route";
 import { POST as createRun } from "./route";
 
@@ -84,6 +85,51 @@ describe("POST /api/runs", () => {
 
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual({ reason: "unavailable" });
+  });
+});
+
+describe("POST /api/runs/[id]/refine", () => {
+  it("forwards the trimmed message to the run's refine route", async () => {
+    const sent = fakeAgent(Response.json({ ...run, run_id: "run_2", parent_run_id: "run_1" }));
+
+    const res = await refineRun(jsonRequest({ message: "  More emerging acts " }), ctx({ id: "run_1" }));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ run_id: "run_2", parent_run_id: "run_1" });
+    expect(sent).toEqual([
+      {
+        method: "POST",
+        url: `${AGENT_URL}/runs/run_1/refine`,
+        key: KEY,
+        body: { message: "More emerging acts" },
+      },
+    ]);
+  });
+
+  it.each([
+    [{ message: "   " }, "message"],
+    [{ message: "x".repeat(301) }, "message"],
+    [{ message: "ok", extra: 1 }, undefined],
+  ])("rejects %j without calling the agent", async (input, field) => {
+    const sent = fakeAgent();
+
+    const res = await refineRun(jsonRequest(input), ctx({ id: "run_1" }));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ reason: "invalid_input", ...(field && { field }) });
+    expect(sent).toEqual([]);
+  });
+
+  it.each([
+    [404, { reason: "not_found" }],
+    [422, { reason: "invalid_input" }],
+    [429, { reason: "budget" }],
+  ])("maps backend %i to %j", async (status, out) => {
+    fakeAgent(Response.json({ detail: "x" }, { status }));
+
+    const res = await refineRun(jsonRequest({ message: "hello" }), ctx({ id: "run_1" }));
+
+    expect(await res.json()).toEqual(out);
   });
 });
 

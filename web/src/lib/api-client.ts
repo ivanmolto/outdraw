@@ -10,7 +10,7 @@ import type {
   VenueId,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
-import type { ConfirmInput, RunInput, VenueUpsert } from "./schemas";
+import type { ConfirmInput, RefineInput, RunInput, VenueUpsert } from "./schemas";
 import type { SoundcheckData } from "./soundcheck";
 
 export type { CompareOut, EntityCandidate, Reason, ResolutionItem, Resolutions };
@@ -82,4 +82,6 @@ export const api = {
     post<ResolutionItem>(`/api/venues/${seg(id)}/confirm`, body),
   buildProfile: (id: string) => post<CrowdProfile>(`/api/venues/${seg(id)}/profile`),
   createRun: (body: RunInput) => post<RunOut>("/api/runs", body),
+  refineRun: (runId: string, body: RefineInput) =>
+    post<RunOut>(`/api/runs/${seg(runId)}/refine`, body),
 };

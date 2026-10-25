@@ -78,9 +78,13 @@ export const runSchema = z.strictObject({
   message: z.string().trim().max(LIMITS.message).default(""),
 });
 
+/** POST /api/runs/{id}/refine: what to change, in the booker's words. */
+export const refineSchema = z.strictObject({ message: text(LIMITS.message) });
+
 /** Path segments: venue, run and entity ids. */
 export const idSchema = id;
 
 export type VenueUpsert = z.infer<typeof venueUpsertSchema>;
 export type ConfirmInput = z.infer<typeof confirmSchema>;
 export type RunInput = z.infer<typeof runSchema>;
+export type RefineInput = z.infer<typeof refineSchema>;
