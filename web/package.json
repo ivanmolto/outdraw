@@ -19,6 +19,8 @@
     "node": ">=22.19.0"
   },
   "dependencies": {
+    "@upstash/ratelimit": "2.2.0",
+    "@upstash/redis": "1.39.0",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",
