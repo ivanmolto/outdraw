@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -6,7 +7,7 @@ import { Suspense } from "react";
 import { seedCards, type SeedCard } from "@/src/server/seeds";
 
 export const metadata: Metadata = {
-  title: "Outdraw",
+  title: { absolute: "Outdraw" },
   description: "Book the acts your crowd will turn out for, from Qloo's taste graph.",
 };
 
@@ -68,8 +69,16 @@ export default function Home() {
   return (
     <main className="flex-1 bg-paper text-ink">
       <div className="mx-auto w-full max-w-5xl px-4 py-12">
-        <p className="text-sm font-semibold tracking-wide text-ink/60 uppercase">Outdraw</p>
-        <h1 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight">
+        {/* The flat mark in ink on paper (the brand's light-surface variant). */}
+        <Image
+          src="/brand/flat-mark/mark-light.svg"
+          alt=""
+          width={512}
+          height={512}
+          priority
+          className="h-16 w-16"
+        />
+        <h1 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight">
           Book the acts your crowd will turn out for.
         </h1>
         <p className="mt-3 max-w-2xl text-ink/70">

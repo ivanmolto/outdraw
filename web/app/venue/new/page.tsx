@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { NewVenue } from "./new-venue";
 
 export const metadata: Metadata = {
-  title: "New venue · Outdraw",
+  title: "New venue",
   description: "Tell Outdraw about your room and the acts you've booked.",
 };
 

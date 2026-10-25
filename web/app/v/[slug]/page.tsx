@@ -13,7 +13,7 @@ import { RefinableRun } from "../../venue/[id]/shortlist/refinable-run";
 import { Message, Shell } from "../../venue/[id]/shell";
 
 export const metadata: Metadata = {
-  title: "Demo venue · Outdraw",
+  title: "Demo venue",
   description: "A demo venue's crowd profile and shortlist, precomputed from Qloo's taste graph.",
 };
 

@@ -8,7 +8,7 @@ import { ProfileView } from "./profile-view";
 import { Message, Shell } from "./shell";
 
 export const metadata: Metadata = {
-  title: "Crowd profile · Outdraw",
+  title: "Crowd profile",
   description: "What your crowd likes, from Qloo's taste graph.",
 };
 

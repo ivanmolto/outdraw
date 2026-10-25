@@ -11,7 +11,7 @@ import { RefinableRun } from "./refinable-run";
 import { RunShortlist } from "./run-shortlist";
 
 export const metadata: Metadata = {
-  title: "Shortlist · Outdraw",
+  title: "Shortlist",
   description: "Acts your crowd will turn out for, ranked by Outdraw's score.",
 };
 
