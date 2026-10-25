@@ -3,7 +3,8 @@
 // Soundcheck: everything behind one act's score, as a slide-over (a bottom sheet under
 // 640px). "Why this act" first, then the trail as an expandable tree (inputs → Qloo calls →
 // affinities → score breakdown with weights) and the cross-domain strip. Every item carries
-// the agent's own source label (`source_labels`): Qloo data or Draw's interpretation.
+// the agent's own source label (`source_labels`): Qloo data or Draw's interpretation. The UI
+// labels nothing itself: the top reason and the profile lists have keys in the trail too.
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Spinner } from "@/src/components/progress";
@@ -127,11 +128,15 @@ export function Soundcheck({
   const neutral = new Set(trail.neutral);
   const subs = SUB_SCORES.filter((name) => trail.sub_scores[name] != null);
   const region = trail.inputs.find((i) => i.ref === "region");
-  const strip: { kind: string; item: CrossDomainItem }[] = [
-    ...crossDomain.places.slice(0, STRIP_ITEMS).map((item) => ({ kind: "Place", item })),
-    ...crossDomain.films.slice(0, STRIP_ITEMS).map((item) => ({ kind: "Film", item })),
-    ...crossDomain.brands.slice(0, STRIP_ITEMS).map((item) => ({ kind: "Brand", item })),
-  ];
+  const strip: { list: keyof CrossDomain; kind: string; item: CrossDomainItem }[] = (
+    [
+      ["places", "Place"],
+      ["films", "Film"],
+      ["brands", "Brand"],
+    ] as const
+  ).flatMap(([list, kind]) =>
+    crossDomain[list].slice(0, STRIP_ITEMS).map((item) => ({ list, kind, item })),
+  );
 
   return (
     <div className="space-y-5">
@@ -140,8 +145,7 @@ export function Soundcheck({
           Why this act
         </h3>
         <ul>
-          {/* The templated top reason is Draw's wording of the numbers below. */}
-          <Item source="draw">
+          <Item source={labelOf(trail, REF.topReason)}>
             <p className="text-ink/80">{trail.top_reason}</p>
           </Item>
         </ul>
@@ -174,9 +178,11 @@ export function Soundcheck({
                         {call.cache_hit ? "cached" : "live"}
                       </span>
                     </div>
-                    <p className="mt-0.5 font-mono text-xs break-all text-ink/50">
-                      {call.params_summary}
-                    </p>
+                    {call.params_summary && (
+                      <p className="mt-0.5 font-mono text-xs break-all text-ink/50">
+                        {call.params_summary}
+                      </p>
+                    )}
                     {SUMMARISED.has(call.status) && (
                       <p data-testid="envelope-summary" className="mt-1 text-xs text-ink/80">
                         {summary ?? `Qloo marked this call ${call.status} without a summary.`}
@@ -244,8 +250,12 @@ export function Soundcheck({
           The crowd&apos;s taste outside music, and where it is, behind this shortlist.
         </p>
         <ul aria-label="Cross-domain contributors" className="mt-2 flex flex-wrap gap-2 text-xs">
-          {strip.map(({ kind, item }) => (
-            <Contributor key={`${kind}:${item.entity_id}`} kind={kind} source="qloo">
+          {strip.map(({ list, kind, item }) => (
+            <Contributor
+              key={`${kind}:${item.entity_id}`}
+              kind={kind}
+              source={labelOf(trail, REF.profile(list))}
+            >
               {item.name}
               {item.affinity != null && <span className="font-mono"> {value2(item.affinity)}</span>}
             </Contributor>

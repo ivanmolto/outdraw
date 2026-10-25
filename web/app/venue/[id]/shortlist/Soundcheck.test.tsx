@@ -128,6 +128,38 @@ describe("Soundcheck panel", () => {
     expect(screen.getAllByText("Draw").length).toBeGreaterThan(0);
   });
 
+  it("takes the top reason's and the profile lists' labels from the trail, not the UI", () => {
+    const why = () => sources(screen.getByRole("heading", { name: "Why this act" }).parentElement!);
+    const place = () =>
+      sources(items("Cross-domain contributors").find((c) => c.textContent?.startsWith("Place"))!);
+    setup();
+    expect(why()).toEqual(["draw"]);
+    expect(place()).toEqual(["qloo"]);
+    cleanup();
+
+    // The agent decides: flip its labels and the badges follow.
+    setup({
+      ...data,
+      trail: {
+        ...data.trail,
+        source_labels: { ...data.trail.source_labels, top_reason: "qloo", "profile:places": "draw" },
+      },
+    });
+    expect(why()).toEqual(["qloo"]);
+    expect(place()).toEqual(["draw"]);
+    cleanup();
+
+    // A trail from before these keys existed says so rather than guessing.
+    const older = Object.fromEntries(
+      Object.entries(data.trail.source_labels).filter(
+        ([k]) => k !== "top_reason" && k !== "profile:places",
+      ),
+    );
+    setup({ ...data, trail: { ...data.trail, source_labels: older } });
+    expect(why()).toEqual(["none"]);
+    expect(place()).toEqual(["none"]);
+  });
+
   it("marks a sub-score with no Qloo signal as the neutral fallback", () => {
     setup();
 

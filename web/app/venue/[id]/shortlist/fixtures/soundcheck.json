@@ -97,7 +97,11 @@
       "weight:novelty": "draw",
       "weight:size_fit": "draw",
       "weight:momentum": "draw",
-      "total": "draw"
+      "total": "draw",
+      "top_reason": "draw",
+      "profile:places": "qloo",
+      "profile:films": "qloo",
+      "profile:brands": "qloo"
     }
   },
   "summaries": {

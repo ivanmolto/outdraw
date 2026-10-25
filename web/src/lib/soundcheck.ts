@@ -47,7 +47,9 @@ export const candidateTrailSchema = z.object({
   name: z.string().min(1),
   top_reason: z.string(),
   neutral: z.array(subScore),
-  inputs: z.array(z.object({ ref: z.string().min(1), label: z.string() })),
+  // Trails stored before T22 (24 Oct 2026) carry neither inputs nor affinities, and label
+  // only the sub-scores: they still open, with those branches empty and the rest unlabelled.
+  inputs: z.array(z.object({ ref: z.string().min(1), label: z.string() })).default([]),
   qloo_calls: z.array(
     z.object({
       call_id: z.string().min(1),
@@ -61,14 +63,15 @@ export const candidateTrailSchema = z.object({
         "audience_demographics",
         "trends",
       ]),
-      params_summary: z.string(),
+      // Also absent from pre-T22 records.
+      params_summary: z.string().default(""),
       status: z.enum(["ok", "empty", "needs_input", "partial", "degraded", "error"]),
       cache_hit: z.boolean(),
     }),
   ),
-  affinities: z.array(
-    z.object({ entity: z.string().min(1), value: unit, call_id: z.string().min(1) }),
-  ),
+  affinities: z
+    .array(z.object({ entity: z.string().min(1), value: unit, call_id: z.string().min(1) }))
+    .default([]),
   sub_scores: breakdown,
   weights,
   total: z.number(),
@@ -115,6 +118,10 @@ export const REF = {
   input: (ref: string) => `input:${ref}`,
   call: (callId: string) => `call:${callId}`,
   affinity: (name: SubScore) => `affinity:${name}`,
+  /** Draw's templated wording of the score. */
+  topReason: "top_reason",
+  /** One of the crowd profile's cross-domain lists. */
+  profile: (kind: keyof CrossDomain) => `profile:${kind}`,
 } as const;
 
 /** The label for `key`, or undefined when the trail left the item unlabelled. */
