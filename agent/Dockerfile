@@ -27,6 +27,8 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY draw ./draw
+# The demo venues (T29): `GET /seeds` and the precompute script read this file at runtime.
+COPY seeds ./seeds
 COPY alembic.ini ./
 COPY migrations ./migrations
 COPY --chmod=755 docker/start.sh ./start.sh
