@@ -5,6 +5,7 @@
 // affinities → score breakdown with weights) and the cross-domain strip. Every item carries
 // the agent's own source label (`source_labels`): Qloo data or Draw's interpretation. The UI
 // labels nothing itself: the top reason and the profile lists have keys in the trail too.
+// A second tab holds the act's booking brief (brief.tsx), and the header its pencil hold.
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { Spinner } from "@/src/components/progress";
@@ -21,47 +22,12 @@ import {
   type SoundcheckData,
 } from "@/src/lib/soundcheck";
 import type { QlooStatus, SourceLabel } from "@/types/schemas";
+import { BriefTab, PencilToggle } from "./brief";
+import { Provenance } from "./provenance";
 
 const EMPTY: CrossDomain = { places: [], films: [], brands: [] };
 /** Items per cross-domain list in the strip. */
 const STRIP_ITEMS = 3;
-
-export function Provenance({ source }: { source: SourceLabel | undefined }) {
-  if (source === "qloo") {
-    return (
-      <span
-        data-testid="source"
-        data-source="qloo"
-        title="Qloo data"
-        className="inline-block shrink-0 rounded-sm bg-ink px-1 py-px text-[10px] font-semibold tracking-wide text-brand-amber uppercase"
-      >
-        Qloo
-      </span>
-    );
-  }
-  if (source === "draw") {
-    return (
-      <span
-        data-testid="source"
-        data-source="draw"
-        title="Outdraw's interpretation"
-        className="inline-block shrink-0 rounded-sm border border-ink/30 px-1 py-px text-[10px] font-semibold tracking-wide text-ink/70 uppercase"
-      >
-        Draw
-      </span>
-    );
-  }
-  // The agent validates every trail as fully labelled; say so plainly if one slips through.
-  return (
-    <span
-      data-testid="source"
-      data-source="none"
-      className="inline-block shrink-0 rounded-sm border border-dashed border-ink/40 px-1 py-px text-[10px] text-ink/60"
-    >
-      Unlabelled
-    </span>
-  );
-}
 
 function StatusChip({ status }: { status: QlooStatus }) {
   const style =
@@ -80,9 +46,26 @@ function StatusChip({ status }: { status: QlooStatus }) {
   );
 }
 
-function Item({ source, children }: { source: SourceLabel | undefined; children: React.ReactNode }) {
+/** Trail elements carry their label key as `data-ref`, so a brief's evidence link can find
+ * them (`tabIndex -1`: focusable from the link, never a Tab stop). */
+const refProps = (ref: string | undefined) =>
+  ref === undefined ? {} : { "data-ref": ref, tabIndex: -1 };
+
+function Item({
+  source,
+  evRef,
+  children,
+}: {
+  source: SourceLabel | undefined;
+  evRef?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <li data-testid="trail-item" className="flex items-start justify-between gap-3 py-1.5">
+    <li
+      data-testid="trail-item"
+      {...refProps(evRef)}
+      className="flex items-start justify-between gap-3 rounded-sm py-1.5 data-[highlight]:bg-brand-amber/25"
+    >
       <div className="min-w-0 flex-1 break-words">{children}</div>
       <Provenance source={source} />
     </li>
@@ -145,7 +128,7 @@ export function Soundcheck({
           Why this act
         </h3>
         <ul>
-          <Item source={labelOf(trail, REF.topReason)}>
+          <Item source={labelOf(trail, REF.topReason)} evRef={REF.topReason}>
             <p className="text-ink/80">{trail.top_reason}</p>
           </Item>
         </ul>
@@ -155,7 +138,11 @@ export function Soundcheck({
         <Branch title="Inputs" count={trail.inputs.length} open>
           <ul aria-label="Inputs">
             {trail.inputs.map((input) => (
-              <Item key={input.ref} source={labelOf(trail, REF.input(input.ref))}>
+              <Item
+                key={input.ref}
+                source={labelOf(trail, REF.input(input.ref))}
+                evRef={REF.input(input.ref)}
+              >
                 {input.label}
               </Item>
             ))}
@@ -170,7 +157,11 @@ export function Soundcheck({
               {trail.qloo_calls.map((call) => {
                 const summary = summaries[call.call_id];
                 return (
-                  <Item key={call.call_id} source={labelOf(trail, REF.call(call.call_id))}>
+                  <Item
+                    key={call.call_id}
+                    source={labelOf(trail, REF.call(call.call_id))}
+                    evRef={REF.call(call.call_id)}
+                  >
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-mono font-medium text-ink">{call.workflow}</span>
                       <StatusChip status={call.status} />
@@ -207,6 +198,7 @@ export function Soundcheck({
                   <Item
                     key={`${affinity.call_id}:${sub ?? affinity.entity}`}
                     source={sub ? labelOf(trail, REF.affinity(sub)) : undefined}
+                    evRef={sub ? REF.affinity(sub) : undefined}
                   >
                     <span className="text-ink">{sub ? SUB_SCORE_LABELS[sub] : "Affinity"}</span>{" "}
                     <span className="font-mono">{value2(affinity.value)}</span>
@@ -231,7 +223,7 @@ export function Soundcheck({
                 weightSource={labelOf(trail, REF.weight(name))}
               />
             ))}
-            <Item source={labelOf(trail, REF.total)}>
+            <Item source={labelOf(trail, REF.total)} evRef={REF.total}>
               <span className="font-semibold text-ink">Total</span>{" "}
               <span data-testid="trail-total" className="font-mono">
                 {trail.total.toFixed(3)}
@@ -255,18 +247,23 @@ export function Soundcheck({
               key={`${kind}:${item.entity_id}`}
               kind={kind}
               source={labelOf(trail, REF.profile(list))}
+              evRef={REF.profile(list)}
             >
               {item.name}
               {item.affinity != null && <span className="font-mono"> {value2(item.affinity)}</span>}
             </Contributor>
           ))}
           {region && (
-            <Contributor kind="Region" source={labelOf(trail, REF.input("region"))}>
+            <Contributor
+              kind="Region"
+              source={labelOf(trail, REF.input("region"))}
+              evRef={REF.input("region")}
+            >
               {region.label.replace(/^Venue region:\s*/, "")}
             </Contributor>
           )}
           {trail.sub_scores.local_heat != null && (
-            <Contributor kind="Local heat" source={labelOf(trail, "local_heat")}>
+            <Contributor kind="Local heat" source={labelOf(trail, "local_heat")} evRef="local_heat">
               <span className="font-mono">{value2(trail.sub_scores.local_heat)}</span>
             </Contributor>
           )}
@@ -297,7 +294,12 @@ function Breakdown({
   weightSource: SourceLabel | undefined;
 }) {
   return (
-    <li data-testid="trail-item" data-sub-score={name} className="border-b border-ink/10 py-1.5">
+    <li
+      data-testid="trail-item"
+      data-sub-score={name}
+      {...refProps(name)}
+      className="border-b border-ink/10 py-1.5 data-[highlight]:bg-brand-amber/25"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <span className="text-ink">{SUB_SCORE_LABELS[name]}</span>{" "}
@@ -311,7 +313,10 @@ function Breakdown({
         </div>
         <Provenance source={source} />
       </div>
-      <div className="mt-0.5 flex items-center justify-between gap-3 text-xs text-ink/60">
+      <div
+        {...refProps(REF.weight(name))}
+        className="mt-0.5 flex items-center justify-between gap-3 text-xs text-ink/60 data-[highlight]:bg-brand-amber/25"
+      >
         <span>
           weight <span className="font-mono">{value2(weight)}</span> → adds{" "}
           <span className="font-mono">{(weight * value).toFixed(3)}</span>
@@ -325,16 +330,19 @@ function Breakdown({
 function Contributor({
   kind,
   source,
+  evRef,
   children,
 }: {
   kind: string;
   source: SourceLabel | undefined;
+  evRef: string;
   children: React.ReactNode;
 }) {
   return (
     <li
       data-testid="trail-item"
-      className="flex items-center gap-1.5 rounded-full border border-paper/30 py-0.5 pr-1 pl-2"
+      {...refProps(evRef)}
+      className="flex items-center gap-1.5 rounded-full border border-paper/30 py-0.5 pr-1 pl-2 data-[highlight]:border-brand-amber"
     >
       <span className="text-paper/60">{kind}</span>
       <span>{children}</span>
@@ -379,7 +387,8 @@ type Load =
   | { name: "done"; data: SoundcheckData }
   | { name: "failed"; reason: Reason };
 
-/** Loaded trails by run and act: a trail never changes once its run is stored. */
+/** Loaded trails by run and act: a trail never changes once its run is stored, and the
+ * pencil switch keeps `pencilled` current. */
 const loaded = new Map<string, SoundcheckData>();
 
 /** Clears the module cache between tests. */
@@ -415,6 +424,15 @@ function useTrail(runId: string, entityId: string, attempt: number): Load {
   return state.key === key ? state.load : { name: "loading" };
 }
 
+/** How long a trail item stays highlighted after an evidence link lands on it. */
+export const HIGHLIGHT_MS = 2000;
+
+type Tab = "evidence" | "brief";
+const TABS: [Tab, string][] = [
+  ["evidence", "Evidence"],
+  ["brief", "Brief"],
+];
+
 function Panel({
   runId,
   entityId,
@@ -431,8 +449,61 @@ function Panel({
   const titleId = useId();
   const close = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDivElement>(null);
+  const tabsId = useId();
   const [attempt, setAttempt] = useState(0);
   const load = useTrail(runId, entityId, attempt);
+  const [tab, setTab] = useState<Tab>("evidence");
+  /** The trail item an evidence link asked for, focused once the Evidence tab is drawn. */
+  const [target, setTarget] = useState<string | null>(null);
+  const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({ evidence: null, brief: null });
+  /** The highlight's timer, so a second link clears the first highlight at once. Not an
+   * effect cleanup: `setTarget(null)` re-runs the effect, and a cleanup there would cancel
+   * the timer before it fired. */
+  const highlight = useRef<{ el: HTMLElement; timer: ReturnType<typeof setTimeout> } | null>(
+    null,
+  );
+
+  useEffect(() => {
+    if (tab !== "evidence" || target === null || !dialog.current) return;
+    const el = Array.from(dialog.current.querySelectorAll<HTMLElement>("[data-ref]")).find(
+      (node) => node.dataset.ref === target,
+    );
+    setTarget(null);
+    if (!el) return;
+    for (let d = el.closest("details"); d; d = d.parentElement?.closest("details") ?? null) {
+      d.open = true;
+    }
+    el.scrollIntoView?.({ block: "center" });
+    el.focus();
+    if (highlight.current) {
+      clearTimeout(highlight.current.timer);
+      delete highlight.current.el.dataset.highlight;
+    }
+    el.dataset.highlight = "";
+    const timer = setTimeout(() => {
+      delete el.dataset.highlight;
+      highlight.current = null;
+    }, HIGHLIGHT_MS);
+    highlight.current = { el, timer };
+  }, [tab, target]);
+  useEffect(
+    () => () => {
+      if (highlight.current) clearTimeout(highlight.current.timer);
+    },
+    [],
+  );
+
+  const onEvidence = useCallback((ref: string) => {
+    setTab("evidence");
+    setTarget(ref);
+  }, []);
+
+  const onTabKey = (e: React.KeyboardEvent) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    const next = tab === "evidence" ? "brief" : "evidence";
+    setTab(next);
+    tabRefs.current[next]?.focus();
+  };
 
   useEffect(() => {
     close.current?.focus();
@@ -461,6 +532,20 @@ function Panel({
             <h2 id={titleId} className="mt-0.5 font-semibold break-words text-ink">
               {name}
             </h2>
+            {load.name === "done" && (
+              <div className="mt-2">
+                <PencilToggle
+                  runId={runId}
+                  entityId={entityId}
+                  initial={load.data.pencilled}
+                  onChange={(pencilled) => {
+                    const key = `${runId} ${entityId}`;
+                    const hit = loaded.get(key);
+                    if (hit) loaded.set(key, { ...hit, pencilled });
+                  }}
+                />
+              </div>
+            )}
           </div>
           <button
             ref={close}
@@ -471,6 +556,31 @@ function Panel({
             Close
           </button>
         </header>
+        {load.name === "done" && (
+          <div role="tablist" aria-label="Soundcheck views" className="flex gap-1 border-b border-ink/15 px-4">
+            {TABS.map(([key, label]) => (
+              <button
+                key={key}
+                ref={(el) => {
+                  tabRefs.current[key] = el;
+                }}
+                type="button"
+                role="tab"
+                id={`${tabsId}-${key}`}
+                aria-selected={tab === key}
+                aria-controls={`${tabsId}-${key}-panel`}
+                tabIndex={tab === key ? 0 : -1}
+                onClick={() => setTab(key)}
+                onKeyDown={onTabKey}
+                className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
+                  tab === key ? "border-ink text-ink" : "border-transparent text-ink/60"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="overflow-y-auto p-4">
           {load.name === "loading" && (
             <p role="status" className="flex items-center gap-2 text-sm text-ink/70">
@@ -489,7 +599,24 @@ function Panel({
               </button>
             </div>
           )}
-          {load.name === "done" && <Soundcheck data={load.data} crossDomain={crossDomain} />}
+          {load.name === "done" && (
+            <div
+              role="tabpanel"
+              id={`${tabsId}-${tab}-panel`}
+              aria-labelledby={`${tabsId}-${tab}`}
+            >
+              {tab === "evidence" ? (
+                <Soundcheck data={load.data} crossDomain={crossDomain} />
+              ) : (
+                <BriefTab
+                  runId={runId}
+                  entityId={entityId}
+                  onEvidence={onEvidence}
+                  linkable={(ref) => ref in load.data.trail.source_labels}
+                />
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

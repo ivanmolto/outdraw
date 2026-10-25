@@ -18,6 +18,8 @@ export type RunOut = Schema<"RunOut">;
 export type CandidateEvidence = Schema<"Evidence">;
 export type QlooCall = Schema<"QlooCall">;
 export type CompareOut = Schema<"CompareOut">;
+export type BriefOut = Schema<"BriefOut">;
+export type CandidateOut = Schema<"CandidateOut">;
 
 /** What the UI may branch on; never a backend message, URL or stack trace. */
 export type Reason =

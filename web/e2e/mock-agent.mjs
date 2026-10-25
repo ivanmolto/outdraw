@@ -13,6 +13,8 @@ const fixture = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)
 const venueFixture = fixture("../app/venue/[id]/fixtures/venue.json");
 const runFixture = fixture("../app/venue/[id]/shortlist/fixtures/run.json");
 const refinedFixture = fixture("../app/venue/[id]/shortlist/fixtures/refined-run.json");
+const soundcheckFixture = fixture("../app/venue/[id]/shortlist/fixtures/soundcheck.json");
+const briefFixture = fixture("../app/venue/[id]/shortlist/fixtures/brief.json");
 
 const VENUE_ID = venueFixture.id;
 /** How long a run "takes", so the skeleton is visible. */
@@ -25,6 +27,12 @@ let venue = null;
 let profiled = false;
 /** Stored runs by id, fresh and refined. @type {Map<string, any>} */
 const runs = new Map();
+/** Pencil holds by `${run_id} ${entity_id}`, as the real agent stores them on the row. */
+const pencilled = new Map();
+/** How long a brief "takes" to draft the first time, so the spinner is visible. */
+const BRIEF_DELAY_MS = 600;
+/** Briefs served once, so the second read is the cached copy. @type {Set<string>} */
+const briefed = new Set();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -123,6 +131,58 @@ async function route(method, path, body) {
   if (reading && runs.has(decodeURIComponent(reading[1]))) {
     return [200, runs.get(decodeURIComponent(reading[1]))];
   }
+  // The Soundcheck panel's routes, for any act of a stored run: every act gets the one
+  // synthetic trail and brief, renamed to it; the pencil hold is kept per act.
+  const candidate = /^\/runs\/([^/]+)\/candidates\/([^/]+)(\/evidence|\/brief)?$/.exec(path);
+  if (candidate) {
+    const runId = decodeURIComponent(candidate[1]);
+    const entityId = decodeURIComponent(candidate[2]);
+    const run = runs.get(runId);
+    const act = run?.result.shortlist.find((e) => e.entity_id === entityId);
+    if (!act) return [404, { detail: "No such candidate." }];
+    const key = `${runId} ${entityId}`;
+    if (method === "GET" && candidate[3] === "/evidence") {
+      const trail = {
+        ...soundcheckFixture.trail,
+        run_id: runId,
+        entity_id: entityId,
+        name: act.name,
+      };
+      return [
+        200,
+        {
+          run_id: runId,
+          entity_id: entityId,
+          score: {},
+          evidence: trail,
+          pencilled: pencilled.get(key) ?? false,
+        },
+      ];
+    }
+    if (method === "GET" && candidate[3] === "/brief") {
+      const cached = briefed.has(key);
+      if (!cached) await sleep(BRIEF_DELAY_MS);
+      briefed.add(key);
+      return [
+        200,
+        {
+          ...briefFixture,
+          run_id: runId,
+          entity_id: entityId,
+          name: act.name,
+          cached,
+        },
+      ];
+    }
+    if (method === "PATCH" && !candidate[3]) {
+      if (typeof body?.pencilled !== "boolean")
+        return [422, { detail: "pencilled must be a boolean." }];
+      pencilled.set(key, body.pencilled);
+      return [200, { run_id: runId, entity_id: entityId, pencilled: body.pencilled }];
+    }
+  }
+  const calls = method === "GET" && /^\/runs\/([^/]+)\/calls$/.exec(path);
+  if (calls && runs.has(decodeURIComponent(calls[1]))) return [200, []];
   return [404, { detail: "Not found." }];
 }
 

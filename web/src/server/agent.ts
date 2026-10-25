@@ -6,7 +6,9 @@ import "server-only";
 import { connection } from "next/server";
 
 import type {
+  BriefOut,
   CandidateEvidence,
+  CandidateOut,
   CompareOut,
   QlooCall,
   Reason,
@@ -17,11 +19,19 @@ import type {
   VenueOut,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
-import type { ConfirmInput, RefineInput, RunInput, VenueUpsert } from "@/src/lib/schemas";
+import type {
+  ConfirmInput,
+  PencilInput,
+  RefineInput,
+  RunInput,
+  VenueUpsert,
+} from "@/src/lib/schemas";
 
 // Response shapes live in types/agent.ts, shared with the browser client.
 export type {
+  BriefOut,
   CandidateEvidence,
+  CandidateOut,
   CompareOut,
   QlooCall,
   Reason,
@@ -97,7 +107,7 @@ function config(): { url: string; key: string } {
 }
 
 async function call<T>(
-  method: "GET" | "POST",
+  method: "GET" | "POST" | "PATCH",
   path: string,
   body?: unknown,
   timeoutMs = TIMEOUT_MS,
@@ -152,6 +162,16 @@ export const agent = {
     call<RunOut>("POST", `/runs/${seg(id)}/refine`, body, SLOW_TIMEOUT_MS),
   getEvidence: (runId: string, entityId: string) =>
     call<CandidateEvidence>("GET", `/runs/${seg(runId)}/candidates/${seg(entityId)}/evidence`),
+  setPencil: (runId: string, entityId: string, body: PencilInput) =>
+    call<CandidateOut>("PATCH", `/runs/${seg(runId)}/candidates/${seg(entityId)}`, body),
+  /** One Qloo call and one model call the first time per act, then the cached copy. */
+  getBrief: (runId: string, entityId: string) =>
+    call<BriefOut>(
+      "GET",
+      `/runs/${seg(runId)}/candidates/${seg(entityId)}/brief`,
+      undefined,
+      SLOW_TIMEOUT_MS,
+    ),
   getCalls: (runId: string) => call<QlooCall[]>("GET", `/runs/${seg(runId)}/calls`),
   /** One tool-less model call the first time per run, then the cached copy. */
   getCompare: (runId: string) =>

@@ -81,6 +81,9 @@ export const runSchema = z.strictObject({
 /** POST /api/runs/{id}/refine: what to change, in the booker's words. */
 export const refineSchema = z.strictObject({ message: text(LIMITS.message) });
 
+/** PATCH /api/runs/{id}/candidates/{entityId}: pencil (or release) a hold on the act. */
+export const pencilSchema = z.strictObject({ pencilled: z.boolean() });
+
 /** Path segments: venue, run and entity ids. */
 export const idSchema = id;
 
@@ -88,3 +91,4 @@ export type VenueUpsert = z.infer<typeof venueUpsertSchema>;
 export type ConfirmInput = z.infer<typeof confirmSchema>;
 export type RunInput = z.infer<typeof runSchema>;
 export type RefineInput = z.infer<typeof refineSchema>;
+export type PencilInput = z.infer<typeof pencilSchema>;

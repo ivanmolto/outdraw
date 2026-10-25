@@ -1,0 +1,66 @@
+{
+  "run_id": "run_fixture",
+  "entity_id": "urn:entity:synthetic:artist:11",
+  "name": "Synthetic Headliner",
+  "brief": {
+    "why_it_fits": [
+      {
+        "text": "Qloo ranks Synthetic Headliner among this crowd's strongest affinities.",
+        "evidence_ref": "call:00000000-0000-4000-8000-0000000000a1"
+      },
+      {
+        "text": "The room's past sell-outs share its audience.",
+        "evidence_ref": "affinity:past_fit"
+      },
+      {
+        "text": "Synthetic Opener pulls from the same crowd at a smaller size.",
+        "evidence_ref": "call:00000000-0000-4000-8000-0000000000b9"
+      }
+    ],
+    "night_format": "Two-act show: doors 19:30, support 20:15, headline 21:15.",
+    "support_act": "Synthetic Opener",
+    "partners": ["Synthetic Bar", "Synthetic Café"],
+    "outreach_email": {
+      "subject": "Synthetic Headliner at Synthetic Room",
+      "body": "Hello,\n\nSynthetic Room would like to host Synthetic Headliner.\n\nBest, bookings."
+    }
+  },
+  "evidence": {
+    "top_reason": {
+      "label": "Qloo's recommend puts Synthetic Headliner at 92% affinity with this crowd.",
+      "source": "draw"
+    },
+    "call:00000000-0000-4000-8000-0000000000a1": {
+      "label": "Qloo recommend artists for the crowd, ok",
+      "source": "qloo"
+    },
+    "affinity:past_fit": { "label": "Qloo value 0.81 behind past_fit", "source": "qloo" },
+    "call:00000000-0000-4000-8000-0000000000b9": {
+      "label": "Qloo compare_audiences support pool, ok",
+      "source": "qloo"
+    }
+  },
+  "support": {
+    "entity_id": "urn:entity:synthetic:artist:12",
+    "name": "Synthetic Opener",
+    "overlap": 0.64,
+    "call_id": "00000000-0000-4000-8000-0000000000b9",
+    "status": "ok",
+    "pool": 3,
+    "note": null
+  },
+  "source_labels": {
+    "why_it_fits": "draw",
+    "night_format": "draw",
+    "support_act": "qloo",
+    "partners": "qloo",
+    "outreach_email": "draw"
+  },
+  "notes": [],
+  "error": null,
+  "model": "claude-haiku-5-5",
+  "attempts": 1,
+  "token_usage": { "input_tokens": 1200, "output_tokens": 300 },
+  "created_at": "2026-10-25T12:00:00Z",
+  "cached": false
+}

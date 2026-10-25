@@ -80,11 +80,13 @@ export const candidateTrailSchema = z.object({
 
 export type CandidateTrail = z.infer<typeof candidateTrailSchema>;
 
-/** What `/api/runs/[id]/candidates/[entityId]/soundcheck` answers: the trail, and the
- * envelope summary of each of its calls that came back less than ok (by call_id). */
+/** What `/api/runs/[id]/candidates/[entityId]/soundcheck` answers: the trail, the
+ * envelope summary of each of its calls that came back less than ok (by call_id), and
+ * whether the booker has pencilled the act. */
 export interface SoundcheckData {
   trail: CandidateTrail;
   summaries: Record<string, string>;
+  pencilled: boolean;
 }
 
 /** A profile entity as both the schema and the API contract type it (affinity may be null). */

@@ -1,4 +1,5 @@
 {
+  "pencilled": false,
   "trail": {
     "candidate_id": "cand_1",
     "run_id": "run_fixture",

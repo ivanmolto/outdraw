@@ -1,6 +1,8 @@
 // Browser-side calls to our own /api routes (never the agent or Qloo directly). Every
 // failure becomes an ApiError carrying the `{reason}` body the proxy routes emit.
 import type {
+  BriefOut,
+  CandidateOut,
   CompareOut,
   EntityCandidate,
   Reason,
@@ -10,10 +12,10 @@ import type {
   VenueId,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
-import type { ConfirmInput, RefineInput, RunInput, VenueUpsert } from "./schemas";
+import type { ConfirmInput, PencilInput, RefineInput, RunInput, VenueUpsert } from "./schemas";
 import type { SoundcheckData } from "./soundcheck";
 
-export type { CompareOut, EntityCandidate, Reason, ResolutionItem, Resolutions };
+export type { BriefOut, CandidateOut, CompareOut, EntityCandidate, Reason, ResolutionItem, Resolutions };
 
 export class ApiError extends Error {
   constructor(
@@ -48,7 +50,7 @@ export function reasonMessage(err: unknown): string {
   return reasonText(err instanceof ApiError ? err.reason : "unavailable");
 }
 
-async function request<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function request<T>(method: "GET" | "POST" | "PATCH", path: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
     res = await fetch(path, {
@@ -75,6 +77,14 @@ const seg = encodeURIComponent;
 export const api = {
   getSoundcheck: (runId: string, entityId: string) =>
     get<SoundcheckData>(`/api/runs/${seg(runId)}/candidates/${seg(entityId)}/soundcheck`),
+  getBrief: (runId: string, entityId: string) =>
+    get<BriefOut>(`/api/runs/${seg(runId)}/candidates/${seg(entityId)}/brief`),
+  setPencil: (runId: string, entityId: string, body: PencilInput) =>
+    request<CandidateOut>(
+      "PATCH",
+      `/api/runs/${seg(runId)}/candidates/${seg(entityId)}`,
+      body,
+    ),
   getCompare: (runId: string) => get<CompareOut>(`/api/runs/${seg(runId)}/compare`),
   upsertVenue: (body: VenueUpsert) => post<VenueId>("/api/venues", body),
   resolveVenue: (id: string) => post<Resolutions>(`/api/venues/${seg(id)}/resolve`),

@@ -203,6 +203,7 @@ describe("Soundcheck panel", () => {
         inputs: data.trail.inputs.filter((i) => i.ref !== "region"),
       },
       summaries: {},
+      pencilled: false,
     };
     render(<Soundcheck data={bare} />);
 

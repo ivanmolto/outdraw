@@ -1,14 +1,26 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { peekRateLimit, spendRateLimit } from "@/src/server/ratelimit";
 import { AGENT_URL, KEY, ctx, fakeAgent, jsonRequest } from "@/src/server/test-agent";
 import soundcheck from "../../venue/[id]/shortlist/fixtures/soundcheck.json";
 import { GET as getCalls } from "./[id]/calls/route";
+import { GET as getBrief } from "./[id]/candidates/[entityId]/brief/route";
 import { GET as getEvidence } from "./[id]/candidates/[entityId]/evidence/route";
 import { GET as getSoundcheck } from "./[id]/candidates/[entityId]/soundcheck/route";
+import { PATCH as patchCandidate } from "./[id]/candidates/[entityId]/route";
 import { GET as getCompare } from "./[id]/compare/route";
 import { POST as refineRun } from "./[id]/refine/route";
 import { GET as getRun } from "./[id]/route";
 import { POST as createRun } from "./route";
+
+// The brief route limits itself (peek, then spend when the agent drafted); the limiter is
+// tested on its own in src/server/ratelimit.test.ts.
+vi.mock("@/src/server/ratelimit", () => ({
+  peekRateLimit: vi.fn(async () => null),
+  spendRateLimit: vi.fn(async () => {}),
+}));
+const peek = vi.mocked(peekRateLimit);
+const spend = vi.mocked(spendRateLimit);
 
 const constraints = {
   include_tags: [],
@@ -23,6 +35,8 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  peek.mockReset().mockResolvedValue(null);
+  spend.mockReset().mockResolvedValue(undefined);
 });
 
 describe("POST /api/runs", () => {
@@ -202,7 +216,13 @@ describe("GET /api/runs/[id]/candidates/[entityId]/soundcheck", () => {
 
   it("joins the trail with summaries of its non-ok calls, never the envelopes' results", async () => {
     const sent = fakeAgent(
-      Response.json({ run_id: "run_1", entity_id: "urn:entity:synthetic:2", score: {}, evidence: trail }),
+      Response.json({
+        run_id: "run_1",
+        entity_id: "urn:entity:synthetic:2",
+        score: {},
+        evidence: trail,
+        pencilled: true,
+      }),
       Response.json([
         call("c-ok", "ok", { status: "ok", summary: "fine", results: [{ name: "Secret" }] }),
         call("c-partial", "partial", { status: "partial", summary: "Half came back.", results: [{ x: 1 }] }),
@@ -221,6 +241,7 @@ describe("GET /api/runs/[id]/candidates/[entityId]/soundcheck", () => {
     expect(body).toEqual({
       trail,
       summaries: { "c-partial": "Half came back.", "c-error": "Retry later." },
+      pencilled: true,
     });
     expect(JSON.stringify(body)).not.toContain("Secret");
     expect(sent.map((s) => s.url)).toEqual([
@@ -287,5 +308,119 @@ describe("GET /api/runs/[id]/calls", () => {
 
     expect(await res.json()).toEqual([]);
     expect(sent[0]).toMatchObject({ method: "GET", url: `${AGENT_URL}/runs/run_1/calls` });
+  });
+});
+
+describe("GET /api/runs/[id]/candidates/[entityId]/brief", () => {
+  const act = ctx({ id: "run_1", entityId: "urn:entity:synthetic:2" });
+
+  it("forwards to the agent with the entity id encoded; a cached brief costs no token", async () => {
+    const brief = { run_id: "run_1", entity_id: "urn:entity:synthetic:2", cached: true };
+    const sent = fakeAgent(Response.json(brief));
+    const req = jsonRequest({});
+
+    const res = await getBrief(req, act);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(brief);
+    expect(sent).toEqual([
+      {
+        method: "GET",
+        url: `${AGENT_URL}/runs/run_1/candidates/urn%3Aentity%3Asynthetic%3A2/brief`,
+        key: KEY,
+        body: undefined,
+      },
+    ]);
+    expect(peek).toHaveBeenCalledWith(req);
+    expect(spend).not.toHaveBeenCalled();
+  });
+
+  it("takes a token after the agent drafted the brief", async () => {
+    fakeAgent(Response.json({ run_id: "run_1", entity_id: "x", cached: false }));
+    const req = jsonRequest({});
+
+    const res = await getBrief(req, act);
+
+    expect(res.status).toBe(200);
+    expect(peek).toHaveBeenCalledTimes(1);
+    expect(spend).toHaveBeenCalledWith(req);
+    // The gate came before the call, the charge after it.
+    expect(peek.mock.invocationCallOrder[0]).toBeLessThan(spend.mock.invocationCallOrder[0]);
+  });
+
+  it("refuses a visitor with no token left before calling the agent", async () => {
+    const sent = fakeAgent();
+    const busy = Response.json({ reason: "busy", fallback_seed: "nyc-jazz" }, { status: 429 });
+    peek.mockResolvedValue(busy);
+
+    const res = await getBrief(jsonRequest({}), act);
+
+    expect(res).toBe(busy);
+    expect(sent).toEqual([]);
+    expect(spend).not.toHaveBeenCalled();
+  });
+
+  it("maps the model's daily cap to budget, and takes no token for it", async () => {
+    fakeAgent(Response.json({ detail: "cap", what: "LLM token" }, { status: 429 }));
+
+    const res = await getBrief(jsonRequest({}), ctx({ id: "run_1", entityId: "x" }));
+
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual({ reason: "budget" });
+    expect(spend).not.toHaveBeenCalled();
+  });
+});
+
+describe("PATCH /api/runs/[id]/candidates/[entityId]", () => {
+  const patch = (body: unknown) =>
+    new Request("http://web.test/api", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    });
+
+  it("forwards the pencil hold to the agent", async () => {
+    const out = { run_id: "run_1", entity_id: "urn:entity:synthetic:2", pencilled: true };
+    const sent = fakeAgent(Response.json(out));
+
+    const res = await patchCandidate(
+      patch({ pencilled: true }),
+      ctx({ id: "run_1", entityId: "urn:entity:synthetic:2" }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(out);
+    expect(sent).toEqual([
+      {
+        method: "PATCH",
+        url: `${AGENT_URL}/runs/run_1/candidates/urn%3Aentity%3Asynthetic%3A2`,
+        key: KEY,
+        body: { pencilled: true },
+      },
+    ]);
+  });
+
+  it.each([
+    [{}, "pencilled"],
+    [{ pencilled: "yes" }, "pencilled"],
+    [{ pencilled: true, extra: 1 }, undefined],
+    ["not json", undefined],
+  ])("rejects %j without calling the agent", async (body, field) => {
+    const sent = fakeAgent();
+
+    const res = await patchCandidate(patch(body), ctx({ id: "run_1", entityId: "x" }));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ reason: "invalid_input", ...(field && { field }) });
+    expect(sent).toEqual([]);
+  });
+
+  it("maps an unknown candidate to not_found", async () => {
+    fakeAgent(Response.json({ detail: "nope" }, { status: 404 }));
+
+    const res = await patchCandidate(patch({ pencilled: false }), ctx({ id: "run_1", entityId: "x" }));
+
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ reason: "not_found" });
   });
 });

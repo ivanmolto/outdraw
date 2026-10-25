@@ -4,7 +4,7 @@ import { id, proxy } from "@/src/server/proxy";
 import type { QlooStatus } from "@/types/schemas";
 
 /** One candidate's evidence trail for the Soundcheck panel, with the envelope summary of
- * each trail call that came back less than ok. Joined here so the browser gets the
+ * each trail call that came back less than ok and the act's pencil hold. Joined here so the browser gets the
  * summaries only, never the recorded envelopes' Qloo results. The agent's contract types
  * the trail as a bare object, so it is parsed here: a reshaped trail is a logged 502, not
  * a half-rendered panel. */
@@ -42,6 +42,6 @@ export async function GET(
       const text = typeof summary === "string" ? summary : error?.recovery;
       if (typeof text === "string" && text) summaries[call.call_id] = text;
     }
-    return { trail, summaries };
+    return { trail, summaries, pencilled: evidence.pencilled ?? false };
   });
 }
