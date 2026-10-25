@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "gen:types": "node scripts/gen-types.mjs",
     "gen:api": "openapi-typescript ../shared/openapi.json -o types/api.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "check:seeds": "tsx scripts/check-seeds.mts"
   },
   "engines": {
     "node": ">=22.19.0"
@@ -42,6 +43,7 @@
     "json-schema-to-typescript": "16.0.0",
     "openapi-typescript": "7.13.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.5"
   }
