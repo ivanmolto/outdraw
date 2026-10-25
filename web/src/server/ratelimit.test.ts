@@ -13,6 +13,8 @@ import {
   createLimiters,
   FALLBACK_SEED,
   isAgentWork,
+  peekRateLimit,
+  spendRateLimit,
   type Limiter,
 } from "./ratelimit";
 
@@ -99,6 +101,46 @@ describe("checkRateLimit", () => {
 
     expect(await checkRateLimit(req("/api/runs"), [broken])).toBeNull();
     expect(await checkRateLimit(req("/api/runs"), null)).toBeNull();
+    expect(await peekRateLimit(req("/api/x"), [broken])).toBeNull();
+    expect(await peekRateLimit(req("/api/x"), null)).toBeNull();
+    await expect(spendRateLimit(req("/api/x"), [broken])).resolves.toBeUndefined();
+  });
+});
+
+describe("peekRateLimit and spendRateLimit", () => {
+  const brief = req("/api/runs/run_1/candidates/E/brief", { method: "GET" });
+  const used = () =>
+    [...redis.store].filter(([k]) => k.startsWith("outdraw:rl:burst")).map(([, e]) => e.value);
+
+  it("peeks without spending, and spends a token on demand", async () => {
+    expect(await peekRateLimit(brief, limiters)).toBeNull();
+    expect(used()).toEqual([0]);
+
+    await spendRateLimit(brief, limiters);
+    await spendRateLimit(brief, limiters);
+    expect(used()).toEqual([2]);
+    expect(await peekRateLimit(brief, limiters)).toBeNull();
+
+    // The third token is the last: once spent, a peek refuses while a consume would too.
+    await spendRateLimit(brief, limiters);
+    const res = await peekRateLimit(brief, limiters);
+    expect(res?.status).toBe(429);
+    expect(await res?.json()).toEqual({
+      reason: "busy",
+      fallback_seed: FALLBACK_SEED,
+    });
+    expect(Number(res?.headers.get("retry-after"))).toBeGreaterThan(0);
+    expect(used()).toEqual([3]);
+    expect((await run())?.status).toBe(429);
+  });
+
+  it("shares the windows with the proxy's runs, per IP", async () => {
+    for (let i = 0; i < 3; i++) expect(await run()).toBeNull();
+    expect((await peekRateLimit(brief, limiters))?.status).toBe(429);
+    expect(await peekRateLimit(req("/api/x", { ip: "198.51.100.9" }), limiters)).toBeNull();
+
+    vi.setSystemTime(HOUR + 2 * MINUTE);
+    expect(await peekRateLimit(brief, limiters)).toBeNull();
   });
 });
 
@@ -143,6 +185,9 @@ describe("isAgentWork", () => {
     ["POST", "/api/venues", false],
     ["POST", "/api/venues/ven_1/confirm", false],
     ["GET", "/api/runs/run_1", false],
+    // The brief route counts itself (peek, then spend when the agent drafted).
+    ["GET", "/api/runs/run_1/candidates/urn%3Aentity%3Ax/brief", false],
+    ["PATCH", "/api/runs/run_1/candidates/urn%3Aentity%3Ax", false],
     ["POST", "/api/runsx", false],
   ])("%s %s → %s", (method, path, expected) => {
     expect(isAgentWork(method, path)).toBe(expected);
