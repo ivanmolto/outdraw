@@ -1,0 +1,240 @@
+{
+  "_comment": "Refinement messages (T25). `previous` is the parent run's constraints and `shortlist` its act names (synthetic). For each case, `model_output` is a structured-output answer the model may give (noise included: casing, duplicates, extra fields), `delta` the normalised ConstraintsDelta it must become and `merged` the Constraints after merge(previous, delta).",
+  "previous": {
+    "include_tags": ["jazz"],
+    "exclude_tags": [],
+    "size_tier": "mid",
+    "exclude_recent_months": 6,
+    "max_candidates": 20
+  },
+  "shortlist": [
+    "Synthetic Act 1",
+    "Synthetic Act 2",
+    "Synthetic Act 3",
+    "Synthetic Act 4",
+    "Synthetic Act 5"
+  ],
+  "cases": [
+    {
+      "message": "more emerging acts",
+      "model_output": {
+        "include_tags_add": [],
+        "include_tags_remove": [],
+        "exclude_tags_add": [],
+        "exclude_tags_remove": [],
+        "size_tier": "emerging",
+        "draw_cap": null,
+        "exclude_recent_months": null,
+        "max_candidates": null,
+        "hints": []
+      },
+      "delta": {"size_tier": "emerging"},
+      "merged": {
+        "include_tags": ["jazz"],
+        "exclude_tags": [],
+        "size_tier": "emerging",
+        "exclude_recent_months": 6,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "Thursday crowd skews younger",
+      "model_output": {
+        "include_tags_add": [],
+        "include_tags_remove": [],
+        "exclude_tags_add": [],
+        "exclude_tags_remove": [],
+        "size_tier": null,
+        "draw_cap": null,
+        "exclude_recent_months": null,
+        "max_candidates": null,
+        "hints": ["Thursday crowd skews younger."]
+      },
+      "delta": {"hints": ["Thursday crowd skews younger"]},
+      "merged": {
+        "include_tags": ["jazz"],
+        "exclude_tags": [],
+        "size_tier": "mid",
+        "exclude_recent_months": 6,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "no tribute acts",
+      "model_output": {
+        "include_tags_add": [],
+        "include_tags_remove": [],
+        "exclude_tags_add": ["Tribute", "tribute"],
+        "exclude_tags_remove": [],
+        "size_tier": null,
+        "draw_cap": null,
+        "exclude_recent_months": null,
+        "max_candidates": null,
+        "hints": []
+      },
+      "delta": {"exclude_tags_add": ["tribute"]},
+      "merged": {
+        "include_tags": ["jazz"],
+        "exclude_tags": ["tribute"],
+        "size_tier": "mid",
+        "exclude_recent_months": 6,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "cap at 300",
+      "model_output": {
+        "include_tags_add": [],
+        "include_tags_remove": [],
+        "exclude_tags_add": [],
+        "exclude_tags_remove": [],
+        "size_tier": null,
+        "draw_cap": 300,
+        "exclude_recent_months": null,
+        "max_candidates": null,
+        "hints": []
+      },
+      "delta": {"draw_cap": 300},
+      "merged": {
+        "include_tags": ["jazz"],
+        "exclude_tags": [],
+        "size_tier": "emerging",
+        "exclude_recent_months": 6,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "bigger names, something established that fills a 2,500-cap room",
+      "model_output": {
+        "include_tags_add": [],
+        "include_tags_remove": [],
+        "exclude_tags_add": [],
+        "exclude_tags_remove": [],
+        "size_tier": "established",
+        "draw_cap": 2500,
+        "exclude_recent_months": null,
+        "max_candidates": null,
+        "hints": []
+      },
+      "delta": {"size_tier": "established", "draw_cap": 2500},
+      "merged": {
+        "include_tags": ["jazz"],
+        "exclude_tags": [],
+        "size_tier": "established",
+        "exclude_recent_months": 6,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "add indie rock and shoegaze to the mix",
+      "model_output": {
+        "include_tags_add": ["indie rock", "shoegaze"],
+        "include_tags_remove": [],
+        "exclude_tags_add": [],
+        "exclude_tags_remove": [],
+        "size_tier": null,
+        "draw_cap": null,
+        "exclude_recent_months": null,
+        "max_candidates": null,
+        "hints": [],
+        "confidence": 0.9
+      },
+      "delta": {"include_tags_add": ["indie rock", "shoegaze"]},
+      "merged": {
+        "include_tags": ["jazz", "indie rock", "shoegaze"],
+        "exclude_tags": [],
+        "size_tier": "mid",
+        "exclude_recent_months": 6,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "drop jazz, go for soul instead",
+      "model_output": {
+        "include_tags_add": ["soul"],
+        "include_tags_remove": ["Jazz"],
+        "exclude_tags_add": [],
+        "exclude_tags_remove": [],
+        "size_tier": null,
+        "draw_cap": null,
+        "exclude_recent_months": null,
+        "max_candidates": null,
+        "hints": []
+      },
+      "delta": {"include_tags_add": ["soul"], "include_tags_remove": ["jazz"]},
+      "merged": {
+        "include_tags": ["soul"],
+        "exclude_tags": [],
+        "size_tier": "mid",
+        "exclude_recent_months": 6,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "fine to rebook acts we had this year",
+      "model_output": {
+        "include_tags_add": [],
+        "include_tags_remove": [],
+        "exclude_tags_add": [],
+        "exclude_tags_remove": [],
+        "size_tier": null,
+        "draw_cap": null,
+        "exclude_recent_months": 0,
+        "max_candidates": null,
+        "hints": []
+      },
+      "delta": {"exclude_recent_months": 0},
+      "merged": {
+        "include_tags": ["jazz"],
+        "exclude_tags": [],
+        "size_tier": "mid",
+        "exclude_recent_months": 0,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "nothing we've booked in the last two years",
+      "model_output": {
+        "include_tags_add": [],
+        "include_tags_remove": [],
+        "exclude_tags_add": [],
+        "exclude_tags_remove": [],
+        "size_tier": null,
+        "draw_cap": null,
+        "exclude_recent_months": 24,
+        "max_candidates": null,
+        "hints": []
+      },
+      "delta": {"exclude_recent_months": 24},
+      "merged": {
+        "include_tags": ["jazz"],
+        "exclude_tags": [],
+        "size_tier": "mid",
+        "exclude_recent_months": 24,
+        "max_candidates": 20
+      }
+    },
+    {
+      "message": "show me 40 candidates, no cover bands",
+      "model_output": {
+        "include_tags_add": [],
+        "include_tags_remove": [],
+        "exclude_tags_add": ["cover bands"],
+        "exclude_tags_remove": [],
+        "size_tier": null,
+        "draw_cap": null,
+        "exclude_recent_months": null,
+        "max_candidates": 40,
+        "hints": []
+      },
+      "delta": {"exclude_tags_add": ["cover bands"], "max_candidates": 40},
+      "merged": {
+        "include_tags": ["jazz"],
+        "exclude_tags": ["cover bands"],
+        "size_tier": "mid",
+        "exclude_recent_months": 6,
+        "max_candidates": 40
+      }
+    }
+  ]
+}
