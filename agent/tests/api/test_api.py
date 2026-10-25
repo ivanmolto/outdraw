@@ -73,6 +73,7 @@ PROTECTED = [
     ("get", "/runs/run_x"),
     ("get", "/runs/run_x/candidates/E/evidence"),
     ("get", "/runs/run_x/candidates/E/brief"),
+    ("patch", "/runs/run_x/candidates/E"),
     ("get", "/runs/run_x/calls"),
     ("get", "/runs/run_x/compare"),
     ("post", "/runs/run_x/refine"),

@@ -20,6 +20,9 @@ the message, the delta and a one-sentence explanation of what changed.
 from the stored run (`draw.agent.brief`): one Qloo call for the support act through a
 scripted gateway under the run's id, one model call (plus one retry), then the brief is
 cached on the candidate row and served from there with `cached: true`.
+
+`PATCH /runs/{id}/candidates/{entity_id} {pencilled}` (T28) sets the candidate's pencil
+hold; the evidence route reads it back, so the Soundcheck panel opens with it.
 """
 
 from __future__ import annotations
@@ -140,6 +143,17 @@ class Evidence(BaseModel):
     entity_id: str
     score: dict[str, Any]
     evidence: dict[str, Any]
+    pencilled: bool = False
+
+
+class CandidatePatch(BaseModel):
+    pencilled: bool
+
+
+class CandidateOut(BaseModel):
+    run_id: str
+    entity_id: str
+    pencilled: bool
 
 
 class QlooCall(BaseModel):
@@ -392,7 +406,28 @@ async def get_evidence(run_id: str, entity_id: str, deps: DepsDep) -> Evidence:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, f"No candidate {entity_id!r} in run {run_id!r}."
         )
-    return Evidence(run_id=run_id, entity_id=entity_id, score=row.score, evidence=row.evidence)
+    return Evidence(
+        run_id=run_id,
+        entity_id=entity_id,
+        score=row.score,
+        evidence=row.evidence,
+        pencilled=row.pencilled,
+    )
+
+
+@router.patch("/{run_id}/candidates/{entity_id}")
+async def patch_candidate(
+    run_id: str, entity_id: str, body: CandidatePatch, deps: DepsDep
+) -> CandidateOut:
+    """Pencil (or release) a hold on the candidate; idempotent. 404 when unknown."""
+    async with deps.sessions.begin() as session:
+        row = await session.get(CandidateRow, (run_id, entity_id))
+        if row is None:
+            raise HTTPException(
+                status.HTTP_404_NOT_FOUND, f"No candidate {entity_id!r} in run {run_id!r}."
+            )
+        row.pencilled = body.pencilled
+    return CandidateOut(run_id=run_id, entity_id=entity_id, pencilled=body.pencilled)
 
 
 _compare_locks: dict[str, asyncio.Lock] = {}

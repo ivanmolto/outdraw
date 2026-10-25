@@ -174,6 +174,42 @@
         "title": "BriefOut",
         "type": "object"
       },
+      "CandidateOut": {
+        "properties": {
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "pencilled": {
+            "title": "Pencilled",
+            "type": "boolean"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "entity_id",
+          "pencilled"
+        ],
+        "title": "CandidateOut",
+        "type": "object"
+      },
+      "CandidatePatch": {
+        "properties": {
+          "pencilled": {
+            "title": "Pencilled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "pencilled"
+        ],
+        "title": "CandidatePatch",
+        "type": "object"
+      },
       "CompareAct": {
         "properties": {
           "label": {
@@ -623,6 +659,11 @@
             "additionalProperties": true,
             "title": "Evidence",
             "type": "object"
+          },
+          "pencilled": {
+            "default": false,
+            "title": "Pencilled",
+            "type": "boolean"
           },
           "run_id": {
             "title": "Run Id",
@@ -2063,6 +2104,81 @@
           }
         },
         "summary": "Get Calls"
+      }
+    },
+    "/runs/{run_id}/candidates/{entity_id}": {
+      "patch": {
+        "description": "Pencil (or release) a hold on the candidate; idempotent. 404 when unknown.",
+        "operationId": "patch_candidate_runs__run_id__candidates__entity_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "entity_id",
+            "required": true,
+            "schema": {
+              "title": "Entity Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CandidatePatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Patch Candidate"
       }
     },
     "/runs/{run_id}/candidates/{entity_id}/brief": {

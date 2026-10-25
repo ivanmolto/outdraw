@@ -17,6 +17,7 @@ ROUTE_MODELS = {
     "ConstraintsDelta",
     "BriefOut",
     "BookingBrief",
+    "CandidateOut",
 }
 
 

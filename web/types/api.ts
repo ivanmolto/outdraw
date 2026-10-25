@@ -92,6 +92,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{run_id}/candidates/{entity_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Patch Candidate
+         * @description Pencil (or release) a hold on the candidate; idempotent. 404 when unknown.
+         */
+        patch: operations["patch_candidate_runs__run_id__candidates__entity_id__patch"];
+        trace?: never;
+    };
     "/runs/{run_id}/candidates/{entity_id}/brief": {
         parameters: {
             query?: never;
@@ -342,6 +362,20 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** CandidateOut */
+        CandidateOut: {
+            /** Entity Id */
+            entity_id: string;
+            /** Pencilled */
+            pencilled: boolean;
+            /** Run Id */
+            run_id: string;
+        };
+        /** CandidatePatch */
+        CandidatePatch: {
+            /** Pencilled */
+            pencilled: boolean;
+        };
         /** CompareAct */
         CompareAct: {
             /**
@@ -504,6 +538,11 @@ export interface components {
             evidence: {
                 [key: string]: unknown;
             };
+            /**
+             * Pencilled
+             * @default false
+             */
+            pencilled: boolean;
             /** Run Id */
             run_id: string;
             /** Score */
@@ -1024,6 +1063,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["QlooCall"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_candidate_runs__run_id__candidates__entity_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                run_id: string;
+                entity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CandidatePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateOut"];
                 };
             };
             /** @description Validation Error */
