@@ -1,11 +1,13 @@
 // End-to-end tests against a production build (`next build && next start`, as Vercel runs
-// it) with the agent replaced by e2e/mock-agent.mjs, so no Qloo or Claude call is ever
-// made. Run with `npm run test:e2e`.
+// it) with the agent replaced by e2e/mock-agent.mjs and Upstash by e2e/mock-redis.mjs, so
+// no Qloo, Claude or Redis call is ever made. Run with `npm run test:e2e`.
 import { defineConfig, devices } from "@playwright/test";
 
 const WEB_PORT = 3100;
 const AGENT_PORT = 8787;
+const REDIS_PORT = 8788;
 const INTERNAL_API_KEY = "e2e-internal-key";
+const UPSTASH_REDIS_REST_TOKEN = "e2e-redis-token";
 
 export default defineConfig({
   testDir: "e2e",
@@ -29,9 +31,20 @@ export default defineConfig({
       reuseExistingServer: false,
     },
     {
+      command: "node e2e/mock-redis.mjs",
+      url: `http://127.0.0.1:${REDIS_PORT}/health`,
+      env: { MOCK_REDIS_PORT: String(REDIS_PORT), UPSTASH_REDIS_REST_TOKEN },
+      reuseExistingServer: false,
+    },
+    {
       command: `npx next build && npx next start --port ${WEB_PORT}`,
       url: `http://localhost:${WEB_PORT}/api/health`,
-      env: { AGENT_URL: `http://127.0.0.1:${AGENT_PORT}`, INTERNAL_API_KEY },
+      env: {
+        AGENT_URL: `http://127.0.0.1:${AGENT_PORT}`,
+        INTERNAL_API_KEY,
+        UPSTASH_REDIS_REST_URL: `http://127.0.0.1:${REDIS_PORT}`,
+        UPSTASH_REDIS_REST_TOKEN,
+      },
       reuseExistingServer: false,
       timeout: 240_000,
     },
