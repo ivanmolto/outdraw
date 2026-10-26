@@ -4,11 +4,14 @@
 and fakes. Every route except /health needs `X-Draw-Internal-Key` (see `draw.api.auth`).
 Gateway exceptions map to HTTP: `BudgetExceeded` → 429 `{reason: "budget"}`, `QlooError` →
 502 with its `code`, `retryable` and `recovery`, any other gateway error → 502;
-`NotModified` (a seed read whose `If-None-Match` matched) → 304 with the `ETag`.
+`NotModified` (a seed read whose `If-None-Match` matched) → 304 with the `ETag`;
+`LiveModeOff` (`LIVE_MODE=off`, `draw.api.live`) → 503 `{reason: "live_mode_off",
+fallback_seed}`. A run route's 429 carries `fallback_seed` too.
 """
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
@@ -20,10 +23,13 @@ from draw import __version__
 from draw.api import limits, runs, seeds, venues
 from draw.api.deps import Deps
 from draw.api.etag import CACHE_CONTROL, NotModified
+from draw.api.live import LIVE_MODE_OFF, LiveModeOff, live_mode
 from draw.qloo.envelope import BudgetExceeded, QlooError, QlooGatewayError
 from draw.qloo.harness import RuntimeVersions, probe_versions
 
 DepsFactory = Callable[[], Awaitable[Deps | None]]
+
+log = logging.getLogger("draw.main")
 
 
 class Health(BaseModel):
@@ -42,8 +48,17 @@ async def _budget_exceeded(request: Request, exc: Exception) -> Response:
             "what": exc.what,
             "used": exc.used,
             "cap": exc.cap,
+            **({"fallback_seed": exc.fallback_seed} if exc.fallback_seed else {}),
         },
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    )
+
+
+async def _live_mode_off(request: Request, exc: Exception) -> Response:
+    assert isinstance(exc, LiveModeOff)
+    return JSONResponse(
+        {"reason": LIVE_MODE_OFF, "detail": str(exc), "fallback_seed": exc.fallback_seed},
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
     )
 
 
@@ -73,6 +88,9 @@ async def _not_modified(request: Request, exc: Exception) -> Response:
 def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        # An invalid LIVE_MODE fails the start, so the previous deploy keeps serving.
+        if not live_mode():
+            log.warning("LIVE_MODE=off: runs and refinements answer 503 with a fallback seed")
         # Probe once at startup; /health only reads the cached result.
         app.state.runtime = probe_versions()
         deps = await deps_factory()
@@ -92,6 +110,7 @@ def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
     app.add_exception_handler(QlooError, _qloo_error)
     app.add_exception_handler(QlooGatewayError, _gateway_error)
     app.add_exception_handler(NotModified, _not_modified)
+    app.add_exception_handler(LiveModeOff, _live_mode_off)
 
     @app.get("/health")
     def health(request: Request, response: Response) -> Health:

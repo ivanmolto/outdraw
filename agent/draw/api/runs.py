@@ -53,6 +53,7 @@ from draw.agent.tools import DrawTools
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
 from draw.api.etag import conditional
+from draw.api.live import live_run, require_live
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
 from draw.qloo.exec_client import QlooExec
@@ -361,10 +362,12 @@ async def execute_run(
 
 @router.post("")
 async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
-    await deps.guard.check()
-    async with deps.sessions() as session:
-        target = await venue_for_run(session, body.venue_id)
-    return await execute_run(deps, new_id("run"), target, body.constraints, body.message)
+    """One agent run. 503 `live_mode_off` with `LIVE_MODE=off` and 429 `budget` at either
+    daily cap, both before anything is stored and both naming `fallback_seed`."""
+    async with live_run(deps, venue_id=body.venue_id, include_tags=body.constraints.include_tags):
+        async with deps.sessions() as session:
+            target = await venue_for_run(session, body.venue_id)
+        return await execute_run(deps, new_id("run"), target, body.constraints, body.message)
 
 
 def _shortlist_names(result: dict[str, Any] | None) -> list[str]:
@@ -377,9 +380,13 @@ async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
 
     404 for an unknown parent; 422 when no change can be read from the message (nothing is
     spent on Qloo then); 429 at either daily cap. The parse is one model call, the re-run a
-    normal agent run with every cap of `POST /runs`.
+    normal agent run with every cap of `POST /runs`, and refused like one with `LIVE_MODE=off`.
     """
-    await deps.guard.check()
+    async with live_run(deps, run_id=run_id):
+        return await _refine(run_id, body, deps)
+
+
+async def _refine(run_id: str, body: RefineBody, deps: Deps) -> RunOut:
     async with deps.sessions() as session:
         parent = await session.get(RunRow, run_id)
         if parent is None:
@@ -514,6 +521,7 @@ async def compare_for(deps: Deps, run_id: str) -> CompareOut:
     found = await _cached_compare(deps, run_id)
     if isinstance(found, CompareOut):
         return found
+    await require_live(deps, run_id=run_id)  # before the lock: a refusal leaves none behind
     lock = _compare_locks.setdefault(run_id, asyncio.Lock())
     async with lock:
         # A request that waited here finds the first one's result cached.
@@ -618,6 +626,7 @@ async def brief_for(deps: Deps, run_id: str, entity_id: str) -> BriefOut:
     found = await _cached_brief(deps, run_id, entity_id)
     if isinstance(found, BriefOut):
         return found
+    await require_live(deps, run_id=run_id)  # before the lock: a refusal leaves none behind
     lock = _brief_locks.setdefault((run_id, entity_id), asyncio.Lock())
     async with lock:
         found = await _cached_brief(deps, run_id, entity_id)

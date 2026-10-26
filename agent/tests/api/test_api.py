@@ -195,7 +195,7 @@ def client(
     _sql(db_url, f"TRUNCATE {TABLES} CASCADE")
     monkeypatch.setenv("INTERNAL_API_KEY", INTERNAL_KEY)
     monkeypatch.setenv("QLOO_API_KEY", FAKE_QLOO_KEY)
-    for name in ("DATABASE_URL", "REDIS_URL", "QLOO_RECORD", "LLM_DAILY_TOKEN_CAP"):
+    for name in ("DATABASE_URL", "REDIS_URL", "QLOO_RECORD", "LLM_DAILY_TOKEN_CAP", "LIVE_MODE"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setattr(main, "probe_versions", lambda: RuntimeVersions("0.0.0", "v22.19.0"))
 

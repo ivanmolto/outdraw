@@ -22,6 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from draw.agent.store import new_id
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
+from draw.api.live import require_live
 from draw.db.models import CrowdProfileRow, ResolutionRow, VenueRow
 from draw.profile.crowd import build_crowd_profile
 from draw.profile.resolve import confirm_entity, resolve_entity, resolve_venue, synthetic_venue
@@ -242,6 +243,8 @@ async def resolve(venue_id: str, deps: DepsDep) -> Resolutions:
     async with deps.sessions() as session:
         _, venue = await load_venue(session, venue_id)
         _, _, missing = await load_resolutions(session, venue_id, venue)
+    if missing:
+        await require_live(deps, venue_id=venue_id)
 
     qloo = deps.gateways.scripted()
     resolved: dict[str, ResolvedEntity] = {}
@@ -302,6 +305,7 @@ async def profile(venue_id: str, deps: DepsDep) -> CrowdProfile:
             status.HTTP_409_CONFLICT,
             {"message": "Confirm every match before building the profile.", "pending": pending},
         )
+    await require_live(deps, venue_id=venue_id)
 
     built = await build_crowd_profile(
         venue,

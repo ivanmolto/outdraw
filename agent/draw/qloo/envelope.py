@@ -97,6 +97,8 @@ class BudgetExceeded(QlooGatewayError):  # noqa: N818
         self.used = used
         self.cap = cap
         self.what = what
+        self.fallback_seed: str | None = None
+        """The demo seed the web shows instead; set by the run routes (`draw.api.live`)."""
 
 
 # --- normalisation --------------------------------------------------------------------

@@ -47,7 +47,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Create Run */
+        /**
+         * Create Run
+         * @description One agent run. 503 `live_mode_off` with `LIVE_MODE=off` and 429 `budget` at either
+         *     daily cap, both before anything is stored and both naming `fallback_seed`.
+         */
         post: operations["create_run_runs_post"];
         delete?: never;
         options?: never;
@@ -188,7 +192,7 @@ export interface paths {
          *
          *     404 for an unknown parent; 422 when no change can be read from the message (nothing is
          *     spent on Qloo then); 429 at either daily cap. The parse is one model call, the re-run a
-         *     normal agent run with every cap of `POST /runs`.
+         *     normal agent run with every cap of `POST /runs`, and refused like one with `LIVE_MODE=off`.
          */
         post: operations["refine_run_runs__run_id__refine_post"];
         delete?: never;
