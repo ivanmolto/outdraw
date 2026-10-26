@@ -156,3 +156,22 @@ test("a first brief waits for live analysis; the panel still opens", async ({ pa
   await expect(panel.getByRole("alert")).toHaveCount(0);
   expect(await counters(request)).toEqual(spent);
 });
+
+test("the LLM-only list waits for live analysis; Outdraw's list stays", async ({ page, request }, info) => {
+  await profiledVenue(page, request, ipFor(info, 251));
+  await page.goto(`/venue/${VENUE_ID}/shortlist`);
+  await expect(page.getByRole("heading", { name: LIVE_VENUE, exact: true })).toBeVisible();
+  await refuse(request, 429);
+  const spent = await counters(request);
+
+  // Tabs at this viewport: the LLM-only panel is hidden until its tab is picked.
+  await page.getByRole("switch", { name: "With Qloo / LLM only" }).click();
+  await page.getByRole("tab", { name: "LLM only" }).click();
+  await expect(page.getByRole("status", { name: "Live analysis paused" })).toContainText(
+    "LLM-only list can't be fetched right now",
+  );
+  await page.getByRole("tab", { name: "With Qloo" }).click();
+  await expect(page.getByRole("list", { name: "Ranked acts" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
+  expect(await counters(request)).toEqual(spent);
+});
