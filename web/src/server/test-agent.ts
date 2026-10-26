@@ -16,6 +16,7 @@ export function fakeAgent(...replies: (Response | Error)[]): Sent[] {
   vi.stubEnv("AGENT_URL", AGENT_URL + "/");
   vi.stubEnv("INTERNAL_API_KEY", KEY);
   vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.spyOn(console, "info").mockImplementation(() => {});
   const sent: Sent[] = [];
   vi.stubGlobal(
     "fetch",

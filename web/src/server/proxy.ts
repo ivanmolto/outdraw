@@ -1,11 +1,15 @@
 // Shared plumbing for the /api route handlers: validate input with zod, call the agent,
-// and turn every failure into a `{reason}` JSON body the UI can branch on.
+// and turn every failure into a `{reason}` JSON body the UI can branch on. Failures that
+// are ours (the agent down or erroring, a bug here) also go to Sentry, tagged with the
+// request's run id.
 import "server-only";
 
+import * as Sentry from "@sentry/nextjs";
 import type { z } from "zod";
 
 import { idSchema } from "@/src/lib/schemas";
 import { AgentError, type Reason } from "./agent";
+import { shouldReportUnavailable } from "./observability";
 
 /** Request bodies above this are rejected before parsing (a full venue is ~3 KB). A sanity
  * cap on the decoded text, not a byte limit: the platform bounds the raw request. */
@@ -58,6 +62,14 @@ export function id(value: string, field: string): string {
   return check(idSchema, value, field);
 }
 
+/** Our failure, not the user's: to Sentry (a no-op without SENTRY_DSN), scrubbed there. */
+function report(err: unknown, runId?: string): void {
+  Sentry.withScope((scope) => {
+    if (runId) scope.setTag("run_id", runId);
+    Sentry.captureException(err);
+  });
+}
+
 /** Run `fn` and answer with its JSON, or with `{reason}` on any failure. */
 export async function proxy<T>(fn: () => Promise<T>, status = 200): Promise<Response> {
   try {
@@ -67,6 +79,8 @@ export async function proxy<T>(fn: () => Promise<T>, status = 200): Promise<Resp
       return fail(400, { reason: "invalid_input", ...(err.field && { field: err.field }) });
     }
     if (err instanceof AgentError) {
+      if (err.reason === "unknown") report(err, err.runId);
+      else if (err.reason === "unavailable" && shouldReportUnavailable()) report(err, err.runId);
       return fail(err.status, {
         reason: err.reason,
         ...(err.pending && { pending: err.pending }),
@@ -75,6 +89,7 @@ export async function proxy<T>(fn: () => Promise<T>, status = 200): Promise<Resp
       });
     }
     console.error("api proxy failed:", err);
+    report(err);
     return fail(500, { reason: "unknown" });
   }
 }

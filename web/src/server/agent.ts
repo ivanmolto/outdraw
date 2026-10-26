@@ -1,8 +1,10 @@
 // Typed client for the agent service on Render. Server-only: it reads AGENT_URL and
 // INTERNAL_API_KEY from the server environment and sends the key as X-Draw-Internal-Key,
-// so the browser reaches the agent only through the /api route handlers.
+// so the browser reaches the agent only through the /api route handlers. Every request
+// carries X-Draw-Run-Id and logs one line under it (src/server/observability.ts).
 import "server-only";
 
+import * as Sentry from "@sentry/nextjs";
 import { connection } from "next/server";
 
 import type {
@@ -23,6 +25,7 @@ import type {
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
 import { isSeedSlug } from "@/src/lib/seeds";
+import { RUN_ID_HEADER, logLine, newRunId, runIdFor } from "./observability";
 import type {
   ConfirmInput,
   PencilInput,
@@ -53,6 +56,9 @@ export type {
 const PASSTHROUGH: ReadonlySet<string> = new Set<Reason>(["busy", "budget", "live_mode_off"]);
 
 export class AgentError extends Error {
+  /** The X-Draw-Run-Id of the failed request, for the log line and the Sentry tag. */
+  runId?: string;
+
   constructor(
     readonly status: number,
     readonly reason: Reason,
@@ -121,20 +127,31 @@ function config(): { url: string; key: string } {
   return { url: url.replace(/\/+$/, ""), key };
 }
 
-/** One request to the agent, with the key, a timeout and the error mapping. */
+function withRunId(err: AgentError, runId: string): AgentError {
+  err.runId = runId;
+  return err;
+}
+
+/** One request to the agent, with the key, the run id, a timeout and the error mapping. */
 async function transport<T>(
   method: "GET" | "POST" | "PATCH",
   path: string,
   body: unknown,
   timeoutMs: number,
+  runId: string = runIdFor(path),
 ): Promise<T> {
-  const { url, key } = config();
   let res: Response;
+  const started = Date.now();
+  // On the request's isolation scope, so an error thrown past us (a page rendering, not
+  // only an /api route through proxy()) still reaches Sentry tagged with the run.
+  Sentry.getIsolationScope().setTag("run_id", runId);
   try {
+    const { url, key } = config();
     res = await fetch(url + path, {
       method,
       headers: {
         [HEADER]: key,
+        [RUN_ID_HEADER]: runId,
         accept: "application/json",
         ...(body === undefined ? {} : { "content-type": "application/json" }),
       },
@@ -143,14 +160,20 @@ async function transport<T>(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
-    console.error(`agent ${method} ${path} failed:`, err);
-    throw new AgentError(503, "unavailable");
+    if (err instanceof AgentError) throw withRunId(err, runId);
+    console.error(logLine(`agent ${method} ${path} failed`, runId), err);
+    throw withRunId(new AgentError(503, "unavailable"), runId);
   }
+  // The agent names a new run itself when our id was taken; log the one it used.
+  const used = res.headers.get(RUN_ID_HEADER) ?? runId;
+  if (used !== runId) Sentry.getIsolationScope().setTag("run_id", used);
+  const line = logLine(`agent ${method} ${path} → ${res.status} ${Date.now() - started}ms`, used);
   const data: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    console.error(`agent ${method} ${path} → ${res.status}`);
-    throw toAgentError(res.status, data);
+    console.error(line);
+    throw withRunId(toAgentError(res.status, data), used);
   }
+  console.info(line);
   return data as T;
 }
 
@@ -162,9 +185,10 @@ async function call<T>(
   path: string,
   body?: unknown,
   timeoutMs = TIMEOUT_MS,
+  runId?: string,
 ): Promise<T> {
   await connection();
-  return transport<T>(method, path, body, timeoutMs);
+  return transport<T>(method, path, body, timeoutMs, runId);
 }
 
 const seg = encodeURIComponent;
@@ -180,11 +204,13 @@ export const agent = {
     call<ResolutionItem>("POST", `/venues/${seg(id)}/confirm`, body),
   buildProfile: (id: string) =>
     call<CrowdProfile>("POST", `/venues/${seg(id)}/profile`, undefined, SLOW_TIMEOUT_MS),
-  createRun: (body: RunInput) => call<RunOut>("POST", "/runs", body, SLOW_TIMEOUT_MS),
+  /** The new run's id is ours (`X-Draw-Run-Id`), so both services log it from the start. */
+  createRun: (body: RunInput) =>
+    call<RunOut>("POST", "/runs", body, SLOW_TIMEOUT_MS, newRunId("run")),
   getRun: (id: string) => call<RunOut>("GET", `/runs/${seg(id)}`),
   /** A new run chained to `id`: one parse call, then a whole agent loop. */
   refineRun: (id: string, body: RefineInput) =>
-    call<RunOut>("POST", `/runs/${seg(id)}/refine`, body, SLOW_TIMEOUT_MS),
+    call<RunOut>("POST", `/runs/${seg(id)}/refine`, body, SLOW_TIMEOUT_MS, newRunId("run")),
   getEvidence: (runId: string, entityId: string) =>
     call<CandidateEvidence>("GET", `/runs/${seg(runId)}/candidates/${seg(entityId)}/evidence`),
   setPencil: (runId: string, entityId: string, body: PencilInput) =>
@@ -201,6 +227,15 @@ export const agent = {
   /** One tool-less model call the first time per run, then the cached copy. */
   getCompare: (runId: string) =>
     call<CompareOut>("GET", `/runs/${seg(runId)}/compare`, undefined, SLOW_TIMEOUT_MS),
+  /** One Sentry test event on the agent under `runId` (T38; not in the OpenAPI contract). */
+  sentryTest: (runId: string) =>
+    call<{ run_id: string | null; event_id: string | null }>(
+      "POST",
+      "/ops/sentry-test",
+      undefined,
+      TIMEOUT_MS,
+      runId,
+    ),
 };
 
 /** A seed read runs inside a `use cache` scope (src/server/seeds.ts), where `connection()`
