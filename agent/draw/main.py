@@ -10,6 +10,9 @@ fallback_seed}`. A run route's 429 carries `fallback_seed` too. A request that f
 validation (`draw.api.inputs`) → 400 `{reason: "invalid_input", field}`, before any route
 code runs, so it never reaches Qloo or Claude.
 
+Every request runs under a run id (`draw.observability`): the web's `X-Draw-Run-Id`, echoed
+on the response and stamped on every `draw.*` log line and Sentry event (`SENTRY_DSN`).
+
 At startup, with a database and embeddings on, the cached Qloo tag names are embedded in
 the background for the refine parser's tag hints (T37, `draw.embed.tag_map.index_tags`).
 """
@@ -22,24 +25,38 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, Response, status
+import sentry_sdk
+from fastapi import Depends, FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from draw import __version__
 from draw.api import limits, runs, seeds, venues
+from draw.api.auth import require_internal_key
 from draw.api.deps import Deps
 from draw.api.etag import CACHE_CONTROL, NotModified
 from draw.api.inputs import InvalidInput
 from draw.api.live import LIVE_MODE_OFF, LiveModeOff, live_mode
 from draw.embed.tag_map import index_tags
+from draw.observability import (
+    RunIdMiddleware,
+    configure_logging,
+    current_run_id,
+    init_sentry,
+)
 from draw.qloo.envelope import BudgetExceeded, QlooError, QlooGatewayError
 from draw.qloo.harness import RuntimeVersions, probe_versions
 
 DepsFactory = Callable[[], Awaitable[Deps | None]]
 
 log = logging.getLogger("draw.main")
+
+
+class SentryTest(BaseModel):
+    run_id: str | None
+    event_id: str | None
+    """None when `SENTRY_DSN` is unset: nothing was sent."""
 
 
 class Health(BaseModel):
@@ -141,6 +158,7 @@ def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
                 await deps.aclose()
 
     app = FastAPI(title="Outdraw agent", version=__version__, lifespan=lifespan)
+    app.add_middleware(RunIdMiddleware)
     app.include_router(venues.router)
     app.include_router(runs.router)
     app.include_router(limits.router)
@@ -165,7 +183,22 @@ def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
             node_version=runtime.node,
         )
 
+    @app.post(
+        "/ops/sentry-test",
+        dependencies=[Depends(require_internal_key)],
+        include_in_schema=False,
+    )
+    async def sentry_test() -> SentryTest:
+        """One Sentry test event under the request's run id (docs/ops.md, T38)."""
+        log.info("sentry_test")
+        return SentryTest(
+            run_id=current_run_id(),
+            event_id=sentry_sdk.capture_message("Outdraw agent: Sentry test event", "info"),
+        )
+
     return app
 
 
+configure_logging()
+init_sentry()
 app = create_app()

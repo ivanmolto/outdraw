@@ -108,6 +108,9 @@ class QlooExec:
         # Sees every result (cache hits and non-ok statuses included) before the status
         # branch raises: the agent's run store uses it to list the calls behind a score.
         self.observer = observer
+        # Per gateway, so per run: the run's summary log line reads them (`draw.api.runs`).
+        self.calls = 0
+        self.cache_hits = 0
         self._wait: wait_base = retry_wait or wait_exponential_jitter(multiplier=0.5, max=8.0)
         self._semaphore = asyncio.Semaphore(self.config.concurrency)
         self._pool: asyncpg.Pool | None = None
@@ -252,6 +255,8 @@ class QlooExec:
                 await self.cache.set(key, envelope.model_dump(mode="json"))
 
         latency_ms = int((time.monotonic() - started) * 1000)
+        self.calls += 1
+        self.cache_hits += int(cache_hit)
         result = QlooResult(
             **envelope.model_dump(mode="json"),
             call_id=call_id,

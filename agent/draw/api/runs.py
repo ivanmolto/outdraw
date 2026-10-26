@@ -65,6 +65,7 @@ from draw.api.live import live_call, live_run
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
 from draw.embed import semantic_cache, tag_map
+from draw.observability import RUN_ID_HEADER, bind_run_id, is_new_run_id
 from draw.qloo.exec_client import QlooExec
 from draw.ranking.score import WEIGHTS, SourceLabel, SubScore, source_labels
 from draw.schemas import (
@@ -311,11 +312,36 @@ async def execute_run(
     back. `finish` sees the stored result before it is written (the refinement adds to it).
     With `semantic`, a semantic cache hit is copied instead and an ok run stores its request
     embedding. The precompute script calls this directly with its deterministic seed run ids."""
+    with bind_run_id(run_id):
+        return await _execute_run(
+            deps,
+            run_id,
+            target,
+            constraints,
+            message,
+            parent_run_id=parent_run_id,
+            finish=finish,
+            semantic=semantic,
+        )
+
+
+async def _execute_run(
+    deps: Deps,
+    run_id: str,
+    target: _Venue,
+    constraints: Constraints,
+    message: str,
+    *,
+    parent_run_id: str | None,
+    finish: Callable[[dict[str, Any]], dict[str, Any]] | None,
+    semantic: bool,
+) -> RunOut:
     vector = await _request_vector(deps, target, constraints) if semantic else None
     if vector is not None:
         async with deps.sessions() as session:
             hit = await semantic_cache.lookup(session, vector, target.venue_id, constraints)
         if hit is not None:
+            log.info("run_done source=semantic cached_from=%s", hit.run_id)
             return await _reuse(deps, run_id, hit, constraints)
 
     async with deps.sessions.begin() as session:
@@ -345,7 +371,9 @@ async def execute_run(
                 token_cap=deps.llm_cap,
             )
             candidates = await _candidates(result, qloo, run_id)
+            _log_run(result, qloo)
     except Exception as exc:
+        log.warning("run_failed error=%s", type(exc).__name__)
         async with deps.sessions.begin() as session:
             row = await session.get(RunRow, run_id)
             assert row is not None
@@ -374,6 +402,31 @@ async def execute_run(
         row = await session.get(RunRow, run_id)
         assert row is not None
         return run_out(row)
+
+
+def _log_run(result: AgentResult, qloo: QlooExec) -> None:
+    """The run's summary line: steps, tokens and Qloo calls (cache hits apart)."""
+    usage = result.usage
+    log.info(
+        "run_done status=%s stop=%s steps=%d model_calls=%d input_tokens=%d output_tokens=%d "
+        "cache_read_tokens=%d qloo_calls=%d qloo_cache_hits=%d",
+        result.status,
+        result.stop_reason,
+        result.steps,
+        usage.get("model_calls", 0),
+        usage.get("input_tokens", 0),
+        usage.get("output_tokens", 0),
+        usage.get("cache_read_tokens", 0),
+        qloo.calls,
+        qloo.cache_hits,
+        extra={
+            "status": result.status,
+            "steps": result.steps,
+            "usage": usage,
+            "qloo_calls": qloo.calls,
+            "qloo_cache_hits": qloo.cache_hits,
+        },
+    )
 
 
 async def _request_vector(
@@ -429,15 +482,35 @@ async def _reuse(
         return run_out(row)
 
 
+async def _new_run_id(deps: Deps, request: Request, response: Response) -> str:
+    """The web's `X-Draw-Run-Id` when it is a fresh run id, so both services log the run
+    under one id; a new one when it is missing, malformed or taken. The response's
+    `X-Draw-Run-Id` names the run either way."""
+    wanted = request.headers.get(RUN_ID_HEADER)
+    run_id = new_id("run")
+    if is_new_run_id(wanted):
+        assert wanted is not None
+        async with deps.sessions() as session:
+            if await session.get(RunRow, wanted) is None:
+                run_id = wanted
+    response.headers[RUN_ID_HEADER] = run_id
+    return run_id
+
+
 @router.post("")
-async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
+async def create_run(body: RunBody, request: Request, response: Response, deps: DepsDep) -> RunOut:
     """One agent run. 503 `live_mode_off` with `LIVE_MODE=off` and 429 `budget` at either
     daily cap, both before anything is stored and both naming `fallback_seed`."""
     async with live_run(deps, venue_id=body.venue_id):
         async with deps.sessions() as session:
             target = await venue_for_run(session, body.venue_id)
         return await execute_run(
-            deps, new_id("run"), target, body.constraints, body.message, semantic=True
+            deps,
+            await _new_run_id(deps, request, response),
+            target,
+            body.constraints,
+            body.message,
+            semantic=True,
         )
 
 
@@ -448,7 +521,9 @@ def _shortlist_names(result: dict[str, Any] | None) -> list[str]:
 @router.post(
     "/{run_id}/refine", responses={422: {"description": "No change can be read from the message."}}
 )
-async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
+async def refine_run(
+    run_id: str, body: RefineBody, request: Request, response: Response, deps: DepsDep
+) -> RunOut:
     """A new run under the parent's constraints changed as the message asks.
 
     404 for an unknown parent; 422 when no change can be read from the message (nothing is
@@ -456,10 +531,10 @@ async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
     normal agent run with every cap of `POST /runs`, and refused like one with `LIVE_MODE=off`.
     """
     async with live_run(deps, run_id=run_id):
-        return await _refine(run_id, body, deps)
+        return await _refine(run_id, body, deps, await _new_run_id(deps, request, response))
 
 
-async def _refine(run_id: str, body: RefineBody, deps: Deps) -> RunOut:
+async def _refine(run_id: str, body: RefineBody, deps: Deps, new_run_id: str) -> RunOut:
     async with deps.sessions() as session:
         parent = await session.get(RunRow, run_id)
         if parent is None:
@@ -499,7 +574,7 @@ async def _refine(run_id: str, body: RefineBody, deps: Deps) -> RunOut:
 
     return await execute_run(
         deps,
-        new_id("run"),
+        new_run_id,
         target,
         merged,
         refine_request(body.message, delta, before),

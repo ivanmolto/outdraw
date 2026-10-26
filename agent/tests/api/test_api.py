@@ -8,6 +8,7 @@ model is `ScriptedModel`, so every route runs its real code path offline.
 from __future__ import annotations
 
 import asyncio
+import io
 import json
 import re
 import sys
@@ -28,6 +29,7 @@ from draw import main
 from draw.api.auth import HEADER
 from draw.api.deps import Deps
 from draw.db.engine import async_url
+from draw.observability import RUN_ID_HEADER, configure_logging
 from draw.qloo import exec_client
 from draw.qloo.budget import LLM_PREFIX, MemoryCounter
 from draw.qloo.config import QlooConfig
@@ -40,6 +42,7 @@ from scripted_model import Results, ScriptedModel, Turn  # noqa: E402
 FAKE_SERVER = Path(__file__).resolve().parents[1] / "qloo" / "fake_mcp_server.py"
 FAKE_QLOO_KEY = "-".join(["fake", "qloo", "key", "0" * 12])
 INTERNAL_KEY = "test-internal-key"
+WEB_RUN_ID = "run_0badc0de"
 TABLES = "venues, crowd_profiles, runs, candidates, qloo_cache, qloo_calls, resolutions, embeddings"
 
 VENUE: dict[str, Any] = {
@@ -398,6 +401,35 @@ def test_run_returns_ranked_candidates(client: TestClient, scripts: Scripts) -> 
     assert run["token_usage"]["model_calls"] == 3
 
     assert client.get(f"/runs/{run['run_id']}").json() == run
+
+
+def test_run_adopts_the_web_run_id_and_logs_its_summary(
+    client: TestClient, scripts: Scripts
+) -> None:
+    """T38: the web's X-Draw-Run-Id becomes the run's id, so one id names it in both
+    services' logs; a taken id is never reused."""
+    venue_id = profiled_venue(client)
+    body = {"venue_id": venue_id, "constraints": CONSTRAINTS.model_dump(), "message": "Jazz."}
+    logs = io.StringIO()
+    configure_logging("INFO", logs)
+    try:
+        scripts.pipeline()
+        res = client.post("/runs", json=body, headers={RUN_ID_HEADER: WEB_RUN_ID})
+        scripts.pipeline()
+        again = client.post("/runs", json=body, headers={RUN_ID_HEADER: WEB_RUN_ID})
+    finally:
+        configure_logging()
+
+    assert res.status_code == 200, res.text
+    assert res.json()["run_id"] == WEB_RUN_ID == res.headers[RUN_ID_HEADER]
+    assert again.json()["run_id"] != WEB_RUN_ID
+    assert again.headers[RUN_ID_HEADER] == again.json()["run_id"]
+    (done, *_) = [line for line in logs.getvalue().splitlines() if " run_done " in line]
+    assert f"run_id={WEB_RUN_ID} " in done
+    for field in ("steps=2", "model_calls=3", "input_tokens=", "qloo_calls=", "qloo_cache_hits="):
+        assert field in done
+    qloo_lines = [line for line in logs.getvalue().splitlines() if " qloo_call " in line]
+    assert any(f"run_id={WEB_RUN_ID} " in line for line in qloo_lines)
 
 
 def test_run_needs_a_profile(client: TestClient) -> None:

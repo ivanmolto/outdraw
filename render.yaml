@@ -38,6 +38,11 @@ services:
         sync: false
       - key: TELEGRAM_CHAT_ID
         sync: false
+      # Optional: unset = Sentry off (docs/ops.md, Observability).
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_ENVIRONMENT
+        value: production
       # The container has no ~/.qloo/config, so the harness needs both URLs from env.
       - key: QLOO_BASE_URL
         value: https://hackathon.api.qloo.com
