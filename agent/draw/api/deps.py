@@ -23,6 +23,7 @@ from tenacity.wait import wait_base
 
 from draw.agent.agent import AgentSettings, token_counter_from_env
 from draw.db.engine import make_engine, make_sessionmaker
+from draw.embed import Embedder, embedder_from_env
 from draw.guard import BudgetGuard, MemoryLatch, RedisLatch, alerter_from_env
 from draw.qloo.budget import DailyCounter, NullCounter, RedisCounter
 from draw.qloo.cache import CacheBackend, PostgresCache
@@ -90,6 +91,8 @@ class Deps:
     """None: the agent builds Haiku 5.5 from the environment."""
     pool: asyncpg.Pool | None = field(default=None, repr=False)
     """asyncpg pool behind the Qloo cache and recorder (they take asyncpg, not SQLAlchemy)."""
+    embedder: Embedder | None = None
+    """Embeds run requests for the semantic run cache (T36); None turns it off."""
 
     @classmethod
     async def create(
@@ -102,6 +105,7 @@ class Deps:
         model_factory: Callable[[], Model] | None = None,
         mcp_command: Sequence[str] | None = None,
         retry_wait: wait_base | None = None,
+        embedder: Embedder | None = None,
     ) -> Deps:
         config = config or QlooConfig.from_env()
         settings = AgentSettings.from_env()
@@ -145,6 +149,7 @@ class Deps:
             guard=guard,
             model_factory=model_factory,
             pool=pool,
+            embedder=embedder or embedder_from_env(),
         )
 
     @classmethod

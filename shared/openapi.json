@@ -1390,6 +1390,29 @@
               }
             ]
           },
+          "cache_source": {
+            "anyOf": [
+              {
+                "const": "semantic",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cache Source"
+          },
+          "cached_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cached From"
+          },
           "data_quality": {
             "$ref": "#/components/schemas/DataQuality",
             "default": "degraded"

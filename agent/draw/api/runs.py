@@ -29,15 +29,22 @@ read-only: their GETs carry an `ETag` and answer `304` to a matching `If-None-Ma
 (`draw.api.etag`), the pencil PATCH is refused with 403, and a compare or brief that was
 not precomputed is refused with 409 rather than spending a call. A refine of a seed run is
 allowed: it is a new live run chained to the seed by `parent_run_id`.
+
+`POST /runs` goes through the semantic run cache first (T36, `draw.embed.semantic_cache`):
+a request that reads like an earlier ok run of the same venue is answered with a copy of
+that run (result, candidates, cached brief and compare) marked `cache_source="semantic"`
+and `cached_from`, spending no Qloo call and no token. Each new ok run stores its request
+embedding. Refined runs skip the cache: their hints steer the agent outside the constraints.
 """
 
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, Field
@@ -57,6 +64,7 @@ from draw.api.inputs import INVALID_INPUT, RefineBody, RunBody
 from draw.api.live import live_call, live_run
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
+from draw.embed import semantic_cache
 from draw.qloo.exec_client import QlooExec
 from draw.ranking.score import WEIGHTS, SourceLabel, SubScore, source_labels
 from draw.schemas import (
@@ -81,6 +89,8 @@ __all__ = [
     "run_out",
     "venue_for_run",
 ]
+
+log = logging.getLogger("draw.runs")
 
 SEED_READ_ONLY = "seed_read_only"
 SEED_NOT_PRECOMPUTED = "seed_not_precomputed"
@@ -136,6 +146,9 @@ class RunResult(BaseModel):
     steps: int | None = None
     profile_id: str | None = None
     refinement: Refinement | None = None
+    cache_source: Literal["semantic"] | None = None
+    """`semantic`: copied from `cached_from`, whose request read the same (T36)."""
+    cached_from: str | None = None
 
 
 class RunOut(BaseModel):
@@ -292,10 +305,19 @@ async def execute_run(
     *,
     parent_run_id: str | None = None,
     finish: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+    semantic: bool = False,
 ) -> RunOut:
     """Store the run as running, run the agent, store the result (or the error) and read it
     back. `finish` sees the stored result before it is written (the refinement adds to it).
-    The precompute script calls this directly with its deterministic seed run ids."""
+    With `semantic`, a semantic cache hit is copied instead and an ok run stores its request
+    embedding. The precompute script calls this directly with its deterministic seed run ids."""
+    vector = await _request_vector(deps, target, constraints) if semantic else None
+    if vector is not None:
+        async with deps.sessions() as session:
+            hit = await semantic_cache.lookup(session, vector, target.venue_id, constraints)
+        if hit is not None:
+            return await _reuse(deps, run_id, hit, constraints)
+
     async with deps.sessions.begin() as session:
         session.add(
             RunRow(
@@ -346,6 +368,61 @@ async def execute_run(
         row.result = stored
         row.token_usage = result.usage
         session.add_all(candidates)
+        if vector is not None and result.status == "ok":
+            semantic_cache.store(session, run_id, vector)
+    async with deps.sessions() as session:
+        row = await session.get(RunRow, run_id)
+        assert row is not None
+        return run_out(row)
+
+
+async def _request_vector(
+    deps: Deps, target: _Venue, constraints: Constraints
+) -> list[float] | None:
+    """The request's embedding, or None when the cache is off or the embedder failed (the
+    run then goes ahead uncached: the cache must never fail a run)."""
+    if deps.embedder is None:
+        return None
+    try:
+        return await deps.embedder.embed(semantic_cache.canonical_text(target.venue, constraints))
+    except Exception:
+        log.warning("semantic cache: embedding failed, running uncached", exc_info=True)
+        return None
+
+
+async def _reuse(
+    deps: Deps, run_id: str, hit: semantic_cache.Hit, constraints: Constraints
+) -> RunOut:
+    """A new run copied from the hit: its result, candidates and cached brief and compare
+    (re-addressed to the new run), with no tokens counted and pencil holds left behind."""
+    async with deps.sessions.begin() as session:
+        source = await session.get(RunRow, hit.run_id)
+        assert source is not None and source.result is not None
+        rows = (
+            await session.scalars(select(CandidateRow).where(CandidateRow.run_id == source.id))
+        ).all()
+        session.add(
+            RunRow(
+                id=run_id,
+                venue_id=source.venue_id,
+                constraints=constraints.model_dump(mode="json"),
+                status=source.status,
+                result={**source.result, "cache_source": "semantic", "cached_from": source.id},
+                token_usage={key: 0 for key in source.token_usage or {}},
+                compare={**source.compare, "run_id": run_id} if source.compare else None,
+            )
+        )
+        await session.flush()
+        session.add_all(
+            CandidateRow(
+                run_id=run_id,
+                entity_id=r.entity_id,
+                score=r.score,
+                evidence=r.evidence,
+                brief={**r.brief, "run_id": run_id} if r.brief else None,
+            )
+            for r in rows
+        )
     async with deps.sessions() as session:
         row = await session.get(RunRow, run_id)
         assert row is not None
@@ -359,7 +436,9 @@ async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
     async with live_run(deps, venue_id=body.venue_id):
         async with deps.sessions() as session:
             target = await venue_for_run(session, body.venue_id)
-        return await execute_run(deps, new_id("run"), target, body.constraints, body.message)
+        return await execute_run(
+            deps, new_id("run"), target, body.constraints, body.message, semantic=True
+        )
 
 
 def _shortlist_names(result: dict[str, Any] | None) -> list[str]:

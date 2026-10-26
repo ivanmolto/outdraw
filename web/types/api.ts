@@ -843,6 +843,10 @@ export interface components {
          */
         RunResult: {
             ask?: components["schemas"]["AskOut"] | null;
+            /** Cache Source */
+            cache_source?: "semantic" | null;
+            /** Cached From */
+            cached_from?: string | null;
             /** @default degraded */
             data_quality: components["schemas"]["DataQuality"];
             /** Error */

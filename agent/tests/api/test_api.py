@@ -40,7 +40,7 @@ from scripted_model import Results, ScriptedModel, Turn  # noqa: E402
 FAKE_SERVER = Path(__file__).resolve().parents[1] / "qloo" / "fake_mcp_server.py"
 FAKE_QLOO_KEY = "-".join(["fake", "qloo", "key", "0" * 12])
 INTERNAL_KEY = "test-internal-key"
-TABLES = "venues, crowd_profiles, runs, candidates, qloo_cache, qloo_calls, resolutions"
+TABLES = "venues, crowd_profiles, runs, candidates, qloo_cache, qloo_calls, resolutions, embeddings"
 
 VENUE: dict[str, Any] = {
     "name": "Blue Note Jazz Club",
