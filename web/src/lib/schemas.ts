@@ -1,33 +1,42 @@
 // Input validation for the /api proxy routes, shared with the client forms (T18).
 // Bounds are tighter than the JSON Schemas in /shared: they reject junk before it costs a
-// Qloo call or Claude tokens. `satisfies` keeps each schema's output assignable to the
-// generated type the agent expects.
+// Qloo call or Claude tokens; agent/draw/api/inputs.py enforces the same LIMITS again.
+// `satisfies` keeps each schema's output assignable to the generated type the agent expects.
 import { z } from "zod";
 
+import { SHARED_LIMITS as limits } from "@/types/limits";
 import type { Constraints, PastShow, VenueInput } from "@/types/schemas";
 
+/** The bounds from /shared/limits.json (generated into types/limits.ts), the one source
+ * both services use. */
 export const LIMITS = {
-  name: 80,
-  city: 60,
-  country: 60,
-  act: 80,
-  message: 300,
-  pastShows: 10,
-  tags: 20,
-  tag: 128,
-  capacity: 100_000,
-  ticketPrice: 10_000,
-  gross: 10_000_000,
-  recentMonths: 60,
-  maxCandidates: 50,
+  name: limits.name,
+  city: limits.city,
+  country: limits.country,
+  act: limits.act,
+  message: limits.message,
+  pastShows: limits.past_shows,
+  tags: limits.tags,
+  tag: limits.tag,
+  capacity: limits.capacity,
+  ticketPrice: limits.ticket_price,
+  gross: limits.gross,
+  recentMonths: limits.recent_months,
+  maxCandidates: limits.max_candidates,
   /** Ids in paths and bodies: `ven_…`, `run_…`, `urn:entity:…`. */
-  id: 128,
+  id: limits.id,
   /** A resolution key is `venue:<name>` or an act name. */
-  query: 100,
+  query: limits.query,
 } as const;
 
-/** Trimmed, non-empty, at most `max` characters. */
-const text = (max: number) => z.string().trim().min(1).max(max);
+/** Control characters (Unicode Cc) are dropped, except tab, newline and carriage return,
+ * which a booker's message may hold. Same rule as `clean` in agent/draw/api/inputs.py. */
+export function clean(value: string): string {
+  return value.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g, "");
+}
+
+/** Cleaned and trimmed, then at most `max` characters, and non-empty unless `min` is 0. */
+const text = (max: number, min = 1) => z.string().overwrite(clean).trim().min(min).max(max);
 
 const id = z
   .string()
@@ -75,7 +84,7 @@ export const constraintsSchema = z.strictObject({
 export const runSchema = z.strictObject({
   venue_id: id,
   constraints: constraintsSchema,
-  message: z.string().trim().max(LIMITS.message).default(""),
+  message: text(LIMITS.message, 0).default(""),
 });
 
 /** POST /api/runs/{id}/refine: what to change, in the booker's words. */

@@ -46,6 +46,40 @@ describe("POST /api/venues", () => {
   });
 
   it.each([
+    ["an empty name", { ...venue, name: "" }, "name"],
+    ["a whitespace-only name", { ...venue, name: " \t " }, "name"],
+    ["a control-only name", { ...venue, name: "\x00\x1b" }, "name"],
+    ["an oversized name", { ...venue, name: "x".repeat(81) }, "name"],
+    ["an oversized city", { ...venue, city: "x".repeat(61) }, "city"],
+    ["an empty act", { ...venue, past_shows: [{ act: " ", date: "2026-05-01" }] }, "past_shows.0.act"],
+  ])("rejects %s without calling the agent", async (_label, input, field) => {
+    const sent = fakeAgent();
+
+    const res = await upsert(jsonRequest(input));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ reason: "invalid_input", field });
+    expect(sent).toEqual([]);
+  });
+
+  it("forwards names with control characters stripped", async () => {
+    const sent = fakeAgent(Response.json({ id: "ven_1" }, { status: 201 }));
+
+    await upsert(jsonRequest({ ...venue, name: "Synthetic\x00 Room", city: "New\x07 York" }));
+
+    expect(sent[0].body).toEqual({ ...venue, name: "Synthetic Room", city: "New York" });
+  });
+
+  it("passes the agent's invalid field through", async () => {
+    fakeAgent(Response.json({ reason: "invalid_input", field: "past_shows.0.act" }, { status: 400 }));
+
+    const res = await upsert(jsonRequest(venue));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ reason: "invalid_input", field: "past_shows.0.act" });
+  });
+
+  it.each([
     ["malformed JSON", "{not json"],
     ["an oversized body", JSON.stringify({ ...venue, name: "x".repeat(40_000) })],
   ])("rejects %s", async (_label, raw) => {

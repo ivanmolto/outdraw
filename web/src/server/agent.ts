@@ -10,6 +10,7 @@ import type {
   CandidateEvidence,
   CandidateOut,
   CompareOut,
+  InvalidInput,
   QlooCall,
   Reason,
   ResolutionItem,
@@ -59,6 +60,8 @@ export class AgentError extends Error {
     readonly pending?: string[],
     /** The seed the agent named for a refused run (busy, budget, live_mode_off). */
     readonly fallbackSeed?: string,
+    /** Dotted path of the field the agent refused, for invalid_input. */
+    readonly field?: string,
   ) {
     super(`agent ${status}: ${reason}`);
     this.name = "AgentError";
@@ -74,8 +77,11 @@ function toAgentError(status: number, body: unknown): AgentError {
   }
   switch (status) {
     case 400:
-    case 422:
-      return new AgentError(400, "invalid_input");
+    case 422: {
+      // 400 is InvalidInput; 422 is a route's own refusal (not a candidate, no change).
+      const { field } = obj as Partial<InvalidInput>;
+      return new AgentError(400, "invalid_input", undefined, undefined, field ?? undefined);
+    }
     case 404:
       return new AgentError(404, "not_found");
     case 409: {

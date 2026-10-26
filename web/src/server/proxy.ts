@@ -71,6 +71,7 @@ export async function proxy<T>(fn: () => Promise<T>, status = 200): Promise<Resp
         reason: err.reason,
         ...(err.pending && { pending: err.pending }),
         ...(err.fallbackSeed && { fallback_seed: err.fallbackSeed }),
+        ...(err.field && { field: err.field }),
       });
     }
     console.error("api proxy failed:", err);

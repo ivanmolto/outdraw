@@ -134,6 +134,7 @@ describe("POST /api/runs/[id]/refine", () => {
 
   it.each([
     [{ message: "   " }, "message"],
+    [{ message: "\x00\n\x07" }, "message"],
     [{ message: "x".repeat(301) }, "message"],
     [{ message: "ok", extra: 1 }, undefined],
   ])("rejects %j without calling the agent", async (input, field) => {

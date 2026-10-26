@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import type { z } from "zod";
 
+import { SHARED_LIMITS as limits } from "@/types/limits";
+
 import {
   LIMITS,
+  clean,
   confirmSchema,
   constraintsSchema,
   idSchema,
+  refineSchema,
   runSchema,
   venueUpsertSchema,
 } from "./schemas";
@@ -32,6 +36,33 @@ function firstError(schema: z.ZodType, value: unknown): string | null {
   return parsed.success ? null : parsed.error.issues[0].path.join(".");
 }
 
+describe("LIMITS", () => {
+  it("expose every bound generated from /shared/limits.json", () => {
+    expect(LIMITS).toMatchObject({ name: 80, city: 60, message: 300, pastShows: 10 });
+    expect(Object.keys(LIMITS)).toHaveLength(Object.keys(limits).length);
+  });
+});
+
+describe("clean", () => {
+  it.each([
+    ["Synthetic\x00 Room\x07", "Synthetic Room"],
+    ["Synthetic\tRoom\r\n", "Synthetic\tRoom\r\n"],
+    ["line one\nline two", "line one\nline two"],
+    ["Synthetic\x1b[31m Room\x7f\x9b", "Synthetic[31m Room"],
+    ["\x00\x01", ""],
+    ["Café — Ünïcode", "Café — Ünïcode"],
+  ])("cleans %j", (raw, cleaned) => {
+    expect(clean(raw)).toBe(cleaned);
+  });
+
+  it("runs before trimming and the length checks", () => {
+    const parsed = venueUpsertSchema.parse({ ...venue, name: " \x00Synthetic Room\x07 " });
+    expect(parsed.name).toBe("Synthetic Room");
+    const padded = `  ${"x".repeat(LIMITS.name)}\x00 `;
+    expect(firstError(venueUpsertSchema, { ...venue, name: padded })).toBeNull();
+  });
+});
+
 describe("venueUpsertSchema", () => {
   it("accepts a full venue, trimming strings", () => {
     const parsed = venueUpsertSchema.parse({ ...venue, name: "  Synthetic Room  ", lat: 40.7 });
@@ -57,8 +88,20 @@ describe("venueUpsertSchema", () => {
     ["unknown field", { ...venue, email: "a@b.c" }, ""],
     ["bad id", { ...venue, id: "../etc" }, "id"],
     ["missing past_shows", { ...venue, past_shows: undefined }, "past_shows"],
+    ["control-only name", { ...venue, name: "\x00\x1b\n" }, "name"],
+    ["whitespace-only city", { ...venue, city: "\t" }, "city"],
+    ["country too long", { ...venue, country: "x".repeat(LIMITS.country + 1) }, "country"],
   ])("rejects %s", (_label, value, field) => {
     expect(firstError(venueUpsertSchema, value)).toBe(field);
+  });
+
+  it.each([
+    ["name", LIMITS.name],
+    ["city", LIMITS.city],
+    ["country", LIMITS.country],
+  ])("accepts %s at its limit and rejects one over", (field, limit) => {
+    expect(firstError(venueUpsertSchema, { ...venue, [field]: "x".repeat(limit) })).toBeNull();
+    expect(firstError(venueUpsertSchema, { ...venue, [field]: "x".repeat(limit + 1) })).toBe(field);
   });
 
   it(`accepts ${LIMITS.pastShows} past shows and rejects ${LIMITS.pastShows + 1}`, () => {
@@ -69,6 +112,7 @@ describe("venueUpsertSchema", () => {
 
   it.each([
     ["empty act", { ...show, act: " " }, "act"],
+    ["control-only act", { ...show, act: "\x00\x07" }, "act"],
     ["act too long", { ...show, act: "x".repeat(LIMITS.act + 1) }, "act"],
     ["bad date", { ...show, date: "May 1st" }, "date"],
     ["impossible date", { ...show, date: "2026-02-30" }, "date"],
@@ -113,6 +157,7 @@ describe("constraintsSchema", () => {
     ["too many candidates", { max_candidates: LIMITS.maxCandidates + 1 }, "max_candidates"],
     ["too many tags", { include_tags: Array(LIMITS.tags + 1).fill("t") }, "include_tags"],
     ["tag too long", { exclude_tags: ["t".repeat(LIMITS.tag + 1)] }, "exclude_tags.0"],
+    ["whitespace-only tag", { exclude_tags: ["  "] }, "exclude_tags.0"],
   ])("rejects %s", (_label, patch, field) => {
     expect(firstError(constraintsSchema, { ...constraints, ...patch })).toBe(field);
   });
@@ -133,6 +178,29 @@ describe("runSchema", () => {
     ["bad constraints", { venue_id: "ven_1", constraints: {} }, "constraints.include_tags"],
   ])("rejects %s", (_label, value, field) => {
     expect(firstError(runSchema, value)).toBe(field);
+  });
+});
+
+describe("run and refine messages", () => {
+  it("keeps the run message optional, so whitespace or control characters become empty", () => {
+    expect(runSchema.parse({ venue_id: "ven_1", constraints, message: " \x00 " }).message).toBe("");
+    const atLimit = { venue_id: "ven_1", constraints, message: "x".repeat(LIMITS.message) };
+    expect(firstError(runSchema, atLimit)).toBeNull();
+  });
+
+  it("cleans the refine message but keeps its line breaks", () => {
+    expect(refineSchema.parse({ message: "more\nemerging\x00 acts" }).message).toBe(
+      "more\nemerging acts",
+    );
+  });
+
+  it.each([
+    ["empty", ""],
+    ["whitespace-only", "   \n\t"],
+    ["control-only", "\x00\x07"],
+    ["too long", "x".repeat(LIMITS.message + 1)],
+  ])("rejects a %s refine message", (_label, message) => {
+    expect(firstError(refineSchema, { message })).toBe("message");
   });
 });
 
