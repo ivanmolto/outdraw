@@ -11,9 +11,12 @@ import {
   ApiError,
   api,
   reasonMessage,
+  sampleSeed,
   type EntityCandidate,
   type ResolutionItem,
 } from "@/src/lib/api-client";
+import type { SeedSlug } from "@/src/lib/seeds";
+import { LivePaused } from "@/src/components/live-paused";
 import { Elapsed, Spinner } from "@/src/components/progress";
 
 interface Props {
@@ -175,6 +178,8 @@ export function ConfirmMatches({ venueId, venueName, items: initial, onBack, onD
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [building, setBuilding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** The profile build was refused for want of live analysis: the demo to offer instead. */
+  const [paused, setPaused] = useState<SeedSlug | null>(null);
 
   const without = (set: ReadonlySet<string>, key: string) => {
     const next = new Set(set);
@@ -217,6 +222,7 @@ export function ConfirmMatches({ venueId, venueName, items: initial, onBack, onD
   async function build() {
     setBuilding(true);
     setError(null);
+    setPaused(null);
     try {
       await api.buildProfile(venueId);
       onDone();
@@ -225,7 +231,9 @@ export function ConfirmMatches({ venueId, venueName, items: initial, onBack, onD
         const pending = new Set(err.pending);
         setItems((prev) => prev.map((i) => (pending.has(i.query) ? { ...i, confirmed: false } : i)));
       }
-      setError(reasonMessage(err));
+      const sample = sampleSeed(err);
+      if (sample) setPaused(sample);
+      else setError(reasonMessage(err));
       setBuilding(false);
     }
   }
@@ -268,6 +276,13 @@ export function ConfirmMatches({ venueId, venueName, items: initial, onBack, onD
         <p className="text-sm text-ink/70">
           No past acts to match. Add some shows to get a sharper crowd profile.
         </p>
+      )}
+
+      {paused && (
+        <LivePaused slug={paused}>
+          Your confirmed matches are saved, but the crowd profile can&apos;t be built right now.
+          Build it again later.
+        </LivePaused>
       )}
 
       {error && (

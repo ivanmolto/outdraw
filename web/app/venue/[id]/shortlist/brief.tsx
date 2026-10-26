@@ -7,7 +7,16 @@
 import { useEffect, useId, useState } from "react";
 
 import { Spinner } from "@/src/components/progress";
-import { ApiError, api, reasonText, type BriefOut, type Reason } from "@/src/lib/api-client";
+import { LivePaused } from "@/src/components/live-paused";
+import {
+  ApiError,
+  api,
+  reasonText,
+  sampleSeed,
+  type BriefOut,
+  type Reason,
+} from "@/src/lib/api-client";
+import type { SeedSlug } from "@/src/lib/seeds";
 import { usePrecomputed } from "@/src/lib/precomputed";
 import type { SourceLabel } from "@/types/schemas";
 import { Provenance } from "./provenance";
@@ -200,6 +209,8 @@ type Load =
   | { name: "loading" }
   | { name: "done"; data: BriefOut }
   | { name: "failed"; reason: Reason }
+  /** Refused for want of live analysis (busy, budget, LIVE_MODE=off). */
+  | { name: "paused"; slug: SeedSlug }
   /** A seed act precompute drafted no brief for: the agent would refuse it, so no fetch. */
   | { name: "absent" };
 
@@ -232,8 +243,9 @@ function useBrief(runId: string, entityId: string, attempt: number): Load {
       },
       (err: unknown) => {
         if (active) {
+          const slug = sampleSeed(err);
           const reason = err instanceof ApiError ? err.reason : "unavailable";
-          setState({ key, load: { name: "failed", reason } });
+          setState({ key, load: slug ? { name: "paused", slug } : { name: "failed", reason } });
         }
       },
     );
@@ -276,6 +288,14 @@ export function BriefTab({
         The demo has briefs for its top acts only. Refine the shortlist for a live run to draft
         this one.
       </p>
+    );
+  }
+  if (load.name === "paused") {
+    return (
+      <LivePaused slug={load.slug}>
+        This act&apos;s booking brief can&apos;t be drafted right now. The rest of its
+        Soundcheck is here; open the brief again later.
+      </LivePaused>
     );
   }
   if (load.name === "failed") {

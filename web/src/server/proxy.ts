@@ -17,6 +17,8 @@ export interface ErrorBody {
   field?: string;
   /** Resolution keys still to confirm, for conflict on profile. */
   pending?: string[];
+  /** The demo venue to show instead, for busy, budget and live_mode_off. */
+  fallback_seed?: string;
 }
 
 export function fail(status: number, body: ErrorBody): Response {
@@ -65,7 +67,11 @@ export async function proxy<T>(fn: () => Promise<T>, status = 200): Promise<Resp
       return fail(400, { reason: "invalid_input", ...(err.field && { field: err.field }) });
     }
     if (err instanceof AgentError) {
-      return fail(err.status, { reason: err.reason, ...(err.pending && { pending: err.pending }) });
+      return fail(err.status, {
+        reason: err.reason,
+        ...(err.pending && { pending: err.pending }),
+        ...(err.fallbackSeed && { fallback_seed: err.fallbackSeed }),
+      });
     }
     console.error("api proxy failed:", err);
     return fail(500, { reason: "unknown" });

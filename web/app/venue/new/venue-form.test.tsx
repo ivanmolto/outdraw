@@ -231,4 +231,27 @@ describe("venue form", () => {
     expect((await screen.findByRole("alert")).textContent).toMatch(/busy/);
     expect(screen.queryByRole("heading", { name: "Confirm matches" })).toBeNull();
   });
+
+  it("says matching waits for live analysis when resolve is refused", async () => {
+    const user = userEvent.setup();
+    fakeApi([
+      [/\/api\/venues$/, Response.json({ id: "ven_fixture" }, { status: 201 })],
+      [
+        /\/resolve$/,
+        Response.json({ reason: "live_mode_off", fallback_seed: "brooklyn-indie" }, { status: 503 }),
+      ],
+    ]);
+    render(<NewVenue />);
+
+    fillVenue();
+    await user.click(screen.getByRole("button", { name: "Save and match acts" }));
+
+    const paused = await screen.findByRole("status", { name: "Live analysis paused" });
+    expect(paused.textContent).toContain("Your venue is saved");
+    expect(screen.getByRole("link", { name: "See a sample shortlist" }).getAttribute("href")).toBe(
+      "/v/brooklyn-indie",
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? "{}").venueId).toBe("ven_fixture");
+  });
 });

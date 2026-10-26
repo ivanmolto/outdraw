@@ -164,12 +164,27 @@ describe("With Qloo / LLM only toggle", () => {
 
   it("says why when the LLM-only list can't be had", async () => {
     viewport(1280);
-    fakeApi([[COMPARE, Response.json({ reason: "budget" }, { status: 429 })]]);
+    fakeApi([[COMPARE, Response.json({ reason: "unavailable" }, { status: 503 })]]);
     const user = setup();
 
     await user.click(toggle());
 
-    expect((await screen.findByRole("alert")).textContent).toContain("today's Qloo budget");
+    expect((await screen.findByRole("alert")).textContent).toContain("Can't reach Outdraw");
+  });
+
+  it.each([
+    [429, "budget"],
+    [503, "live_mode_off"],
+  ])("says the list waits for live analysis on %i %s, with no error", async (status, reason) => {
+    viewport(1280);
+    fakeApi([[COMPARE, Response.json({ reason, fallback_seed: "nola-jazz" }, { status })]]);
+    const user = setup();
+
+    await user.click(toggle());
+
+    const paused = await screen.findByRole("status", { name: "Live analysis paused" });
+    expect(paused.textContent).toContain("LLM-only list can't be fetched right now");
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("never shows the agent's error text for a list the model botched", async () => {

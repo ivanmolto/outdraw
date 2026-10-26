@@ -13,7 +13,9 @@ import type {
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
 import type { ConfirmInput, PencilInput, RefineInput, RunInput, VenueUpsert } from "./schemas";
-import type { SoundcheckData } from "./soundcheck";
+import { FALLBACK_SEED, isSeedSlug, type SeedSlug } from "./seeds";
+import type { Precomputed } from "./precomputed";
+import type { CrossDomain, SoundcheckData } from "./soundcheck";
 
 export type { BriefOut, CandidateOut, CompareOut, EntityCandidate, Reason, ResolutionItem, Resolutions };
 
@@ -24,6 +26,8 @@ export class ApiError extends Error {
     readonly field?: string,
     /** Resolution keys still to confirm, for conflict on profile. */
     readonly pending?: string[],
+    /** The demo venue to show instead, for busy, budget and live_mode_off. */
+    readonly fallbackSeed?: SeedSlug,
   ) {
     super(reason);
     this.name = "ApiError";
@@ -50,6 +54,27 @@ export function reasonMessage(err: unknown): string {
   return reasonText(err instanceof ApiError ? err.reason : "unavailable");
 }
 
+/** Refusals of live analysis (the web's rate limit, the daily budget, `LIVE_MODE=off`): the
+ * UI shows a precomputed sample for these instead of an error. */
+const SAMPLED: ReadonlySet<Reason> = new Set(["busy", "budget", "live_mode_off"]);
+
+/** The seed to show instead of `err`, or null when `err` is a real failure. */
+export function sampleSeed(err: unknown): SeedSlug | null {
+  if (!(err instanceof ApiError) || !SAMPLED.has(err.reason)) return null;
+  return err.fallbackSeed ?? FALLBACK_SEED;
+}
+
+/** A seed's precomputed shortlist, as `GET /api/seeds/{slug}` serves it. */
+export interface SeedSample {
+  slug: SeedSlug;
+  title: string;
+  venueId: string;
+  venueName: string;
+  run: RunOut;
+  precomputed: Precomputed;
+  crossDomain: CrossDomain;
+}
+
 async function request<T>(method: "GET" | "POST" | "PATCH", path: string, body?: unknown): Promise<T> {
   let res: Response;
   try {
@@ -63,8 +88,14 @@ async function request<T>(method: "GET" | "POST" | "PATCH", path: string, body?:
   }
   const data: unknown = await res.json().catch(() => null);
   if (!res.ok) {
-    const err = (data ?? {}) as { reason?: Reason; field?: string; pending?: string[] };
-    throw new ApiError(err.reason ?? "unknown", err.field, err.pending);
+    const err = (data ?? {}) as {
+      reason?: Reason;
+      field?: string;
+      pending?: string[];
+      fallback_seed?: unknown;
+    };
+    const seed = isSeedSlug(err.fallback_seed) ? err.fallback_seed : undefined;
+    throw new ApiError(err.reason ?? "unknown", err.field, err.pending, seed);
   }
   return data as T;
 }
@@ -75,6 +106,8 @@ const get = <T>(path: string) => request<T>("GET", path);
 const seg = encodeURIComponent;
 
 export const api = {
+  /** Free: precomputed rows from the shared cache, never a Qloo or model call. */
+  getSeedSample: (slug: SeedSlug) => get<SeedSample>(`/api/seeds/${seg(slug)}`),
   getSoundcheck: (runId: string, entityId: string) =>
     get<SoundcheckData>(`/api/runs/${seg(runId)}/candidates/${seg(entityId)}/soundcheck`),
   getBrief: (runId: string, entityId: string) =>

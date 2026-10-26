@@ -154,15 +154,35 @@ describe("Soundcheck panel tabs and pencil hold", () => {
   it("shows the reason and retries when the brief fails", async () => {
     fakeApi([
       [/\/soundcheck$/, Response.json(soundcheck)],
-      [/\/brief$/, Response.json({ reason: "budget" }, { status: 429 })],
+      [/\/brief$/, Response.json({ reason: "unavailable" }, { status: 503 })],
       [/\/brief$/, Response.json(fixture)],
     ]);
     const user = open();
     await user.click(screen.getByRole("button", { name: /Soundcheck/ }));
     await user.click(await screen.findByRole("tab", { name: "Brief" }));
-    expect((await screen.findByRole("alert")).textContent).toContain("today's Qloo budget");
+    expect((await screen.findByRole("alert")).textContent).toContain("Can't reach Outdraw");
     await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("heading", { name: "Why it fits" })).toBeTruthy();
+  });
+
+  it.each([
+    [429, "budget"],
+    [503, "live_mode_off"],
+  ])("says the brief waits for live analysis on %i %s, with no error", async (status, reason) => {
+    fakeApi([
+      [/\/soundcheck$/, Response.json(soundcheck)],
+      [/\/brief$/, Response.json({ reason, fallback_seed: "london-comedy" }, { status })],
+    ]);
+    const user = open();
+    await user.click(screen.getByRole("button", { name: /Soundcheck/ }));
+    await user.click(await screen.findByRole("tab", { name: "Brief" }));
+
+    const paused = await screen.findByRole("status", { name: "Live analysis paused" });
+    expect(paused.textContent).toContain("booking brief can't be drafted right now");
+    expect(screen.getByRole("link", { name: "See a sample shortlist" }).getAttribute("href")).toBe(
+      "/v/london-comedy",
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   it("opens with the stored pencil hold and PATCHes the new one", async () => {

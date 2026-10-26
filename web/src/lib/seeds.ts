@@ -6,5 +6,10 @@ export const SEED_SLUGS = ["nola-jazz", "brooklyn-indie", "london-comedy"] as co
 
 export type SeedSlug = (typeof SEED_SLUGS)[number];
 
-export const isSeedSlug = (slug: string): slug is SeedSlug =>
-  (SEED_SLUGS as readonly string[]).includes(slug);
+export const isSeedSlug = (slug: unknown): slug is SeedSlug =>
+  typeof slug === "string" && (SEED_SLUGS as readonly string[]).includes(slug);
+
+/** The demo venue shown when live analysis is refused and nothing names a closer one (the
+ * web's own rate limit, which runs before the venue is known). The agent's refusals name
+ * the seed closest to the venue (agent/draw/api/live.py). */
+export const FALLBACK_SEED: SeedSlug = "nola-jazz";

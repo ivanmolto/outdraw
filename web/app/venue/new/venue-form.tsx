@@ -4,8 +4,10 @@
 // survives a trip back from the confirm step; validation uses the T17 zod schema.
 import { useState, type FormEvent } from "react";
 
+import { LivePaused } from "@/src/components/live-paused";
 import { Elapsed, Spinner } from "@/src/components/progress";
 import type { VenueUpsert } from "@/src/lib/schemas";
+import type { SeedSlug } from "@/src/lib/seeds";
 import {
   MAX_SHOWS,
   emptyShow,
@@ -16,13 +18,20 @@ import {
   type VenueDraft,
 } from "@/src/lib/venue-draft";
 
+/** A failed save: the message, and the field the server rejected, if any. */
+export interface ServerError {
+  message: string;
+  field?: string;
+  /** Matching was refused for want of live analysis: the demo to offer instead. */
+  sample?: SeedSlug;
+}
+
 interface Props {
   draft: VenueDraft;
   onChange: (draft: VenueDraft) => void;
   onSubmit: (venue: VenueUpsert) => void;
   busy: boolean;
-  /** A failed save: the message, and the field the server rejected, if any. */
-  serverError?: { message: string; field?: string };
+  serverError?: ServerError;
 }
 
 const fieldId = (path: string) => `f-${path.replaceAll(".", "-")}`;
@@ -158,10 +167,17 @@ export function VenueForm({ draft, onChange, onSubmit, busy, serverError }: Prop
           </ul>
         </div>
       )}
-      {serverError && (
-        <p role="alert" className="rounded-md border border-red-700/30 bg-red-50 p-3 text-sm text-red-800">
-          {serverError.message}
-        </p>
+      {serverError?.sample ? (
+        <LivePaused slug={serverError.sample}>
+          Your venue is saved, but its acts can&apos;t be matched in Qloo right now. Save again
+          later to pick up where you left off.
+        </LivePaused>
+      ) : (
+        serverError && (
+          <p role="alert" className="rounded-md border border-red-700/30 bg-red-50 p-3 text-sm text-red-800">
+            {serverError.message}
+          </p>
+        )
       )}
 
       <section aria-labelledby="venue-heading" className="space-y-4">

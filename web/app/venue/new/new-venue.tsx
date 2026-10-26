@@ -7,11 +7,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-import { ApiError, api, reasonMessage, type ResolutionItem } from "@/src/lib/api-client";
+import { ApiError, api, reasonMessage, sampleSeed, type ResolutionItem } from "@/src/lib/api-client";
 import type { VenueUpsert } from "@/src/lib/schemas";
 import { emptyDraft, type VenueDraft } from "@/src/lib/venue-draft";
 import { ConfirmMatches } from "./confirm-matches";
-import { VenueForm } from "./venue-form";
+import { VenueForm, type ServerError } from "./venue-form";
 
 type Step =
   | { name: "form" }
@@ -63,7 +63,7 @@ function Flow() {
   const [venueId, setVenueId] = useState<string | undefined>(() => readStored()?.venueId);
   const [step, setStep] = useState<Step>({ name: "form" });
   const [busy, setBusy] = useState(false);
-  const [serverError, setServerError] = useState<{ message: string; field?: string }>();
+  const [serverError, setServerError] = useState<ServerError>();
 
   useEffect(() => {
     writeStored({ draft, venueId });
@@ -72,19 +72,21 @@ function Flow() {
   async function save(venue: VenueUpsert) {
     setBusy(true);
     setServerError(undefined);
+    let saved = false;
     try {
       const { id } = await api.upsertVenue({ ...venue, id: venueId });
       setVenueId(id);
+      saved = true;
       const resolved = await api.resolveVenue(id);
       setStep({ name: "confirm", venueName: venue.name, items: resolved.items });
       window.scrollTo({ top: 0 });
     } catch (err) {
       // The venue was deleted under us: create a fresh one next time.
       if (err instanceof ApiError && err.reason === "not_found") setVenueId(undefined);
-      setServerError({
-        message: reasonMessage(err),
-        field: err instanceof ApiError ? err.field : undefined,
-      });
+      // Matching refused for want of live analysis: the venue is saved, only matching waits.
+      const sample = (saved && sampleSeed(err)) || undefined;
+      const field = err instanceof ApiError && !sample ? err.field : undefined;
+      setServerError({ message: reasonMessage(err), field, sample });
     } finally {
       setBusy(false);
     }

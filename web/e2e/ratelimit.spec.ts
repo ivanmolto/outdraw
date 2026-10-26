@@ -1,7 +1,7 @@
 // The per-IP limits in proxy.ts against the fake Upstash in e2e/mock-redis.mjs: the 4th run
-// in a minute gets 429 {reason:"busy"} without reaching the agent, the shortlist page
-// shows the busy message, and pages outside the matcher stay reachable. Each test sets its
-// own x-forwarded-for, so buckets never carry over between tests or retries.
+// in a minute gets 429 {reason:"busy"} without reaching the agent, the shortlist page shows
+// the default seed's sample instead, and pages outside the matcher stay reachable. Each test
+// sets its own x-forwarded-for, so buckets never carry over between tests or retries.
 import { expect, test, type APIRequestContext } from "@playwright/test";
 
 const AGENT = "http://127.0.0.1:8787";
@@ -69,7 +69,7 @@ test("the 4th run in a minute gets 429 and never reaches the agent", async ({ re
   }
 });
 
-test("a limited visitor sees the busy message on the shortlist", async ({ page, request }, info) => {
+test("a limited visitor sees the default seed's sample on the shortlist", async ({ page, request }, info) => {
   const ip = ipFor(info, 51);
   const headers = { "x-forwarded-for": ip };
   await freshMinute();
@@ -87,5 +87,8 @@ test("a limited visitor sees the busy message on the shortlist", async ({ page, 
   await page.goto(`/venue/${VENUE_ID}/shortlist`);
 
   expect((await limited).status()).toBe(429);
-  await expect(page.getByText("Outdraw is busy with another request.")).toBeVisible();
+  await expect(page.getByText("Live analysis is busy, here's a sample")).toBeVisible();
+  // The web's own limit runs before the venue is known: the default seed, Synthetic Room 1.
+  await expect(page.getByRole("heading", { name: "Synthetic Room 1", exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);
 });

@@ -9,10 +9,10 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
+import { FALLBACK_SEED } from "@/src/lib/seeds";
 import type { ErrorBody } from "./proxy";
 
-/** The demo venue the UI falls back to when live analysis is limited. */
-export const FALLBACK_SEED = "nola-jazz";
+export { FALLBACK_SEED };
 
 export const LIMITS = {
   burst: { tokens: 3, window: "1 m" },
@@ -69,7 +69,7 @@ function defaultLimiters(): Limiter[] | null {
   return shared;
 }
 
-export type BusyBody = ErrorBody & { fallback_seed: string };
+export type BusyBody = ErrorBody & Required<Pick<ErrorBody, "fallback_seed">>;
 
 function busy(reset: number): Response {
   const body: BusyBody = { reason: "busy", fallback_seed: FALLBACK_SEED };

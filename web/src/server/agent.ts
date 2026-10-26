@@ -21,6 +21,7 @@ import type {
   VenueOut,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
+import { isSeedSlug } from "@/src/lib/seeds";
 import type {
   ConfirmInput,
   PencilInput,
@@ -56,6 +57,8 @@ export class AgentError extends Error {
     readonly reason: Reason,
     /** Items still to confirm, from a 409 on profile. */
     readonly pending?: string[],
+    /** The seed the agent named for a refused run (busy, budget, live_mode_off). */
+    readonly fallbackSeed?: string,
   ) {
     super(`agent ${status}: ${reason}`);
     this.name = "AgentError";
@@ -64,8 +67,10 @@ export class AgentError extends Error {
 
 function toAgentError(status: number, body: unknown): AgentError {
   const obj = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+  // Only a known slug passes: it ends up in a URL on the page.
+  const seed = isSeedSlug(obj.fallback_seed) ? obj.fallback_seed : undefined;
   if (typeof obj.reason === "string" && PASSTHROUGH.has(obj.reason)) {
-    return new AgentError(status, obj.reason as Reason);
+    return new AgentError(status, obj.reason as Reason, undefined, seed);
   }
   switch (status) {
     case 400:
@@ -81,7 +86,7 @@ function toAgentError(status: number, body: unknown): AgentError {
       return new AgentError(409, "conflict", pending);
     }
     case 429:
-      return new AgentError(429, "budget");
+      return new AgentError(429, "budget", undefined, seed);
     case 502:
     case 503:
     case 504:

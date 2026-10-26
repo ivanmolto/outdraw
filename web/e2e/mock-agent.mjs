@@ -4,6 +4,10 @@
 // server components and the internal key all run for real. `GET /__requests` lists what
 // it received, for the spec to assert on, and `GET /__counters` how many Qloo and model calls
 // the real agent would have spent on it (the daily counters of agent/draw/qloo/budget.py).
+// `POST /__refuse {status}` makes every call that would spend (runs, refinements, resolve,
+// profile, a first brief or compare) answer as the real agent refuses it (503 with
+// LIVE_MODE=off, 429 at the daily budget, both naming a fallback seed) until
+// `POST /__refuse {status: null}`; stored and cached reads still answer.
 // Three seed venues (T29) are stored from the start, read-only as the agent keeps them.
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -47,6 +51,26 @@ const spend = (qloo, llm) => {
 };
 /** Runs compared once, so a second compare is the cached copy. @type {Set<string>} */
 const compared = new Set();
+
+/** The seed the refusals name: not the web's default, so a spec sees the agent's choice. */
+const REFUSAL_SEED = "brooklyn-indie";
+const REFUSALS = {
+  503: {
+    reason: "live_mode_off",
+    detail: "Live analysis is switched off (LIVE_MODE=off).",
+    fallback_seed: REFUSAL_SEED,
+  },
+  429: {
+    reason: "budget",
+    detail: "Qloo daily budget exceeded: 300/300",
+    what: "Qloo",
+    used: 300,
+    cap: 300,
+    fallback_seed: REFUSAL_SEED,
+  },
+};
+/** The status runs and refinements are refused with, or null to run them. */
+let refuseWith = null;
 
 // --- seeds ------------------------------------------------------------------------------
 
@@ -205,6 +229,9 @@ async function route(method, path, body) {
   }
   // The seeds are stored from the start; the live venue only once it is posted.
   if (!venue && path.startsWith("/venues/")) return [404, { detail: "Unknown venue." }];
+  if (refuseWith && method === "POST" && /^\/venues\/[^/]+\/(resolve|profile)$/.test(path)) {
+    return [refuseWith, REFUSALS[refuseWith]];
+  }
   if (method === "POST" && path === `/venues/${VENUE_ID}/resolve`) {
     spend(1, 0);
     return [200, resolutions(venue)];
@@ -220,6 +247,9 @@ async function route(method, path, body) {
       { id: VENUE_ID, venue, resolutions: [], profile: profiled ? venueFixture.profile : null },
     ];
   }
+  const isRun = method === "POST" && (path === "/runs" || /^\/runs\/[^/]+\/refine$/.test(path));
+  // Refused before any work, as agent/draw/api/live.py does: nothing stored, nothing spent.
+  if (isRun && refuseWith) return [refuseWith, REFUSALS[refuseWith]];
   if (method === "POST" && path === "/runs") {
     spend(1, 1);
     await sleep(RUN_DELAY_MS);
@@ -243,6 +273,7 @@ async function route(method, path, body) {
     const seed = seedByRun.get(runId);
     if (seed && !seed.compare_ready) return [409, { detail: { reason: "seed_not_precomputed" } }];
     const cached = !!seed || compared.has(runId);
+    if (!cached && refuseWith) return [refuseWith, REFUSALS[refuseWith]];
     if (!cached) spend(0, 1);
     compared.add(runId);
     return [200, { ...compareFixture, run_id: runId, cached }];
@@ -285,6 +316,7 @@ async function route(method, path, body) {
         return [409, { detail: { reason: "seed_not_precomputed" } }];
       }
       const cached = !!seed || briefed.has(key);
+      if (!cached && refuseWith) return [refuseWith, REFUSALS[refuseWith]];
       if (!cached) {
         spend(1, 1);
         await sleep(BRIEF_DELAY_MS);
@@ -323,11 +355,16 @@ createServer(async (req, res) => {
   if (url.pathname === "/health") return send(200, { ok: true });
   if (url.pathname === "/__requests") return send(200, requests);
   if (url.pathname === "/__counters") return send(200, counters);
-  if (req.headers["x-draw-internal-key"] !== KEY) return send(401, { detail: "Bad key." });
 
   let raw = "";
   for await (const chunk of req) raw += chunk;
   const body = raw ? JSON.parse(raw) : undefined;
+  if (url.pathname === "/__refuse") {
+    refuseWith = body?.status in REFUSALS ? body.status : null;
+    return send(200, { status: refuseWith });
+  }
+  if (req.headers["x-draw-internal-key"] !== KEY) return send(401, { detail: "Bad key." });
+
   requests.push({ method: req.method, path: url.pathname, body });
   const [status, data] = await route(req.method, url.pathname, body);
   send(status, data);

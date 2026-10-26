@@ -162,6 +162,31 @@ describe("confirm matches", () => {
     expect(onDone).not.toHaveBeenCalled();
   });
 
+  it.each([
+    [429, "busy"],
+    [503, "live_mode_off"],
+  ])("says the profile waits for live analysis on %i %s, with no error", async (status, reason) => {
+    fakeApi([
+      [/\/profile$/, Response.json({ reason, fallback_seed: "brooklyn-indie" }, { status })],
+      [/\/profile$/, Response.json({})],
+    ]);
+    const { user, onDone } = setup(resolutions.items.slice(0, 2));
+
+    await user.click(build());
+
+    const paused = await screen.findByRole("status", { name: "Live analysis paused" });
+    expect(paused.textContent).toContain("crowd profile can't be built right now");
+    expect(screen.getByRole("link", { name: "See a sample shortlist" }).getAttribute("href")).toBe(
+      "/v/brooklyn-indie",
+    );
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(onDone).not.toHaveBeenCalled();
+    // Building again once live analysis is back clears the notice.
+    await user.click(build());
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("status", { name: "Live analysis paused" })).toBeNull();
+  });
+
   it("collapses a row on pick and waits for the save before building", async () => {
     let release: (() => void) | undefined;
     const slow = new Promise<void>((r) => (release = r));

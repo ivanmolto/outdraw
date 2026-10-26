@@ -5,16 +5,20 @@
 // chains to the run on screen, so refining an earlier run drops the later ones from the
 // chain shown. The latest run's id goes into the URL (`?run=`), like a fresh run's. On a seed
 // page (/v/[slug]) a refinement forks the read-only seed into a live run, and the URL moves to
-// that run's live shortlist page, where a reload or a shared link finds it.
+// that run's live shortlist page, where a reload or a shared link finds it. A refinement
+// refused for want of live analysis (busy, budget, LIVE_MODE=off) swaps in the closest seed's
+// sample until the booker goes back to their own shortlist.
 import { useState } from "react";
 
-import { ApiError, api, type Reason } from "@/src/lib/api-client";
+import { ApiError, api, sampleSeed, type Reason } from "@/src/lib/api-client";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
+import type { SeedSlug } from "@/src/lib/seeds";
 import { diffShortlists, type ShortlistDiff } from "@/src/lib/shortlist-diff";
 import type { CrossDomain } from "@/src/lib/soundcheck";
 import { RefineBox } from "./refine-box";
 import { RunHistory } from "./run-history";
 import { RunOutcome } from "./run-outcome";
+import { SampleFallback } from "./sample-fallback";
 
 /** The diff of `run` against `parent`, when both are shortlists and `parent` is its own. */
 function diffWith(run: ParsedRun, parent: ParsedRun | undefined): ShortlistDiff | undefined {
@@ -32,6 +36,8 @@ interface Props {
   /** The path a refined run's `?run=` goes on; the current page when absent. */
   shortlistPath?: string;
   profileHref?: string;
+  /** False hides the refinement box (a sample shown in place of a live run). */
+  refinable?: boolean;
 }
 
 export function RefinableRun({
@@ -41,11 +47,13 @@ export function RefinableRun({
   crossDomain,
   shortlistPath = "",
   profileHref,
+  refinable = true,
 }: Props) {
   const [chain, setChain] = useState(initial);
   const [selected, setSelected] = useState(initial.length - 1);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<Reason | null>(null);
+  const [sample, setSample] = useState<SeedSlug | null>(null);
 
   const run = chain[selected];
   const diff = diffWith(run, chain[selected - 1]);
@@ -69,9 +77,33 @@ export function RefinableRun({
             `${shortlistPath}?run=${encodeURIComponent(next.runId)}`,
           );
         },
-        (err: unknown) => setError(err instanceof ApiError ? err.reason : "unavailable"),
+        (err: unknown) => {
+          const seed = sampleSeed(err);
+          if (seed) setSample(seed);
+          else setError(err instanceof ApiError ? err.reason : "unavailable");
+        },
       )
       .finally(() => setPending(false));
+  }
+
+  if (sample) {
+    const back = (
+      <button type="button" onClick={() => setSample(null)} className="font-medium underline">
+        Back to your shortlist
+      </button>
+    );
+    return (
+      <SampleFallback
+        slug={sample}
+        action={back}
+        fallback={
+          <div role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-6 text-sm">
+            <p className="text-ink/70">Live analysis is busy right now. Try again in a moment.</p>
+            <div className="mt-3">{back}</div>
+          </div>
+        }
+      />
+    );
   }
 
   return (
@@ -86,7 +118,9 @@ export function RefinableRun({
           profileHref={profileHref}
         >
           {/* Keyed by run: a new run on screen starts with an empty box. */}
-          <RefineBox key={run.runId} pending={pending} error={error} onRefine={refine} />
+          {refinable && (
+            <RefineBox key={run.runId} pending={pending} error={error} onRefine={refine} />
+          )}
         </RunOutcome>
       </div>
       {chain.length > 1 && (

@@ -7,7 +7,16 @@
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
 
 import { Spinner } from "@/src/components/progress";
-import { ApiError, api, reasonText, type CompareOut, type Reason } from "@/src/lib/api-client";
+import { LivePaused } from "@/src/components/live-paused";
+import {
+  ApiError,
+  api,
+  reasonText,
+  sampleSeed,
+  type CompareOut,
+  type Reason,
+} from "@/src/lib/api-client";
+import type { SeedSlug } from "@/src/lib/seeds";
 import { usePrecomputed } from "@/src/lib/precomputed";
 
 /** Below Tailwind's `md`: two lists don't fit side by side. */
@@ -35,6 +44,8 @@ type Load =
   | { name: "loading" }
   | { name: "done"; out: CompareOut }
   | { name: "failed"; reason: Reason }
+  /** Refused for want of live analysis (busy, budget, LIVE_MODE=off). */
+  | { name: "paused"; slug: SeedSlug }
   /** A seed run precompute made no comparison for: the agent would refuse it, so no fetch. */
   | { name: "absent" };
 
@@ -62,9 +73,13 @@ function useCompare(runId: string, on: boolean): Load {
         if (active) setState({ name: "done", out });
       },
       (err: unknown) => {
-        if (active) {
-          setState({ name: "failed", reason: err instanceof ApiError ? err.reason : "unavailable" });
-        }
+        if (!active) return;
+        const slug = sampleSeed(err);
+        setState(
+          slug
+            ? { name: "paused", slug }
+            : { name: "failed", reason: err instanceof ApiError ? err.reason : "unavailable" },
+        );
       },
     );
     return () => {
@@ -83,6 +98,14 @@ function LlmList({ load, qlooNames }: { load: Load; qlooNames: string[] }) {
       <p role="status" className="flex items-center gap-2 rounded-lg border border-ink/15 bg-white/60 p-4 text-sm text-ink/70">
         <Spinner /> Asking the model for its own list, with no Qloo data…
       </p>
+    );
+  }
+  if (load.name === "paused") {
+    return (
+      <LivePaused slug={load.slug} className="bg-white/60">
+        The LLM-only list can&apos;t be fetched right now. Outdraw&apos;s shortlist is unaffected;
+        try the toggle again later.
+      </LivePaused>
     );
   }
   if (load.name === "failed") {

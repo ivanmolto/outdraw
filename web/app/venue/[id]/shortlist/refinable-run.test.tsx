@@ -8,6 +8,7 @@ import type { RunOut } from "@/types/agent";
 import { fakeApi } from "../../new/test-utils";
 import parentFixture from "./fixtures/run.json";
 import refinedFixture from "./fixtures/refined-run.json";
+import { seedSample } from "./fixtures/sample";
 import { RefinableRun } from "./refinable-run";
 
 const REFINE = (runId: string) => new RegExp(`/api/runs/${runId}/refine$`);
@@ -150,5 +151,29 @@ describe("refinable run", () => {
 
     expect((await screen.findByRole("alert")).textContent).toMatch(/couldn't read a change/);
     expect(acts()).toEqual(["Synthetic Headliner", "Fixture Collective", "Test Pattern Trio"]);
+  });
+
+  it.each([
+    [429, "budget"],
+    [503, "live_mode_off"],
+  ])("swaps in the named seed's sample on a %i %s refinement, and goes back", async (status, reason) => {
+    const { user, replace } = setup();
+    fakeApi([
+      [REFINE(parent.run_id), Response.json({ reason, fallback_seed: "london-comedy" }, { status })],
+      [/\/api\/seeds\/london-comedy$/, Response.json(seedSample("london-comedy"))],
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Bigger acts" }));
+
+    const banner = await screen.findByRole("status", { name: "Sample shortlist" });
+    expect(banner.textContent).toContain("Live analysis is busy, here's a sample");
+    expect(screen.getByRole("heading", { name: "Synthetic Seed london-comedy" })).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(screen.queryByRole("list", { name: "Suggested refinements" })).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Back to your shortlist" }));
+    expect(screen.getByRole("heading", { name: "Synthetic Room" })).toBeTruthy();
+    expect(screen.getByRole("list", { name: "Suggested refinements" })).toBeTruthy();
   });
 });

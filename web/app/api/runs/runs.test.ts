@@ -76,6 +76,18 @@ describe("POST /api/runs", () => {
     [409, { detail: "No crowd profile for this venue." }, 409, { reason: "conflict" }],
     [429, { detail: "LLM cap", what: "llm" }, 429, { reason: "budget" }],
     [503, { reason: "live_mode_off", fallback_seed: "x" }, 503, { reason: "live_mode_off" }],
+    [
+      503,
+      { reason: "live_mode_off", fallback_seed: "brooklyn-indie" },
+      503,
+      { reason: "live_mode_off", fallback_seed: "brooklyn-indie" },
+    ],
+    [
+      429,
+      { reason: "budget", what: "Qloo", fallback_seed: "london-comedy" },
+      429,
+      { reason: "budget", fallback_seed: "london-comedy" },
+    ],
     [503, { detail: "DATABASE_URL is not set." }, 503, { reason: "unavailable" }],
     [401, { detail: "Missing or wrong X-Draw-Internal-Key header." }, 502, { reason: "unknown" }],
     [500, "Internal Server Error", 502, { reason: "unknown" }],
