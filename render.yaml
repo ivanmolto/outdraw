@@ -53,3 +53,5 @@ services:
         value: "3"
       - key: QLOO_RECORD
         value: "0"
+      # LIVE_MODE (the kill switch, docs/ops.md) is set in the dashboard only, never here: a
+      # Blueprint sync would reset it. Unset means on.
