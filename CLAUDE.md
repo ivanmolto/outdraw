@@ -14,7 +14,9 @@ starting any task. Each task there has a prompt, a definition of done and tests.
 - `/agent` — Python 3.12, FastAPI, Strands Agents SDK, deployed on Render (`render.yaml`) in a container
   that also has Node 22.19+ and the pinned Qloo harness.
 - `/shared` — JSON Schemas shared by both; generated TypeScript types live in
-  `/web/types`, generated Pydantic models in `/agent/draw/schemas.py`. Regenerate with
+  `/web/types`, generated Pydantic models in `/agent/draw/schemas.py`. `/shared/limits.json`
+  holds the input bounds, generated into `/web/types/limits.ts` and `/agent/draw/limits.py`
+  by the same scripts (`npm run gen:schemas` at the root). Regenerate with
   the scripts in each package; never hand-edit generated files. `/shared/openapi.json` is
   the agent's route contract (`make openapi` in `/agent`), and `/web/types/api.ts` is
   generated from it (`npm run gen:api`); `web/src/server/agent.ts` derives its response

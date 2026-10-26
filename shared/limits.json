@@ -1,0 +1,18 @@
+{
+  "$comment": "Input bounds for web/src/lib/schemas.ts and agent/draw/api/inputs.py, generated into web/types/limits.ts and agent/draw/limits.py by `npm run gen:schemas` (CI fails on drift). Lengths count characters after control characters are stripped and the ends trimmed.",
+  "name": 80,
+  "city": 60,
+  "country": 60,
+  "act": 80,
+  "message": 300,
+  "past_shows": 10,
+  "tags": 20,
+  "tag": 128,
+  "capacity": 100000,
+  "ticket_price": 10000,
+  "gross": 10000000,
+  "recent_months": 60,
+  "max_candidates": 50,
+  "id": 128,
+  "query": 100
+}
