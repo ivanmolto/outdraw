@@ -53,7 +53,7 @@ from draw.agent.tools import DrawTools
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
 from draw.api.etag import conditional
-from draw.api.live import live_run, require_live
+from draw.api.live import live_call, live_run
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
 from draw.qloo.exec_client import QlooExec
@@ -364,7 +364,7 @@ async def execute_run(
 async def create_run(body: RunBody, deps: DepsDep) -> RunOut:
     """One agent run. 503 `live_mode_off` with `LIVE_MODE=off` and 429 `budget` at either
     daily cap, both before anything is stored and both naming `fallback_seed`."""
-    async with live_run(deps, venue_id=body.venue_id, include_tags=body.constraints.include_tags):
+    async with live_run(deps, venue_id=body.venue_id):
         async with deps.sessions() as session:
             target = await venue_for_run(session, body.venue_id)
         return await execute_run(deps, new_id("run"), target, body.constraints, body.message)
@@ -521,27 +521,28 @@ async def compare_for(deps: Deps, run_id: str) -> CompareOut:
     found = await _cached_compare(deps, run_id)
     if isinstance(found, CompareOut):
         return found
-    await require_live(deps, run_id=run_id)  # before the lock: a refusal leaves none behind
-    lock = _compare_locks.setdefault(run_id, asyncio.Lock())
-    async with lock:
-        # A request that waited here finds the first one's result cached.
-        found = await _cached_compare(deps, run_id)
-        if isinstance(found, CompareOut):
-            return found
-        venue, constraints = found
-        out = await llm_only_shortlist(
-            run_id,
-            venue,
-            constraints,
-            model_factory=deps.model_factory,
-            token_counter=deps.llm_counter,
-            token_cap=deps.llm_cap,
-        )
-        if out.error is None:
-            async with deps.sessions.begin() as session:
-                row = await session.get(RunRow, run_id)
-                assert row is not None
-                row.compare = out.model_dump(mode="json", exclude={"cached"})
+    # Around the lock, so a refusal leaves no lock behind.
+    async with live_call(deps, run_id=run_id):
+        lock = _compare_locks.setdefault(run_id, asyncio.Lock())
+        async with lock:
+            # A request that waited here finds the first one's result cached.
+            found = await _cached_compare(deps, run_id)
+            if isinstance(found, CompareOut):
+                return found
+            venue, constraints = found
+            out = await llm_only_shortlist(
+                run_id,
+                venue,
+                constraints,
+                model_factory=deps.model_factory,
+                token_counter=deps.llm_counter,
+                token_cap=deps.llm_cap,
+            )
+            if out.error is None:
+                async with deps.sessions.begin() as session:
+                    row = await session.get(RunRow, run_id)
+                    assert row is not None
+                    row.compare = out.model_dump(mode="json", exclude={"cached"})
     if not lock.locked():
         _compare_locks.pop(run_id, None)
     return out
@@ -626,25 +627,26 @@ async def brief_for(deps: Deps, run_id: str, entity_id: str) -> BriefOut:
     found = await _cached_brief(deps, run_id, entity_id)
     if isinstance(found, BriefOut):
         return found
-    await require_live(deps, run_id=run_id)  # before the lock: a refusal leaves none behind
-    lock = _brief_locks.setdefault((run_id, entity_id), asyncio.Lock())
-    async with lock:
-        found = await _cached_brief(deps, run_id, entity_id)
-        if isinstance(found, BriefOut):
-            return found
-        _, ctx = found
-        out = await draft_brief(
-            ctx,
-            qloo=deps.gateways.scripted(run_id),
-            model_factory=deps.model_factory,
-            token_counter=deps.llm_counter,
-            token_cap=deps.llm_cap,
-        )
-        if out.error is None:
-            async with deps.sessions.begin() as session:
-                row = await session.get(CandidateRow, (run_id, entity_id))
-                assert row is not None
-                row.brief = out.model_dump(mode="json", exclude={"cached"})
+    # Around the lock, so a refusal leaves no lock behind.
+    async with live_call(deps, run_id=run_id):
+        lock = _brief_locks.setdefault((run_id, entity_id), asyncio.Lock())
+        async with lock:
+            found = await _cached_brief(deps, run_id, entity_id)
+            if isinstance(found, BriefOut):
+                return found
+            _, ctx = found
+            out = await draft_brief(
+                ctx,
+                qloo=deps.gateways.scripted(run_id),
+                model_factory=deps.model_factory,
+                token_counter=deps.llm_counter,
+                token_cap=deps.llm_cap,
+            )
+            if out.error is None:
+                async with deps.sessions.begin() as session:
+                    row = await session.get(CandidateRow, (run_id, entity_id))
+                    assert row is not None
+                    row.brief = out.model_dump(mode="json", exclude={"cached"})
     if not lock.locked():
         _brief_locks.pop((run_id, entity_id), None)
     return out

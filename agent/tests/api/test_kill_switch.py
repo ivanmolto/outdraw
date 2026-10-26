@@ -85,32 +85,19 @@ def test_a_seed_venue_falls_back_to_itself() -> None:
 
 
 @pytest.mark.parametrize(
-    ("venue", "expected"),
+    ("city", "country", "expected"),
     [
-        ({"city": "New York", "country": "United States", "capacity": 150}, "brooklyn-indie"),
-        ({"city": "manhattan", "country": "US", "capacity": 900}, "brooklyn-indie"),
-        ({"city": "New Orleans", "country": "United States", "capacity": 1200}, "nola-jazz"),
-        ({"city": "London", "country": "United Kingdom", "capacity": 80}, "london-comedy"),
-        ({"city": "Manchester", "country": "United Kingdom", "capacity": 2000}, "london-comedy"),
-        # Same country, no city match: shared tags first, then the nearest capacity.
-        (
-            {"city": "Chicago", "country": "United States", "capacity": 400, "tags": ["jazz"]},
-            "nola-jazz",
-        ),
-        ({"city": "Chicago", "country": "United States", "capacity": 420}, "brooklyn-indie"),
-        ({"city": "Chicago", "country": "United States", "capacity": 140}, "nola-jazz"),
+        ("New York", "United States", "nola-jazz"),  # no seed in the city: first in the country
+        ("Brooklyn", "United States", "brooklyn-indie"),
+        ("brooklyn ", "US", "brooklyn-indie"),  # the city match is case- and space-insensitive
+        ("New Orleans", "United States", "nola-jazz"),
+        ("London", "United Kingdom", "london-comedy"),
+        ("Manchester", "United Kingdom", "london-comedy"),
+        ("Berlin", "Germany", FIRST),
     ],
 )
-def test_closest_seed(venue: dict[str, Any], expected: str) -> None:
-    got = closest_seed(
-        SEEDS,
-        venue_id="ven_x",
-        city=venue["city"],
-        country=venue["country"],
-        capacity=venue["capacity"],
-        include_tags=venue.get("tags"),
-    )
-    assert got == expected
+def test_closest_seed(city: str, country: str, expected: str) -> None:
+    assert closest_seed(SEEDS, venue_id="ven_x", city=city, country=country) == expected
 
 
 def test_nothing_known_is_the_first_seed() -> None:
@@ -152,7 +139,7 @@ def _ready_seed(db_url: str, slug: str) -> None:
 def test_run_refused_when_off(
     client: TestClient, db_url: str, scripts: Scripts, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    venue_id = profiled_venue(client)  # New York, 150
+    venue_id = profiled_venue(client)  # New York: the first US seed
     calls = _count(db_url, "qloo_calls")
     monkeypatch.setenv("LIVE_MODE", "off")
 
@@ -160,7 +147,7 @@ def test_run_refused_when_off(
 
     assert res.status_code == 503
     body = res.json()
-    assert body["reason"] == "live_mode_off" and body["fallback_seed"] == "brooklyn-indie"
+    assert body["reason"] == "live_mode_off" and body["fallback_seed"] == "nola-jazz"
     assert _count(db_url, "runs") == 0, "nothing stored"
     assert _count(db_url, "qloo_calls") == calls and scripts.models == [], "nothing spent"
     assert client.get("/limits").status_code == 200, "reads still answer"
@@ -193,7 +180,7 @@ def test_refine_refused_when_off(
     assert res.json() == {
         "reason": "live_mode_off",
         "detail": "Live analysis is switched off (LIVE_MODE=off).",
-        "fallback_seed": "brooklyn-indie",
+        "fallback_seed": "nola-jazz",
     }
     assert _count(db_url, "runs") == 1 and len(scripts.models) == built, "nothing run"
     # The stored run still reads, and flipping back on runs again.
@@ -218,13 +205,23 @@ def test_budget_429_names_the_seed(client: TestClient) -> None:
     asyncio.run(counter.reserve(300 - asyncio.run(counter.used())))
     res = post_run(client, venue_id)
     assert res.status_code == 429
-    assert res.json()["reason"] == "budget" and res.json()["fallback_seed"] == "brooklyn-indie"
+    assert res.json()["reason"] == "budget" and res.json()["fallback_seed"] == "nola-jazz"
 
 
 # --- the other routes that spend -----------------------------------------------------------
 
 
-def _refused(res: Any, seed: str = "brooklyn-indie") -> None:
+def _spend_qloo_cap(client: TestClient) -> None:
+    counter = client.app.state.deps.gateways.counter  # type: ignore[attr-defined]
+    asyncio.run(counter.reserve(300 - asyncio.run(counter.used())))
+
+
+def _budget(res: Any, seed: str = "nola-jazz") -> None:
+    assert res.status_code == 429, res.text
+    assert res.json()["reason"] == "budget" and res.json()["fallback_seed"] == seed
+
+
+def _refused(res: Any, seed: str = "nola-jazz") -> None:
     assert res.status_code == 503, res.text
     assert res.json()["reason"] == "live_mode_off" and res.json()["fallback_seed"] == seed
 
@@ -306,3 +303,20 @@ def test_first_brief_refused_cached_brief_served(
     monkeypatch.setenv("LIVE_MODE", "off")
     cached = client.get(path)
     assert cached.status_code == 200 and cached.json()["cached"] is True
+
+
+def test_budget_429_names_the_seed_on_every_route(
+    client: TestClient, scripts: Scripts, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cap hit inside resolve, profile, a brief or a compare answers like a run's."""
+    run_id, entity_id, _ = _live_run(client, scripts)  # New York: nola-jazz, nothing ready
+    monkeypatch.setattr(client.app.state.deps, "llm_cap", 1)  # type: ignore[attr-defined]
+    _budget(client.get(f"/runs/{run_id}/candidates/{entity_id}/brief"))
+    _budget(client.get(f"/runs/{run_id}/compare"))
+
+    venue_id = create_venue(client)
+    _spend_qloo_cap(client)
+    _budget(client.post(f"/venues/{venue_id}/resolve"))
+    # The profile's gate still comes first: resolved and confirmed, then the cap.
+    other = create_venue(client)
+    assert client.post(f"/venues/{other}/profile").status_code == 409

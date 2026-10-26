@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from draw.agent.store import new_id
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
-from draw.api.live import require_live
+from draw.api.live import live_call
 from draw.db.models import CrowdProfileRow, ResolutionRow, VenueRow
 from draw.profile.crowd import build_crowd_profile
 from draw.profile.resolve import confirm_entity, resolve_entity, resolve_venue, synthetic_venue
@@ -243,16 +243,15 @@ async def resolve(venue_id: str, deps: DepsDep) -> Resolutions:
     async with deps.sessions() as session:
         _, venue = await load_venue(session, venue_id)
         _, _, missing = await load_resolutions(session, venue_id, venue)
-    if missing:
-        await require_live(deps, venue_id=venue_id)
-
-    qloo = deps.gateways.scripted()
     resolved: dict[str, ResolvedEntity] = {}
-    for key in missing:
-        if key.startswith(VENUE_PREFIX):
-            resolved[key] = await resolve_venue(venue.name, venue.city, qloo=qloo)
-        else:
-            resolved[key] = await resolve_entity(key, "artist", qloo=qloo)
+    if missing:
+        async with live_call(deps, venue_id=venue_id):
+            qloo = deps.gateways.scripted()
+            for key in missing:
+                if key.startswith(VENUE_PREFIX):
+                    resolved[key] = await resolve_venue(venue.name, venue.city, qloo=qloo)
+                else:
+                    resolved[key] = await resolve_entity(key, "artist", qloo=qloo)
 
     async with deps.sessions.begin() as session:
         for key, entity in resolved.items():
@@ -305,15 +304,14 @@ async def profile(venue_id: str, deps: DepsDep) -> CrowdProfile:
             status.HTTP_409_CONFLICT,
             {"message": "Confirm every match before building the profile.", "pending": pending},
         )
-    await require_live(deps, venue_id=venue_id)
-
-    built = await build_crowd_profile(
-        venue,
-        acts,
-        qloo=deps.gateways.scripted(),
-        venue_entity=venue_entity,
-        venue_id=venue_id,
-    )
+    async with live_call(deps, venue_id=venue_id):
+        built = await build_crowd_profile(
+            venue,
+            acts,
+            qloo=deps.gateways.scripted(),
+            venue_entity=venue_entity,
+            venue_id=venue_id,
+        )
     data = built.model_dump(mode="json")
     async with deps.sessions.begin() as session:
         stmt = insert(CrowdProfileRow).values(venue_id=venue_id, profile=data)
