@@ -27,6 +27,9 @@ export type SeedsOut = Schema<"SeedsOut">;
 export type SeedPageOut = Schema<"SeedPageOut">;
 
 /** What the UI may branch on; never a backend message, URL or stack trace. */
+/** The agent's 400 body: `field` is the dotted path of the first invalid field. */
+export type InvalidInput = Schema<"InvalidInput">;
+
 export type Reason =
   | "invalid_input"
   | "not_found"

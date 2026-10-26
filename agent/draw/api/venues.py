@@ -22,23 +22,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from draw.agent.store import new_id
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
+from draw.api.inputs import INVALID_INPUT, ConfirmBody, VenueUpsert
 from draw.api.live import live_call
 from draw.db.models import CrowdProfileRow, ResolutionRow, VenueRow
 from draw.profile.crowd import build_crowd_profile
 from draw.profile.resolve import confirm_entity, resolve_entity, resolve_venue, synthetic_venue
 from draw.schemas import CrowdProfile, EntityCandidate, ResolvedEntity, VenueInput
 
-__all__ = ["VENUE_PREFIX", "load_resolutions", "load_venue", "router"]
+__all__ = ["VENUE_PREFIX", "ConfirmBody", "load_resolutions", "load_venue", "router"]
 
 VENUE_PREFIX = "venue:"
 
-router = APIRouter(prefix="/venues", dependencies=[Depends(require_internal_key)])
+router = APIRouter(
+    prefix="/venues", dependencies=[Depends(require_internal_key)], responses=INVALID_INPUT
+)
 DepsDep = Annotated[Deps, Depends(get_deps)]
-
-
-class VenueUpsert(VenueInput):
-    id: str | None = None
-    """Omit to create; pass an existing id to update that venue."""
 
 
 class VenueId(BaseModel):
@@ -58,13 +56,6 @@ class ResolutionItem(BaseModel):
 class Resolutions(BaseModel):
     venue_id: str
     items: list[ResolutionItem]
-
-
-class ConfirmBody(BaseModel):
-    query: str
-    """A `ResolutionItem.query` from /resolve, unchanged."""
-    chosen_entity_id: str | None
-    """One of the item's candidates, or null for "not in Qloo" (skipped, nothing to ask)."""
 
 
 class VenueOut(BaseModel):
@@ -200,7 +191,7 @@ async def _drop_profile(session: AsyncSession, venue_id: str) -> None:
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def upsert_venue(body: VenueUpsert, deps: DepsDep) -> VenueId:
     """Create a venue, or update one by `id`; an update drops stale resolutions and profile."""
-    venue = VenueInput.model_validate(body.model_dump(exclude={"id"}))
+    venue = body.venue()
     fields: dict[str, Any] = {
         **venue.model_dump(mode="json", exclude={"past_shows"}),
         "past_shows": [s.model_dump(mode="json") for s in venue.past_shows],
@@ -263,7 +254,7 @@ async def resolve(venue_id: str, deps: DepsDep) -> Resolutions:
     return Resolutions(venue_id=venue_id, items=items)
 
 
-@router.post("/{venue_id}/confirm")
+@router.post("/{venue_id}/confirm", responses={422: {"description": "Not one of the candidates."}})
 async def confirm(venue_id: str, body: ConfirmBody, deps: DepsDep) -> ResolutionItem:
     async with deps.sessions.begin() as session:
         venue_row, venue = await load_venue(session, venue_id)

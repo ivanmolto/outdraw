@@ -53,6 +53,7 @@ from draw.agent.tools import DrawTools
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
 from draw.api.etag import conditional
+from draw.api.inputs import INVALID_INPUT, RefineBody, RunBody
 from draw.api.live import live_call, live_run
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
@@ -81,22 +82,13 @@ __all__ = [
     "venue_for_run",
 ]
 
-MAX_MESSAGE = 2000
 SEED_READ_ONLY = "seed_read_only"
 SEED_NOT_PRECOMPUTED = "seed_not_precomputed"
 
-router = APIRouter(prefix="/runs", dependencies=[Depends(require_internal_key)])
+router = APIRouter(
+    prefix="/runs", dependencies=[Depends(require_internal_key)], responses=INVALID_INPUT
+)
 DepsDep = Annotated[Deps, Depends(get_deps)]
-
-
-class RunBody(BaseModel):
-    venue_id: str
-    constraints: Constraints
-    message: str = Field(default="", max_length=MAX_MESSAGE)
-
-
-class RefineBody(BaseModel):
-    message: str = Field(min_length=1, max_length=MAX_MESSAGE)
 
 
 class Refinement(BaseModel):
@@ -374,7 +366,9 @@ def _shortlist_names(result: dict[str, Any] | None) -> list[str]:
     return [str(e.get("name", "")) for e in (result or {}).get("shortlist") or []]
 
 
-@router.post("/{run_id}/refine")
+@router.post(
+    "/{run_id}/refine", responses={422: {"description": "No change can be read from the message."}}
+)
 async def refine_run(run_id: str, body: RefineBody, deps: DepsDep) -> RunOut:
     """A new run under the parent's constraints changed as the message asks.
 

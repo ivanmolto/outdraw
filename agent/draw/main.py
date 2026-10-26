@@ -6,7 +6,9 @@ Gateway exceptions map to HTTP: `BudgetExceeded` → 429 `{reason: "budget"}`, `
 502 with its `code`, `retryable` and `recovery`, any other gateway error → 502;
 `NotModified` (a seed read whose `If-None-Match` matched) → 304 with the `ETag`;
 `LiveModeOff` (`LIVE_MODE=off`, `draw.api.live`) → 503 `{reason: "live_mode_off",
-fallback_seed}`. A run route's 429 carries `fallback_seed` too.
+fallback_seed}`. A run route's 429 carries `fallback_seed` too. A request that fails
+validation (`draw.api.inputs`) → 400 `{reason: "invalid_input", field}`, before any route
+code runs, so it never reaches Qloo or Claude.
 """
 
 from __future__ import annotations
@@ -16,6 +18,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Response, status
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -23,6 +26,7 @@ from draw import __version__
 from draw.api import limits, runs, seeds, venues
 from draw.api.deps import Deps
 from draw.api.etag import CACHE_CONTROL, NotModified
+from draw.api.inputs import InvalidInput
 from draw.api.live import LIVE_MODE_OFF, LiveModeOff, live_mode
 from draw.qloo.envelope import BudgetExceeded, QlooError, QlooGatewayError
 from draw.qloo.harness import RuntimeVersions, probe_versions
@@ -52,6 +56,20 @@ async def _budget_exceeded(request: Request, exc: Exception) -> Response:
         },
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
     )
+
+
+def _field(loc: tuple[int | str, ...]) -> str | None:
+    """Dotted path of an error location without its `body`/`path`/`query` part."""
+    path = loc[1:] if loc and loc[0] in ("body", "path", "query", "header") else loc
+    return ".".join(str(p) for p in path) or None
+
+
+async def _invalid_input(request: Request, exc: Exception) -> Response:
+    assert isinstance(exc, RequestValidationError)
+    errors = exc.errors()
+    field = _field(tuple(errors[0]["loc"])) if errors else None
+    body = InvalidInput(reason="invalid_input", field=field)
+    return JSONResponse(body.model_dump(exclude_none=True), status_code=status.HTTP_400_BAD_REQUEST)
 
 
 async def _live_mode_off(request: Request, exc: Exception) -> Response:
@@ -111,6 +129,7 @@ def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
     app.add_exception_handler(QlooGatewayError, _gateway_error)
     app.add_exception_handler(NotModified, _not_modified)
     app.add_exception_handler(LiveModeOff, _live_mode_off)
+    app.add_exception_handler(RequestValidationError, _invalid_input)
 
     @app.get("/health")
     def health(request: Request, response: Response) -> Health:

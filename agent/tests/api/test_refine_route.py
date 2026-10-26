@@ -168,7 +168,7 @@ def test_refine_404_and_422s_spend_nothing_on_qloo(client: TestClient, scripts: 
     assert res.status_code == 422 and "no change" in res.json()["detail"]
     res, _ = refine(client, scripts, run, "hmm", "not json at all")
     assert res.status_code == 422 and "expected shape" in res.json()["detail"]
-    assert client.post(f"/runs/{run['run_id']}/refine", json={"message": ""}).status_code == 422
+    assert client.post(f"/runs/{run['run_id']}/refine", json={"message": ""}).status_code == 400
 
     assert client.get("/limits").json()["qloo"]["used"] == calls_before
     runs = client.get(f"/runs/{run['run_id']}").json()

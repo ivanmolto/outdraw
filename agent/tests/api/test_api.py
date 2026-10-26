@@ -293,7 +293,9 @@ def test_venue_create_read_update(client: TestClient) -> None:
 def test_venue_errors(client: TestClient) -> None:
     assert client.get("/venues/ven_missing").status_code == 404
     assert client.post("/venues", json={**VENUE, "id": "ven_missing"}).status_code == 404
-    assert client.post("/venues", json={**VENUE, "capacity": 0}).status_code == 422
+    res = client.post("/venues", json={**VENUE, "capacity": 0})
+    assert res.status_code == 400
+    assert res.json() == {"reason": "invalid_input", "field": "capacity"}
 
 
 def test_resolve_returns_candidates(client: TestClient, harness: RouterHarness) -> None:

@@ -68,5 +68,5 @@ def test_pencil_404s_and_rejects_bad_bodies(client: TestClient, scripts: Scripts
     assert client.patch(f"/runs/{run_id}/candidates/NOPE", json=body).status_code == 404
     assert client.patch("/runs/run_missing/candidates/E", json=body).status_code == 404
     for bad in ({}, {"pencilled": "maybe"}):
-        assert client.patch(f"/runs/{run_id}/candidates/{top}", json=bad).status_code == 422
+        assert client.patch(f"/runs/{run_id}/candidates/{top}", json=bad).status_code == 400
     assert pencilled(client, run_id, top) is False

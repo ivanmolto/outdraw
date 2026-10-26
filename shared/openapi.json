@@ -309,10 +309,15 @@
         "type": "object"
       },
       "ConfirmBody": {
+        "additionalProperties": false,
+        "description": "`POST /venues/{id}/confirm`.",
         "properties": {
           "chosen_entity_id": {
             "anyOf": [
               {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9:._-]+$",
                 "type": "string"
               },
               {
@@ -322,6 +327,8 @@
             "title": "Chosen Entity Id"
           },
           "query": {
+            "maxLength": 100,
+            "minLength": 1,
             "title": "Query",
             "type": "string"
           }
@@ -373,6 +380,55 @@
           "max_candidates"
         ],
         "title": "Constraints",
+        "type": "object"
+      },
+      "ConstraintsBody": {
+        "additionalProperties": false,
+        "properties": {
+          "exclude_recent_months": {
+            "maximum": 60.0,
+            "minimum": 0.0,
+            "title": "Exclude Recent Months",
+            "type": "integer"
+          },
+          "exclude_tags": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Exclude Tags",
+            "type": "array"
+          },
+          "include_tags": {
+            "items": {
+              "maxLength": 128,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Include Tags",
+            "type": "array"
+          },
+          "max_candidates": {
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Max Candidates",
+            "type": "integer"
+          },
+          "size_tier": {
+            "$ref": "#/components/schemas/SizeTier"
+          }
+        },
+        "required": [
+          "include_tags",
+          "exclude_tags",
+          "size_tier",
+          "exclude_recent_months",
+          "max_candidates"
+        ],
+        "title": "ConstraintsBody",
         "type": "object"
       },
       "ConstraintsDelta": {
@@ -750,19 +806,6 @@
         "title": "FitReason",
         "type": "object"
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "title": "Detail",
-            "type": "array"
-          }
-        },
-        "title": "HTTPValidationError",
-        "type": "object"
-      },
       "Health": {
         "properties": {
           "node_version": {
@@ -803,6 +846,32 @@
           "node_version"
         ],
         "title": "Health",
+        "type": "object"
+      },
+      "InvalidInput": {
+        "description": "The 400 body for a request that fails these bounds (`draw.main`).",
+        "properties": {
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "reason": {
+            "const": "invalid_input",
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "InvalidInput",
         "type": "object"
       },
       "Limits": {
@@ -916,6 +985,80 @@
         "title": "PastShow",
         "type": "object"
       },
+      "PastShowBody": {
+        "additionalProperties": false,
+        "properties": {
+          "act": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Act",
+            "type": "string"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "gross": {
+            "anyOf": [
+              {
+                "maximum": 10000000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross"
+          },
+          "ticket_price": {
+            "anyOf": [
+              {
+                "maximum": 10000.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Price"
+          },
+          "tickets_sold": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tickets Sold"
+          }
+        },
+        "required": [
+          "act",
+          "date"
+        ],
+        "title": "PastShowBody",
+        "type": "object"
+      },
       "ProfileItem": {
         "additionalProperties": false,
         "properties": {
@@ -996,9 +1139,11 @@
         "type": "object"
       },
       "RefineBody": {
+        "additionalProperties": false,
+        "description": "`POST /runs/{id}/refine`: what to change, in the booker's words.",
         "properties": {
           "message": {
-            "maxLength": 2000,
+            "maxLength": 300,
             "minLength": 1,
             "title": "Message",
             "type": "string"
@@ -1114,17 +1259,23 @@
         "type": "object"
       },
       "RunBody": {
+        "additionalProperties": false,
+        "description": "`POST /runs`.",
         "properties": {
           "constraints": {
-            "$ref": "#/components/schemas/Constraints"
+            "$ref": "#/components/schemas/ConstraintsBody"
           },
           "message": {
             "default": "",
-            "maxLength": 2000,
+            "maxLength": 300,
+            "minLength": 0,
             "title": "Message",
             "type": "string"
           },
           "venue_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9:._-]+$",
             "title": "Venue Id",
             "type": "string"
           }
@@ -1812,46 +1963,6 @@
         "title": "SupportPick",
         "type": "object"
       },
-      "ValidationError": {
-        "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "loc": {
-            "items": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "integer"
-                }
-              ]
-            },
-            "title": "Location",
-            "type": "array"
-          },
-          "msg": {
-            "title": "Message",
-            "type": "string"
-          },
-          "type": {
-            "title": "Error Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
-        "title": "ValidationError",
-        "type": "object"
-      },
       "VenueId": {
         "properties": {
           "id": {
@@ -1970,18 +2081,22 @@
       },
       "VenueUpsert": {
         "additionalProperties": false,
+        "description": "`POST /venues`: omit `id` to create, pass an existing one to update that venue.",
         "properties": {
           "capacity": {
+            "maximum": 100000.0,
             "minimum": 1.0,
             "title": "Capacity",
             "type": "integer"
           },
           "city": {
+            "maxLength": 60,
             "minLength": 1,
             "title": "City",
             "type": "string"
           },
           "country": {
+            "maxLength": 60,
             "minLength": 1,
             "title": "Country",
             "type": "string"
@@ -1989,6 +2104,9 @@
           "id": {
             "anyOf": [
               {
+                "maxLength": 128,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9:._-]+$",
                 "type": "string"
               },
               {
@@ -2024,14 +2142,16 @@
             "title": "Lng"
           },
           "name": {
+            "maxLength": 80,
             "minLength": 1,
             "title": "Name",
             "type": "string"
           },
           "past_shows": {
             "items": {
-              "$ref": "#/components/schemas/PastShow"
+              "$ref": "#/components/schemas/PastShowBody"
             },
+            "maxItems": 10,
             "title": "Past Shows",
             "type": "array"
           }
@@ -2103,16 +2223,6 @@
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
         "summary": "Limits"
@@ -2161,15 +2271,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Create Run"
@@ -2216,15 +2326,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Get Run"
@@ -2276,15 +2386,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Get Calls"
@@ -2351,15 +2461,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Patch Candidate"
@@ -2416,15 +2526,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Get Brief"
@@ -2480,15 +2590,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Get Evidence"
@@ -2536,15 +2646,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Get Compare"
@@ -2602,15 +2712,18 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
+          },
+          "422": {
+            "description": "No change can be read from the message."
           }
         },
         "summary": "Refine Run"
@@ -2648,16 +2761,6 @@
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
         "summary": "List Seeds"
@@ -2704,16 +2807,6 @@
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
         "summary": "Seed Page"
@@ -2762,15 +2855,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Upsert Venue"
@@ -2817,15 +2910,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Get Venue"
@@ -2882,15 +2975,18 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
+          },
+          "422": {
+            "description": "Not one of the candidates."
           }
         },
         "summary": "Confirm"
@@ -2938,15 +3034,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Profile"
@@ -2994,15 +3090,15 @@
             },
             "description": "Successful Response"
           },
-          "422": {
+          "400": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/InvalidInput"
                 }
               }
             },
-            "description": "Validation Error"
+            "description": "Input out of bounds."
           }
         },
         "summary": "Resolve"

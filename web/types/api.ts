@@ -470,7 +470,10 @@ export interface components {
                 [key: string]: number;
             };
         };
-        /** ConfirmBody */
+        /**
+         * ConfirmBody
+         * @description `POST /venues/{id}/confirm`.
+         */
         ConfirmBody: {
             /** Chosen Entity Id */
             chosen_entity_id: string | null;
@@ -479,6 +482,18 @@ export interface components {
         };
         /** Constraints */
         Constraints: {
+            /** Exclude Recent Months */
+            exclude_recent_months: number;
+            /** Exclude Tags */
+            exclude_tags: string[];
+            /** Include Tags */
+            include_tags: string[];
+            /** Max Candidates */
+            max_candidates: number;
+            size_tier: components["schemas"]["SizeTier"];
+        };
+        /** ConstraintsBody */
+        ConstraintsBody: {
             /** Exclude Recent Months */
             exclude_recent_months: number;
             /** Exclude Tags */
@@ -625,11 +640,6 @@ export interface components {
             /** Text */
             text: string;
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
         /** Health */
         Health: {
             /** Node Version */
@@ -640,6 +650,19 @@ export interface components {
             qloo_harness_version: string | null;
             /** Version */
             version: string;
+        };
+        /**
+         * InvalidInput
+         * @description The 400 body for a request that fails these bounds (`draw.main`).
+         */
+        InvalidInput: {
+            /** Field */
+            field?: string | null;
+            /**
+             * Reason
+             * @constant
+             */
+            reason: "invalid_input";
         };
         /** Limits */
         Limits: {
@@ -657,6 +680,24 @@ export interface components {
         };
         /** PastShow */
         PastShow: {
+            /** Act */
+            act: string;
+            /** Capacity */
+            capacity?: number | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Gross */
+            gross?: number | null;
+            /** Ticket Price */
+            ticket_price?: number | null;
+            /** Tickets Sold */
+            tickets_sold?: number | null;
+        };
+        /** PastShowBody */
+        PastShowBody: {
             /** Act */
             act: string;
             /** Capacity */
@@ -706,7 +747,10 @@ export interface components {
             /** Workflow */
             workflow: string;
         };
-        /** RefineBody */
+        /**
+         * RefineBody
+         * @description `POST /runs/{id}/refine`: what to change, in the booker's words.
+         */
         RefineBody: {
             /** Message */
             message: string;
@@ -752,9 +796,12 @@ export interface components {
             /** Venue Id */
             venue_id: string;
         };
-        /** RunBody */
+        /**
+         * RunBody
+         * @description `POST /runs`.
+         */
         RunBody: {
-            constraints: components["schemas"]["Constraints"];
+            constraints: components["schemas"]["ConstraintsBody"];
             /**
              * Message
              * @default
@@ -959,19 +1006,6 @@ export interface components {
             /** Status */
             status?: string | null;
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Context */
-            ctx?: Record<string, never>;
-            /** Input */
-            input?: unknown;
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-        };
         /** VenueId */
         VenueId: {
             /** Id */
@@ -1003,7 +1037,10 @@ export interface components {
             resolutions: components["schemas"]["ResolutionItem"][];
             venue: components["schemas"]["VenueInput"];
         };
-        /** VenueUpsert */
+        /**
+         * VenueUpsert
+         * @description `POST /venues`: omit `id` to create, pass an existing one to update that venue.
+         */
         VenueUpsert: {
             /** Capacity */
             capacity: number;
@@ -1020,7 +1057,7 @@ export interface components {
             /** Name */
             name: string;
             /** Past Shows */
-            past_shows: components["schemas"]["PastShow"][];
+            past_shows: components["schemas"]["PastShowBody"][];
         };
     };
     responses: never;
@@ -1071,15 +1108,6 @@ export interface operations {
                     "application/json": components["schemas"]["Limits"];
                 };
             };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
         };
     };
     create_run_runs_post: {
@@ -1106,13 +1134,13 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1139,13 +1167,13 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1172,13 +1200,13 @@ export interface operations {
                     "application/json": components["schemas"]["QlooCall"][];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1210,13 +1238,13 @@ export interface operations {
                     "application/json": components["schemas"]["CandidateOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1244,13 +1272,13 @@ export interface operations {
                     "application/json": components["schemas"]["BriefOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1278,13 +1306,13 @@ export interface operations {
                     "application/json": components["schemas"]["Evidence"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1311,13 +1339,13 @@ export interface operations {
                     "application/json": components["schemas"]["CompareOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1348,14 +1376,21 @@ export interface operations {
                     "application/json": components["schemas"]["RunOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
+            };
+            /** @description No change can be read from the message. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1377,15 +1412,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeedsOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1410,15 +1436,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeedPageOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1447,13 +1464,13 @@ export interface operations {
                     "application/json": components["schemas"]["VenueId"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1480,13 +1497,13 @@ export interface operations {
                     "application/json": components["schemas"]["VenueOut"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1517,14 +1534,21 @@ export interface operations {
                     "application/json": components["schemas"]["ResolutionItem"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
+            };
+            /** @description Not one of the candidates. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -1550,13 +1574,13 @@ export interface operations {
                     "application/json": components["schemas"]["CrowdProfile"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };
@@ -1583,13 +1607,13 @@ export interface operations {
                     "application/json": components["schemas"]["Resolutions"];
                 };
             };
-            /** @description Validation Error */
-            422: {
+            /** @description Input out of bounds. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["InvalidInput"];
                 };
             };
         };

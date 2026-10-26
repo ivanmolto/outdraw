@@ -19,6 +19,7 @@ from typing import Final
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
+from draw.limits import SHARED_LIMITS
 from draw.qloo.harness import AGENT_DIR
 from draw.schemas import Constraints, VenueInput
 
@@ -36,8 +37,9 @@ class Seed(BaseModel):
     description: str = ""
     venue: VenueInput
     constraints: Constraints
-    message: str = ""
-    """The booker's request the agent run answers (the run's `message`)."""
+    message: str = Field(default="", max_length=SHARED_LIMITS.message)
+    """The booker's request the agent run answers (the run's `message`), within the bound
+    a booker could type (`draw.api.inputs`)."""
 
 
 _SEEDS = TypeAdapter(list[Seed])
