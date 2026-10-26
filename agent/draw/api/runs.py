@@ -64,7 +64,7 @@ from draw.api.inputs import INVALID_INPUT, RefineBody, RunBody
 from draw.api.live import live_call, live_run
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
-from draw.embed import semantic_cache
+from draw.embed import semantic_cache, tag_map
 from draw.qloo.exec_client import QlooExec
 from draw.ranking.score import WEIGHTS, SourceLabel, SubScore, source_labels
 from draw.schemas import (
@@ -475,6 +475,7 @@ async def _refine(run_id: str, body: RefineBody, deps: Deps) -> RunOut:
         model_factory=deps.model_factory,
         token_counter=deps.llm_counter,
         token_cap=deps.llm_cap,
+        tag_hints=await _tag_hints(deps, body.message),
     )
     if parsed.delta is None:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, parsed.error)
@@ -505,6 +506,19 @@ async def _refine(run_id: str, body: RefineBody, deps: Deps) -> RunOut:
         parent_run_id=run_id,
         finish=finish,
     )
+
+
+async def _tag_hints(deps: Deps, message: str) -> list[tag_map.PhraseTags]:
+    """The nearest Qloo tags for the message's phrases (T37), or none when embeddings are off
+    or the lookup failed (the parser then works from the booker's words alone)."""
+    if deps.embedder is None:
+        return []
+    try:
+        async with deps.sessions() as session:
+            return await tag_map.map_phrases(session, deps.embedder, message)
+    except Exception:
+        log.warning("tag map: lookup failed, parsing without tag hints", exc_info=True)
+        return []
 
 
 @router.get("/{run_id}")

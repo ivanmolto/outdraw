@@ -9,10 +9,15 @@ Gateway exceptions map to HTTP: `BudgetExceeded` → 429 `{reason: "budget"}`, `
 fallback_seed}`. A run route's 429 carries `fallback_seed` too. A request that fails
 validation (`draw.api.inputs`) → 400 `{reason: "invalid_input", field}`, before any route
 code runs, so it never reaches Qloo or Claude.
+
+At startup, with a database and embeddings on, the cached Qloo tag names are embedded in
+the background for the refine parser's tag hints (T37, `draw.embed.tag_map.index_tags`).
 """
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -28,6 +33,7 @@ from draw.api.deps import Deps
 from draw.api.etag import CACHE_CONTROL, NotModified
 from draw.api.inputs import InvalidInput
 from draw.api.live import LIVE_MODE_OFF, LiveModeOff, live_mode
+from draw.embed.tag_map import index_tags
 from draw.qloo.envelope import BudgetExceeded, QlooError, QlooGatewayError
 from draw.qloo.harness import RuntimeVersions, probe_versions
 
@@ -103,6 +109,15 @@ async def _not_modified(request: Request, exc: Exception) -> Response:
     )
 
 
+async def _index_tags(deps: Deps) -> None:
+    """Startup's tag index; a failure only leaves refine without tag hints."""
+    try:
+        if deps.embedder is not None:
+            await index_tags(deps.sessions, deps.embedder)
+    except Exception:
+        log.warning("tag index failed; refine parses without tag hints", exc_info=True)
+
+
 def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -113,9 +128,15 @@ def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
         app.state.runtime = probe_versions()
         deps = await deps_factory()
         app.state.deps = deps
+        app.state.tag_index = asyncio.create_task(_index_tags(deps)) if deps else None
         try:
             yield
         finally:
+            task: asyncio.Task[None] | None = app.state.tag_index
+            if task is not None:
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
             if deps is not None:
                 await deps.aclose()
 
