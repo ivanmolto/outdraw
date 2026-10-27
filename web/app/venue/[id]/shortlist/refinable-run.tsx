@@ -11,6 +11,7 @@
 import { useState } from "react";
 
 import { ApiError, api, sampleSeed, type Reason } from "@/src/lib/api-client";
+import type { PlayedHereMap } from "@/src/lib/played-here";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
 import type { SeedSlug } from "@/src/lib/seeds";
 import { diffShortlists, type ShortlistDiff } from "@/src/lib/shortlist-diff";
@@ -33,6 +34,8 @@ interface Props {
   /** Oldest first; the last is the run to show. */
   chain: ParsedRun[];
   crossDomain?: CrossDomain;
+  /** The venue's past shows of the shortlisted acts (src/lib/played-here.ts). */
+  played?: PlayedHereMap;
   /** The path a refined run's `?run=` goes on; the current page when absent. */
   shortlistPath?: string;
   profileHref?: string;
@@ -45,6 +48,7 @@ export function RefinableRun({
   venueName,
   chain: initial,
   crossDomain,
+  played,
   shortlistPath = "",
   profileHref,
   refinable = true,
@@ -115,6 +119,7 @@ export function RefinableRun({
           run={run}
           crossDomain={crossDomain}
           diff={diff}
+          played={played}
           profileHref={profileHref}
         >
           {/* Keyed by run: a new run on screen starts with an empty box. */}

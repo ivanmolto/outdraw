@@ -4,6 +4,7 @@ import { AGENT_URL, KEY, ctx, fakeAgent, jsonRequest } from "@/src/server/test-a
 import { POST as confirm } from "./[id]/confirm/route";
 import { POST as profile } from "./[id]/profile/route";
 import { POST as resolve } from "./[id]/resolve/route";
+import { GET as getHolds } from "./[id]/holds/route";
 import { GET as getVenue } from "./[id]/route";
 import { POST as upsert } from "./route";
 
@@ -204,5 +205,29 @@ describe("POST /api/venues/[id]/profile", () => {
 
     expect(res.status).toBe(429);
     expect(await res.json()).toEqual({ reason: "budget" });
+  });
+});
+
+describe("GET /api/venues/[id]/holds", () => {
+  it("forwards the id and passes the venue's holds through", async () => {
+    const out = {
+      venue_id: "ven_1",
+      holds: [{ run_id: "run_1", entity_id: "E1", name: "Synthetic Act", date: "2026-11-14" }],
+    };
+    const sent = fakeAgent(Response.json(out));
+
+    const res = await getHolds(jsonRequest({}), ctx({ id: "ven_1" }));
+
+    expect(await res.json()).toEqual(out);
+    expect(sent[0]).toMatchObject({ method: "GET", url: `${AGENT_URL}/venues/ven_1/holds` });
+  });
+
+  it("rejects a malformed id", async () => {
+    const sent = fakeAgent();
+
+    const res = await getHolds(jsonRequest({}), ctx({ id: "../runs" }));
+
+    expect(await res.json()).toEqual({ reason: "invalid_input", field: "id" });
+    expect(sent).toEqual([]);
   });
 });

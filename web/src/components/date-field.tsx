@@ -130,7 +130,10 @@ const label = (fmt: Intl.DateTimeFormat, iso: string) => {
   return fmt.format(new Date(Date.UTC(y, m - 1, d)));
 };
 
-const WEEKDAYS = [
+/** "October 2026" for any day of that month. */
+export const monthLabel = (iso: string) => label(MONTH_LABEL, iso);
+
+export const WEEKDAYS = [
   ["Mo", "Monday"], ["Tu", "Tuesday"], ["We", "Wednesday"], ["Th", "Thursday"],
   ["Fr", "Friday"], ["Sa", "Saturday"], ["Su", "Sunday"],
 ] as const;
@@ -292,13 +295,16 @@ interface Props {
   /** The draft's text: YYYY-MM-DD once picked or normalised, else whatever was typed. */
   value: string;
   onChange: (value: string) => void;
+  /** Called with the value once it is settled: the field left (normalised when it reads as
+   * a date), a day picked from the grid, or the native picker changed. */
+  onCommit?: (value: string) => void;
   /** The input's classes (the form's shared input style). */
   className: string;
   "aria-invalid"?: true;
   "aria-describedby"?: string;
 }
 
-export function DateField({ id, name, value, onChange, className, ...aria }: Props) {
+export function DateField({ id, name, value, onChange, onCommit, className, ...aria }: Props) {
   const touch = useTouch();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -323,7 +329,10 @@ export function DateField({ id, name, value, onChange, className, ...aria }: Pro
         name={name}
         type="date"
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => {
+          onChange(e.target.value);
+          onCommit?.(e.target.value);
+        }}
         className={className}
         {...aria}
       />
@@ -350,6 +359,7 @@ export function DateField({ id, name, value, onChange, className, ...aria }: Pro
         onBlur={() => {
           const iso = parseDate(value);
           if (iso && iso !== value) onChange(iso);
+          onCommit?.(iso ?? value);
         }}
         className={`${className} pr-11`}
         {...aria}
@@ -378,6 +388,7 @@ export function DateField({ id, name, value, onChange, className, ...aria }: Pro
             labelledBy={dialogLabel}
             onPick={(iso) => {
               onChange(iso);
+              onCommit?.(iso);
               close(false);
               input.current?.focus();
             }}

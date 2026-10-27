@@ -549,10 +549,11 @@ function Panel({
                   runId={runId}
                   entityId={entityId}
                   initial={load.data.pencilled}
-                  onChange={(pencilled) => {
+                  initialDate={load.data.pencilDate ?? null}
+                  onChange={(pencilled, pencilDate) => {
                     const key = `${runId} ${entityId}`;
                     const hit = loaded.get(key);
-                    if (hit) loaded.set(key, { ...hit, pencilled });
+                    if (hit) loaded.set(key, { ...hit, pencilled, pencilDate });
                   }}
                 />
               </div>

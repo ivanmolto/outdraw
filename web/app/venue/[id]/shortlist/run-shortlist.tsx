@@ -11,6 +11,7 @@ import { ErrorState } from "@/src/components/error-state";
 import { Elapsed, Spinner } from "@/src/components/progress";
 import { api, errorOf, sampleSeed, type Reason } from "@/src/lib/api-client";
 import type { ErrorDetails } from "@/src/lib/error-states";
+import type { PlayedHereMap } from "@/src/lib/played-here";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
 import type { SeedSlug } from "@/src/lib/seeds";
 import type { CrossDomain } from "@/src/lib/soundcheck";
@@ -45,9 +46,10 @@ interface Props {
   venueName: string;
   constraints: Constraints;
   crossDomain?: CrossDomain;
+  played?: PlayedHereMap;
 }
 
-export function RunShortlist({ venueId, venueName, constraints, crossDomain }: Props) {
+export function RunShortlist({ venueId, venueName, constraints, crossDomain, played }: Props) {
   const [state, setState] = useState<State>({ name: "running" });
   const [attempt, setAttempt] = useState(0);
 
@@ -118,6 +120,7 @@ export function RunShortlist({ venueId, venueName, constraints, crossDomain }: P
       venueName={venueName}
       chain={[state.run]}
       crossDomain={crossDomain}
+      played={played}
     />
   );
 }

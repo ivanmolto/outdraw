@@ -21,6 +21,7 @@ import type {
   SeedPageOut,
   SeedsOut,
   VenueId,
+  VenueHolds,
   VenueOut,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
@@ -229,6 +230,7 @@ const seg = encodeURIComponent;
 export const agent = {
   upsertVenue: (body: VenueUpsert) => call<VenueId>("POST", "/venues", body),
   getVenue: (id: string) => call<VenueOut>("GET", `/venues/${seg(id)}`),
+  getHolds: (id: string) => call<VenueHolds>("GET", `/venues/${seg(id)}/holds`),
   resolveVenue: (id: string) =>
     call<Resolutions>("POST", `/venues/${seg(id)}/resolve`, undefined, SLOW_TIMEOUT_MS),
   confirmMatch: (id: string, body: ConfirmInput) =>

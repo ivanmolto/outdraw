@@ -15,6 +15,21 @@ export type ShortlistResult = Omit<
 /** Capacity bounds for the size tiers: < 300 emerging, < 1,500 mid, else established. */
 const TIER_CAPACITY = { emerging: 300, mid: 1_500 } as const;
 
+export type SizeBand = Constraints["size_tier"];
+
+/** The size tiers as capacity bands, smallest first: the rooms each tier suits. */
+export const SIZE_BANDS: { band: SizeBand; label: string }[] = [
+  { band: "emerging", label: `Emerging (rooms under ${TIER_CAPACITY.emerging})` },
+  {
+    band: "mid",
+    label: `Mid (rooms of ${TIER_CAPACITY.emerging} to ${TIER_CAPACITY.mid.toLocaleString("en-US")})`,
+  },
+  {
+    band: "established",
+    label: `Established (rooms of ${TIER_CAPACITY.mid.toLocaleString("en-US")} and up)`,
+  },
+];
+
 /** The constraints a first shortlist runs with: no tag filters, a size tier that suits
  * the room, acts from the last six months left out. */
 export function defaultConstraints(capacity: number): Constraints {

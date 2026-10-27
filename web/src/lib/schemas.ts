@@ -90,8 +90,12 @@ export const runSchema = z.strictObject({
 /** POST /api/runs/{id}/refine: what to change, in the booker's words. */
 export const refineSchema = z.strictObject({ message: text(LIMITS.message) });
 
-/** PATCH /api/runs/{id}/candidates/{entityId}: pencil (or release) a hold on the act. */
-export const pencilSchema = z.strictObject({ pencilled: z.boolean() });
+/** PATCH /api/runs/{id}/candidates/{entityId}: pencil (or release) a hold on the act, for
+ * a night when `date` is given. */
+export const pencilSchema = z.strictObject({
+  pencilled: z.boolean(),
+  date: z.iso.date().optional(),
+});
 
 /** Path segments: venue, run and entity ids. */
 export const idSchema = id;

@@ -1,0 +1,120 @@
+{
+  "run_id": "run_pencilled",
+  "venue_id": "ven_fixture",
+  "status": "ok",
+  "constraints": {
+    "include_tags": [],
+    "exclude_tags": [],
+    "size_tier": "mid",
+    "exclude_recent_months": 6,
+    "max_candidates": 40
+  },
+  "result": {
+    "shortlist": [
+      {
+        "candidate_id": "cand_1",
+        "entity_id": "urn:entity:synthetic:artist:11",
+        "name": "Synthetic Headliner",
+        "total": 0.8125,
+        "reason": "Qloo's recommend puts Synthetic Headliner at 92% affinity with this crowd.",
+        "top_reason": "Qloo's recommend puts Synthetic Headliner at 92% affinity with this crowd.",
+        "sub_scores": {
+          "crowd_affinity": 0.92,
+          "past_fit": 0.81,
+          "local_heat": 0.7,
+          "novelty": 1.0,
+          "size_fit": 1.0,
+          "momentum": 0.5
+        },
+        "neutral": [
+          "momentum"
+        ],
+        "source_labels": {
+          "crowd_affinity": "qloo",
+          "past_fit": "qloo",
+          "local_heat": "qloo",
+          "novelty": "draw",
+          "size_fit": "draw",
+          "momentum": "draw"
+        },
+        "genres": [
+          "Synthetic Wave",
+          "Fixture Rock"
+        ],
+        "size_band": "mid",
+        "pencil_hold": {
+          "date": "2026-11-14"
+        }
+      },
+      {
+        "candidate_id": "cand_2",
+        "entity_id": "urn:entity:synthetic:artist:12",
+        "name": "Fixture Collective",
+        "total": 0.6475,
+        "reason": "Qloo's where_popular heatmap gives Fixture Collective 88% affinity across the venue's region.",
+        "top_reason": "Qloo's where_popular heatmap gives Fixture Collective 88% affinity across the venue's region.",
+        "sub_scores": {
+          "crowd_affinity": 0.55,
+          "past_fit": 0.5,
+          "local_heat": 0.88,
+          "novelty": 0.25,
+          "size_fit": 0.5,
+          "momentum": 0.74
+        },
+        "neutral": [
+          "past_fit"
+        ],
+        "source_labels": {
+          "crowd_affinity": "qloo",
+          "past_fit": "draw",
+          "local_heat": "qloo",
+          "novelty": "draw",
+          "size_fit": "draw",
+          "momentum": "qloo"
+        },
+        "genres": [
+          "Fixture Rock"
+        ],
+        "size_band": "emerging",
+        "pencil_hold": {
+          "date": "2026-12-05"
+        }
+      },
+      {
+        "candidate_id": "cand_3",
+        "entity_id": "urn:entity:synthetic:artist:13",
+        "name": "Test Pattern Trio",
+        "total": 0.41,
+        "reason": null,
+        "genres": [
+          "Test Folk"
+        ],
+        "size_band": "mid",
+        "pencil_hold": {
+          "date": null
+        }
+      }
+    ],
+    "notes": [
+      "Signals were partial: one compare_audiences call came back empty."
+    ],
+    "data_quality": "partial",
+    "weights": {
+      "crowd_affinity": 0.35,
+      "past_fit": 0.2,
+      "local_heat": 0.2,
+      "novelty": 0.1,
+      "size_fit": 0.1,
+      "momentum": 0.05
+    },
+    "stop_reason": "end_turn",
+    "steps": 4,
+    "profile_id": "prof_fixture"
+  },
+  "token_usage": {
+    "model_calls": 3
+  },
+  "created_at": "2026-10-21T12:00:00Z",
+  "is_seed": false,
+  "seed_slug": null
+}

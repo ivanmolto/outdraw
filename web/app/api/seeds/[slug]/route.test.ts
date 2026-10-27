@@ -37,6 +37,7 @@ describe("GET /api/seeds/[slug]", () => {
       profile: venue.profile as never,
       run: run as RunOut,
       precomputed,
+      played: {},
     });
 
     const res = await get("nola-jazz");

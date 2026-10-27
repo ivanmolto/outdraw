@@ -88,6 +88,7 @@ export function SampleFallback({ slug, action, fallback }: Props) {
           venueName={sample.venueName}
           chain={[parseRun(sample.run)]}
           crossDomain={sample.crossDomain}
+          played={sample.played}
           profileHref={`${demo}#profile`}
           refinable={false}
         />

@@ -40,6 +40,8 @@ let profiled = false;
 const runs = new Map();
 /** Pencil holds by `${run_id} ${entity_id}`, as the real agent stores them on the row. */
 const pencilled = new Map();
+/** The night each hold is for, by the same key (cleared on a release). */
+const pencilDates = new Map();
 /** How long a brief "takes" to draft the first time, so the spinner is visible. */
 const BRIEF_DELAY_MS = 600;
 /** Briefs served once, so the second read is the cached copy. @type {Set<string>} */
@@ -296,9 +298,34 @@ async function route(method, path, body) {
     compared.add(runId);
     return [200, { ...compareFixture, run_id: runId, cached }];
   }
+  const venueHolds = method === "GET" && /^\/venues\/([^/]+)\/holds$/.exec(path);
+  if (venueHolds) {
+    // Every pencilled act across the venue's stored runs, as the real route lists them.
+    const venueId = decodeURIComponent(venueHolds[1]);
+    const holds = [];
+    for (const run of runs.values()) {
+      if (run.venue_id !== venueId) continue;
+      for (const e of run.result?.shortlist ?? []) {
+        const key = `${run.run_id} ${e.entity_id}`;
+        if (!pencilled.get(key)) continue;
+        const date = pencilDates.get(key) ?? null;
+        holds.push({ run_id: run.run_id, entity_id: e.entity_id, name: e.name, date });
+      }
+    }
+    const night = (h) => h.date ?? "9999-12-31"; // undated last
+    holds.sort((a, b) => night(a).localeCompare(night(b)));
+    return [200, { venue_id: venueId, holds }];
+  }
   const reading = method === "GET" && /^\/runs\/([^/]+)$/.exec(path);
   if (reading && runs.has(decodeURIComponent(reading[1]))) {
-    return [200, runs.get(decodeURIComponent(reading[1]))];
+    // Each entry carries its hold, as the real agent serves a run read back.
+    const run = runs.get(decodeURIComponent(reading[1]));
+    const shortlist = (run.result?.shortlist ?? []).map((e) => {
+      const key = `${run.run_id} ${e.entity_id}`;
+      const hold = pencilled.get(key) ? { date: pencilDates.get(key) ?? null } : null;
+      return { ...e, pencil_hold: hold };
+    });
+    return [200, run.result ? { ...run, result: { ...run.result, shortlist } } : run];
   }
   // The Soundcheck panel's routes, for any act of a stored run: every act gets the one
   // synthetic trail and brief, renamed to it; the pencil hold is kept per act.
@@ -325,6 +352,7 @@ async function route(method, path, body) {
           score: {},
           evidence: trail,
           pencilled: pencilled.get(key) ?? false,
+          pencil_date: pencilDates.get(key) ?? null,
         },
       ];
     }
@@ -356,7 +384,9 @@ async function route(method, path, body) {
       if (typeof body?.pencilled !== "boolean")
         return [422, { detail: "pencilled must be a boolean." }];
       pencilled.set(key, body.pencilled);
-      return [200, { run_id: runId, entity_id: entityId, pencilled: body.pencilled }];
+      const date = body.pencilled ? (body.date ?? null) : null;
+      pencilDates.set(key, date);
+      return [200, { run_id: runId, entity_id: entityId, pencilled: body.pencilled, date }];
     }
   }
   const calls = method === "GET" && /^\/runs\/([^/]+)\/calls$/.exec(path);

@@ -9,12 +9,14 @@ import type {
   ResolutionItem,
   Resolutions,
   RunOut,
+  VenueHolds,
   VenueId,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
 import { SAMPLED, reasonText, type ErrorDetails } from "./error-states";
 import type { ConfirmInput, PencilInput, RefineInput, RunInput, VenueUpsert } from "./schemas";
 import { FALLBACK_SEED, isSeedSlug, type SeedSlug } from "./seeds";
+import type { PlayedHereMap } from "./played-here";
 import type { Precomputed } from "./precomputed";
 import type { CrossDomain, SoundcheckData } from "./soundcheck";
 
@@ -64,6 +66,7 @@ export interface SeedSample {
   run: RunOut;
   precomputed: Precomputed;
   crossDomain: CrossDomain;
+  played: PlayedHereMap;
 }
 
 async function request<T>(method: "GET" | "POST" | "PATCH", path: string, body?: unknown): Promise<T> {
@@ -110,6 +113,7 @@ export const api = {
       body,
     ),
   getCompare: (runId: string) => get<CompareOut>(`/api/runs/${seg(runId)}/compare`),
+  getHolds: (venueId: string) => get<VenueHolds>(`/api/venues/${seg(venueId)}/holds`),
   upsertVenue: (body: VenueUpsert) => post<VenueId>("/api/venues", body),
   resolveVenue: (id: string) => post<Resolutions>(`/api/venues/${seg(id)}/resolve`),
   confirmMatch: (id: string, body: ConfirmInput) =>

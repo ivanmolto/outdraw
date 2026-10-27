@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { reasonText } from "@/src/lib/api-client";
+import type { PlayedHereMap } from "@/src/lib/played-here";
 import type { ParsedRun } from "@/src/lib/run-result";
 import type { ShortlistDiff } from "@/src/lib/shortlist-diff";
 import type { CrossDomain } from "@/src/lib/soundcheck";
@@ -16,6 +17,7 @@ export function RunOutcome({
   run,
   crossDomain,
   diff,
+  played,
   profileHref = `/venue/${encodeURIComponent(venueId)}`,
   children,
 }: {
@@ -24,6 +26,7 @@ export function RunOutcome({
   run: ParsedRun;
   crossDomain?: CrossDomain;
   diff?: ShortlistDiff;
+  played?: PlayedHereMap;
   profileHref?: string;
   children?: ReactNode;
 }) {
@@ -36,6 +39,7 @@ export function RunOutcome({
         result={run}
         crossDomain={crossDomain}
         diff={diff}
+        played={played}
         profileHref={profileHref}
       >
         {children}

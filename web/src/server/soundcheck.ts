@@ -33,5 +33,7 @@ export function soundcheckData(evidence: CandidateEvidence, calls: QlooCall[]): 
     const text = typeof summary === "string" ? summary : error?.recovery;
     if (typeof text === "string" && text) summaries[call.call_id] = text;
   }
-  return { trail, summaries, pencilled: evidence.pencilled ?? false };
+  const pencilled = evidence.pencilled ?? false;
+  const pencilDate = (pencilled && evidence.pencil_date) || null;
+  return { trail, summaries, pencilled, pencilDate };
 }

@@ -82,11 +82,13 @@ export type CandidateTrail = z.infer<typeof candidateTrailSchema>;
 
 /** What `/api/runs/[id]/candidates/[entityId]/soundcheck` answers: the trail, the
  * envelope summary of each of its calls that came back less than ok (by call_id), and
- * whether the booker has pencilled the act. */
+ * whether the booker has pencilled the act, and for which night. */
 export interface SoundcheckData {
   trail: CandidateTrail;
   summaries: Record<string, string>;
   pencilled: boolean;
+  /** YYYY-MM-DD; absent or null while the hold has no date. */
+  pencilDate?: string | null;
 }
 
 /** A profile entity as both the schema and the API contract type it (affinity may be null). */

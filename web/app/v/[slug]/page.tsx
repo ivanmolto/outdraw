@@ -60,7 +60,7 @@ export default async function DemoVenuePage({ params }: PageProps<"/v/[slug]">) 
     );
   }
 
-  const { seed, venueId, profile, run, precomputed } = page;
+  const { seed, venueId, profile, run, precomputed, played } = page;
   return (
     <PrecomputedProvider value={precomputed}>
       <Shell wide>
@@ -96,6 +96,7 @@ export default async function DemoVenuePage({ params }: PageProps<"/v/[slug]">) 
             venueName={seed.venueName}
             chain={[parseRun(run)]}
             crossDomain={crossDomain(profile)}
+            played={played}
             shortlistPath={`/venue/${encodeURIComponent(venueId)}/shortlist`}
             profileHref="#profile"
           />

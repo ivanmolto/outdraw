@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { ErrorState } from "@/src/components/error-state";
+import { playedHere } from "@/src/lib/played-here";
 import { defaultConstraints, parseRun, type ParsedRun } from "@/src/lib/run-result";
 import { idSchema } from "@/src/lib/schemas";
 import { crossDomain } from "@/src/lib/soundcheck";
@@ -86,6 +87,7 @@ export default async function ShortlistPage({
   }
 
   const strip = crossDomain(venue.profile);
+  const played = playedHere(venue);
   return (
     <Shell wide>
       {chain ? (
@@ -94,6 +96,7 @@ export default async function ShortlistPage({
           venueName={venue.venue.name}
           chain={chain}
           crossDomain={strip}
+          played={played}
         />
       ) : (
         <RunShortlist
@@ -101,6 +104,7 @@ export default async function ShortlistPage({
           venueName={venue.venue.name}
           constraints={defaultConstraints(venue.venue.capacity)}
           crossDomain={strip}
+          played={played}
         />
       )}
     </Shell>

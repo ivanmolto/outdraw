@@ -28,6 +28,7 @@ export async function GET(
       run: page.run,
       precomputed: page.precomputed,
       crossDomain: crossDomain(page.profile),
+      played: page.played,
     };
   });
 }

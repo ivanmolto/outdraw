@@ -14,6 +14,9 @@ export type ResolutionItem = Schema<"ResolutionItem">;
 export type EntityCandidate = Schema<"EntityCandidate">;
 export type Resolutions = Schema<"Resolutions">;
 export type VenueOut = Schema<"VenueOut">;
+/** The pencil holds across every run of a venue (`GET /venues/{id}/holds`). */
+export type VenueHolds = Schema<"VenueHolds">;
+export type VenueHold = Schema<"VenueHold">;
 export type RunOut = Schema<"RunOut">;
 export type CandidateEvidence = Schema<"Evidence">;
 export type QlooCall = Schema<"QlooCall">;

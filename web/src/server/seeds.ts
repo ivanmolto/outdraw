@@ -10,6 +10,7 @@ import "server-only";
 
 import { cacheLife, cacheTag } from "next/cache";
 
+import { playedHere, type PlayedHereMap } from "@/src/lib/played-here";
 import type { Precomputed } from "@/src/lib/precomputed";
 import type { RunOut, SeedOut, SeedPageOut, VenueOut } from "@/types/agent";
 import { AgentError, seedAgent } from "./agent";
@@ -58,6 +59,8 @@ export type SeedPage =
       profile: NonNullable<VenueOut["profile"]>;
       run: RunOut;
       precomputed: Precomputed;
+      /** The venue's past shows of the shortlisted acts. */
+      played: PlayedHereMap;
     };
 
 /** The page's data from the agent's one read. */
@@ -74,6 +77,7 @@ function assemble(page: SeedPageOut): SeedPage {
     venueId: page.venue.id,
     profile: page.venue.profile,
     run: page.run,
+    played: playedHere(page.venue),
     precomputed: {
       runId: page.run.run_id,
       soundcheck: Object.fromEntries(

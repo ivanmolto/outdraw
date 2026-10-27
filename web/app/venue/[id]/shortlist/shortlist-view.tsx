@@ -5,7 +5,10 @@
 // for a stored run and by the client run component for a fresh one. Each scored act opens
 // its Soundcheck panel, and the list sits inside the With Qloo / LLM only toggle (both
 // client components). After a refinement each act carries a badge for how it changed
-// against the parent run, and the acts that left are listed under it.
+// against the parent run, and the acts that left are listed under it. An act that has played
+// the venue carries a "Played here" chip from the venue's own past shows; the list can be
+// filtered by genre and capacity band, or seen as a calendar of pencil holds
+// (shortlist-browser.tsx).
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -16,11 +19,14 @@ import {
   type ShortlistResult,
   type SubScore,
 } from "@/src/lib/run-result";
+import type { PlayedHere, PlayedHereMap } from "@/src/lib/played-here";
 import type { ActChange, ShortlistDiff } from "@/src/lib/shortlist-diff";
 import type { CrossDomain } from "@/src/lib/soundcheck";
 import { SourceBadge } from "../profile-view";
 import { CompareToggle } from "./compare-toggle";
 import { PrecomputedLabel } from "./precomputed-label";
+import { dayLabel } from "./holds-calendar";
+import { FilterGate, ShortlistBrowser, type BrowsableAct } from "./shortlist-browser";
 import { ChangeBadge, LeftList } from "./shortlist-diff";
 import { SoundcheckButton } from "./soundcheck";
 
@@ -70,6 +76,29 @@ function Chip({
   );
 }
 
+/** The venue's own record of the act: its last night here and how much of the room it sold. */
+export function PlayedChip({ played }: { played: PlayedHere }) {
+  const sold = played.sellThrough == null ? null : Math.round(played.sellThrough * 100);
+  return (
+    <p
+      data-testid="played-here"
+      title="From your past shows (Outdraw data)"
+      className="inline-flex flex-wrap items-center gap-x-1.5 rounded-full border border-ink/30 px-2 py-0.5 text-xs text-ink"
+    >
+      <span className="font-medium">Played here</span>
+      <span aria-hidden="true">·</span>
+      <time dateTime={played.date}>{dayLabel(played.date)}</time>
+      {sold !== null && (
+        <>
+          <span aria-hidden="true">·</span>
+          <span className="font-mono">{sold}% sold</span>
+        </>
+      )}
+      <span className="sr-only"> (Outdraw data)</span>
+    </p>
+  );
+}
+
 /** Totals are shown to two decimals, except where a neighbour rounds to the same two: then
  * both show three, so the order never looks like a tie the score didn't break. */
 export function precisionOf(totals: readonly number[]): number[] {
@@ -85,6 +114,7 @@ function Act({
   runId,
   crossDomain,
   change,
+  played,
   precision = 2,
 }: {
   entry: ShortlistEntry;
@@ -92,6 +122,7 @@ function Act({
   runId: string;
   crossDomain?: CrossDomain;
   change?: ActChange;
+  played?: PlayedHere;
   /** Decimals of the total (see precisionOf). */
   precision?: number;
 }) {
@@ -131,6 +162,17 @@ function Act({
       >
         <div className="h-full rounded-full bg-brand-amber" style={{ width: pct(entry.total) }} />
       </div>
+      {(played || (entry.genres?.length ?? 0) > 0) && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+          {played && <PlayedChip played={played} />}
+          {entry.genres && entry.genres.length > 0 && (
+            <p className="text-xs text-ink/60" title="Qloo genre tags">
+              <span className="sr-only">Genres (Qloo data): </span>
+              {entry.genres.join(" · ")}
+            </p>
+          )}
+        </div>
+      )}
       {reason && <p className="mt-3 text-sm text-ink/80">{reason}</p>}
       {entry.sub_scores && (
         <ul aria-label={`Sub-scores for ${entry.name}`} className="mt-3 flex flex-wrap gap-2 text-xs">
@@ -213,6 +255,7 @@ export function ShortlistView({
   result,
   crossDomain,
   diff,
+  played = {},
   profileHref = `/venue/${encodeURIComponent(venueId)}`,
   children,
 }: {
@@ -222,6 +265,8 @@ export function ShortlistView({
   result: ShortlistResult;
   /** The crowd profile's places, films and brands, for Soundcheck's cross-domain strip. */
   crossDomain?: CrossDomain;
+  /** The venue's past shows of the shortlisted acts, by entity ID. */
+  played?: PlayedHereMap;
   /** Changes against the parent run, for a refined run. */
   diff?: ShortlistDiff;
   /** Where "Back to crowd profile" goes: the venue page, or the profile above on a seed page. */
@@ -230,6 +275,16 @@ export function ShortlistView({
   children?: ReactNode;
 }) {
   const precision = precisionOf(result.shortlist.map((e) => e.total));
+  const acts: BrowsableAct[] = result.shortlist.map((e, i) => ({
+    entityId: e.entity_id,
+    name: e.name,
+    rank: i + 1,
+    genres: e.genres ?? [],
+    band: e.size_band ?? null,
+  }));
+  const holds = Object.fromEntries(
+    result.shortlist.flatMap((e) => (e.pencil_hold ? [[e.entity_id, e.pencil_hold.date ?? null]] : [])),
+  );
   return (
     <>
       <Header venueName={venueName} runId={runId} />
@@ -263,21 +318,25 @@ export function ShortlistView({
               No Qloo signal (run median)
             </span>
           </div>
-          <CompareToggle runId={runId} qlooNames={result.shortlist.map((e) => e.name)}>
-            <ol aria-label="Ranked acts" className="space-y-3">
-              {result.shortlist.map((entry, i) => (
-                <Act
-                  key={entry.entity_id}
-                  entry={entry}
-                  rank={i + 1}
-                  runId={runId}
-                  crossDomain={crossDomain}
-                  change={diff?.changes.get(entry.entity_id)}
-                  precision={precision[i]}
-                />
-              ))}
-            </ol>
-          </CompareToggle>
+          <ShortlistBrowser venueId={venueId} runId={runId} acts={acts} holds={holds}>
+            <CompareToggle runId={runId} qlooNames={result.shortlist.map((e) => e.name)}>
+              <ol aria-label="Ranked acts" className="space-y-3">
+                {result.shortlist.map((entry, i) => (
+                  <FilterGate key={entry.entity_id} entityId={entry.entity_id}>
+                    <Act
+                      entry={entry}
+                      rank={i + 1}
+                      runId={runId}
+                      crossDomain={crossDomain}
+                      change={diff?.changes.get(entry.entity_id)}
+                      played={played[entry.entity_id]}
+                      precision={precision[i]}
+                    />
+                  </FilterGate>
+                ))}
+              </ol>
+            </CompareToggle>
+          </ShortlistBrowser>
         </>
       )}
       <LeftList diff={diff} />

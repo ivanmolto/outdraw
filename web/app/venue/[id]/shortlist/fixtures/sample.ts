@@ -14,5 +14,6 @@ export function seedSample(slug: SeedSlug): SeedSample {
     run: { ...(run as RunOut), run_id: runId, is_seed: true, seed_slug: slug },
     precomputed: { runId, soundcheck: {}, briefs: {}, compare: null },
     crossDomain: { places: [], films: [], brands: [] },
+    played: {},
   };
 }

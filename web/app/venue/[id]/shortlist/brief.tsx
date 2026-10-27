@@ -6,6 +6,7 @@
 // Every field carries the agent's own source label (`source_labels`), as in the trail.
 import { useEffect, useId, useState } from "react";
 
+import { DateField, parseDate } from "@/src/components/date-field";
 import { Spinner } from "@/src/components/progress";
 import { LivePaused } from "@/src/components/live-paused";
 import {
@@ -19,6 +20,7 @@ import {
 import type { SeedSlug } from "@/src/lib/seeds";
 import { usePrecomputed } from "@/src/lib/precomputed";
 import type { SourceLabel } from "@/types/schemas";
+import { useHolds } from "./holds";
 import { Provenance } from "./provenance";
 
 type BriefField = "why_it_fits" | "night_format" | "support_act" | "partners" | "outreach_email";
@@ -315,49 +317,86 @@ export function BriefTab({
   return <Brief data={load.data} onEvidence={onEvidence} linkable={linkable} />;
 }
 
+const DATE_INPUT =
+  "block w-40 min-w-0 rounded-md border border-ink/20 bg-surface px-2 py-1 text-sm text-ink " +
+  "placeholder:text-ink/40 focus:border-ink focus:outline-2 focus:outline-offset-1 focus:outline-ink";
+
 // --- pencil hold -------------------------------------------------------------------------
 
-/** The "Pencil hold" switch. Optimistic: it flips at once, and flips back with the reason
- * when the PATCH fails. `onChange` hears only stored values; a new `initial` (the stored
- * value read again) resets it. While a save is in flight the switch stays enabled, so it
- * keeps focus, and ignores clicks. */
+/** The "Pencil hold" switch, and once it is on, the night the hold is for. Optimistic: it
+ * flips at once, and flips back with the reason when the PATCH fails. `onChange` hears only
+ * stored values, as do the page's holds (holds.tsx); a new `initial` (the stored value read
+ * again) resets it. While a save is in flight the switch stays enabled, so it keeps focus,
+ * and ignores clicks. The date is saved when the field is left (or a day picked from the
+ * grid), not on each keystroke; clearing it keeps the hold with no night. */
 export function PencilToggle({
   runId,
   entityId,
   initial,
+  initialDate = null,
   onChange,
 }: {
   runId: string;
   entityId: string;
   initial: boolean;
-  onChange?: (pencilled: boolean) => void;
+  /** The night held, YYYY-MM-DD. */
+  initialDate?: string | null;
+  onChange?: (pencilled: boolean, date: string | null) => void;
 }) {
   const [on, setOn] = useState(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<Reason | null>(null);
+  /** The date field's text, and the date last stored. */
+  const [draft, setDraft] = useState(initialDate ?? "");
+  const [stored, setStored] = useState(initialDate);
+  const holds = useHolds();
+  const dateId = useId();
   // A new stored value resets the switch (state adjusted during render, not in an effect).
-  const [seen, setSeen] = useState(initial);
-  if (seen !== initial) {
-    setSeen(initial);
+  const [seen, setSeen] = useState([initial, initialDate] as const);
+  if (seen[0] !== initial || seen[1] !== initialDate) {
+    setSeen([initial, initialDate]);
     setOn(initial);
+    setDraft(initialDate ?? "");
+    setStored(initialDate);
   }
+
+  const save = async (pencilled: boolean, date: string | null) => {
+    setSaving(true);
+    setError(null);
+    try {
+      const out = await api.setPencil(
+        runId,
+        entityId,
+        date ? { pencilled, date } : { pencilled },
+      );
+      const night = out.date ?? null;
+      setOn(out.pencilled);
+      setStored(night);
+      setDraft(night ?? "");
+      onChange?.(out.pencilled, night);
+      holds?.setHold(entityId, out.pencilled, night);
+      return true;
+    } catch (err) {
+      setError(err instanceof ApiError ? err.reason : "unavailable");
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const toggle = async () => {
     if (saving) return;
     const next = !on;
     setOn(next);
-    setSaving(true);
-    setError(null);
-    try {
-      const out = await api.setPencil(runId, entityId, { pencilled: next });
-      setOn(out.pencilled);
-      onChange?.(out.pencilled);
-    } catch (err) {
-      setOn(!next);
-      setError(err instanceof ApiError ? err.reason : "unavailable");
-    } finally {
-      setSaving(false);
-    }
+    if (!(await save(next, next ? stored : null))) setOn(!next);
+  };
+
+  /** Stores the drafted date once the field is left; a date that reads as none is left as
+   * typed for the booker to fix. */
+  const commitDate = (text: string) => {
+    const iso = text.trim() ? parseDate(text) : null;
+    if (saving || (text.trim() && !iso) || iso === stored) return;
+    void save(true, iso);
   };
 
   return (
@@ -378,6 +417,21 @@ export function PencilToggle({
         />
         Pencil hold
       </button>
+      {on && (
+        <div className="mt-1 flex items-center gap-2 text-sm">
+          <label htmlFor={dateId} className="shrink-0 text-ink/70">
+            Hold date
+          </label>
+          <DateField
+            id={dateId}
+            name="pencil_date"
+            value={draft}
+            onChange={setDraft}
+            onCommit={commitDate}
+            className={DATE_INPUT}
+          />
+        </div>
+      )}
       {error && (
         <p role="alert" className="text-xs text-ink/80">
           {reasonText(error)}

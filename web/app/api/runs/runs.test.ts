@@ -235,6 +235,7 @@ describe("GET /api/runs/[id]/candidates/[entityId]/soundcheck", () => {
         score: {},
         evidence: trail,
         pencilled: true,
+        pencil_date: "2026-11-14",
       }),
       Response.json([
         call("c-ok", "ok", { status: "ok", summary: "fine", results: [{ name: "Secret" }] }),
@@ -255,6 +256,7 @@ describe("GET /api/runs/[id]/candidates/[entityId]/soundcheck", () => {
       trail,
       summaries: { "c-partial": "Half came back.", "c-error": "Retry later." },
       pencilled: true,
+      pencilDate: "2026-11-14",
     });
     expect(JSON.stringify(body)).not.toContain("Secret");
     expect(sent.map((s) => s.url)).toEqual([
@@ -413,9 +415,23 @@ describe("PATCH /api/runs/[id]/candidates/[entityId]", () => {
     ]);
   });
 
+  it("forwards the night held with the pencil", async () => {
+    const out = { run_id: "run_1", entity_id: "x", pencilled: true, date: "2026-11-14" };
+    const sent = fakeAgent(Response.json(out));
+
+    const res = await patchCandidate(
+      patch({ pencilled: true, date: "2026-11-14" }),
+      ctx({ id: "run_1", entityId: "x" }),
+    );
+
+    expect(res.status).toBe(200);
+    expect(sent[0].body).toEqual({ pencilled: true, date: "2026-11-14" });
+  });
+
   it.each([
     [{}, "pencilled"],
     [{ pencilled: "yes" }, "pencilled"],
+    [{ pencilled: true, date: "2026-02-30" }, "date"],
     [{ pencilled: true, extra: 1 }, undefined],
     ["not json", undefined],
   ])("rejects %j without calling the agent", async (body, field) => {
