@@ -20,8 +20,18 @@ export default defineConfig({
     baseURL: `http://localhost:${WEB_PORT}`,
     trace: "retain-on-failure",
   },
+  expect: {
+    // Anti-aliasing drifts between Chromium builds; a real change moves far more than this.
+    toHaveScreenshot: { maxDiffPixelRatio: 0.01 },
+  },
   projects: [
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testIgnore: "visual.spec.ts" },
+    // Visual snapshots and the axe check (T43), at scale 1 so a snapshot is CSS pixels.
+    {
+      name: "visual",
+      testMatch: "visual.spec.ts",
+      use: { ...devices["Desktop Chrome"], deviceScaleFactor: 1 },
+    },
   ],
   webServer: [
     {
