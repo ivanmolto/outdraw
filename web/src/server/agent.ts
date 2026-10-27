@@ -55,9 +55,27 @@ export type {
 
 const PASSTHROUGH: ReadonlySet<string> = new Set<Reason>(["busy", "budget", "live_mode_off"]);
 
+const REASONS: ReadonlySet<string> = new Set<Reason>([
+  "invalid_input",
+  "not_found",
+  "conflict",
+  "budget",
+  "busy",
+  "live_mode_off",
+  "unavailable",
+  "unknown",
+]);
+
+/** The digest's tag; `NEXT_HTTP_ERROR_FALLBACK;404` is Next's own in the same shape. */
+const DIGEST = "DRAW_AGENT";
+
 export class AgentError extends Error {
   /** The X-Draw-Run-Id of the failed request, for the log line and the Sentry tag. */
   runId?: string;
+  /** `DRAW_AGENT;{status};{reason}`: what survives a `use cache` boundary. An error thrown
+   * out of a cached function (src/server/seeds.ts) reaches its caller serialised, with the
+   * message replaced and only the digest kept, as Next does for its own `notFound()`. */
+  readonly digest: string;
 
   constructor(
     readonly status: number,
@@ -71,7 +89,20 @@ export class AgentError extends Error {
   ) {
     super(`agent ${status}: ${reason}`);
     this.name = "AgentError";
+    this.digest = `${DIGEST};${status};${reason}`;
   }
+}
+
+/** The AgentError `err` is, or the one its digest names (its status and reason; the rest
+ * does not cross a cache boundary), or null for any other error. */
+export function agentError(err: unknown): AgentError | null {
+  if (err instanceof AgentError) return err;
+  if (typeof err !== "object" || err === null || !("digest" in err)) return null;
+  const { digest } = err as { digest?: unknown };
+  if (typeof digest !== "string") return null;
+  const [tag, status, reason] = digest.split(";");
+  if (tag !== DIGEST || !/^\d{3}$/.test(status ?? "") || !REASONS.has(reason ?? "")) return null;
+  return new AgentError(Number(status), reason as Reason);
 }
 
 function toAgentError(status: number, body: unknown): AgentError {

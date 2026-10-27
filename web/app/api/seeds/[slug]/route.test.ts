@@ -1,6 +1,7 @@
 // GET /api/seeds/{slug}: a seed's sample from the seed cache, never a run.
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { AgentError } from "@/src/server/agent";
 import type { SeedPage } from "@/src/server/seeds";
 import type { RunOut } from "@/types/agent";
 import venue from "../../../venue/[id]/fixtures/venue.json";
@@ -9,7 +10,6 @@ import run from "../../../venue/[id]/shortlist/fixtures/run.json";
 const seedPage = vi.fn<(slug: string) => Promise<SeedPage>>();
 vi.mock("@/src/server/seeds", () => ({ seedPage: (slug: string) => seedPage(slug) }));
 
-import { AgentError } from "@/src/server/agent";
 import { GET } from "./route";
 
 const get = (slug: string) =>
@@ -70,6 +70,24 @@ describe("GET /api/seeds/[slug]", () => {
     const res = await get("london-comedy");
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual({ reason: "unavailable" });
+  });
+
+  it("maps a failed read stripped to its digest by the cache boundary", async () => {
+    seedPage.mockRejectedValue(
+      Object.assign(new Error("An error occurred in the Server Components render."), {
+        digest: "DRAW_AGENT;502;unknown",
+      }),
+    );
+    const res = await get("london-comedy");
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ reason: "unknown" });
+  });
+
+  it("answers 500 {reason: 'unknown'} for a bug of ours, with nothing of it", async () => {
+    seedPage.mockRejectedValue(new TypeError("Cannot read properties of undefined"));
+    const res = await get("london-comedy");
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ reason: "unknown" });
   });
 
   it("is a 404 for a slug that is no seed, without reading anything", async () => {

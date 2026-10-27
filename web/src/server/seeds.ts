@@ -88,7 +88,9 @@ function assemble(page: SeedPageOut): SeedPage {
 }
 
 /** Everything /v/[slug] shows, read once per cache lifetime. A failed read throws (and is
- * not cached); a missing or unfinished seed is cached briefly, a ready one for hours. */
+ * not cached): the caller gets it stripped to its digest, which names the status and
+ * reason (`agentError` in ./agent.ts). A missing or unfinished seed is cached briefly, a
+ * ready one for hours. */
 export async function seedPage(slug: string): Promise<SeedPage> {
   "use cache: remote";
   cacheTag(SEEDS_TAG, seedTag(slug));

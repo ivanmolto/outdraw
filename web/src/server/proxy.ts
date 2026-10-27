@@ -8,7 +8,7 @@ import * as Sentry from "@sentry/nextjs";
 import type { z } from "zod";
 
 import { idSchema } from "@/src/lib/schemas";
-import { AgentError, type Reason } from "./agent";
+import { agentError, type Reason } from "./agent";
 import { shouldReportUnavailable } from "./observability";
 
 /** Request bodies above this are rejected before parsing (a full venue is ~3 KB). A sanity
@@ -78,14 +78,17 @@ export async function proxy<T>(fn: () => Promise<T>, status = 200): Promise<Resp
     if (err instanceof InvalidInput) {
       return fail(400, { reason: "invalid_input", ...(err.field && { field: err.field }) });
     }
-    if (err instanceof AgentError) {
-      if (err.reason === "unknown") report(err, err.runId);
-      else if (err.reason === "unavailable" && shouldReportUnavailable()) report(err, err.runId);
-      return fail(err.status, {
-        reason: err.reason,
-        ...(err.pending && { pending: err.pending }),
-        ...(err.fallbackSeed && { fallback_seed: err.fallbackSeed }),
-        ...(err.field && { field: err.field }),
+    const agentErr = agentError(err);
+    if (agentErr) {
+      if (agentErr.reason === "unknown") report(agentErr, agentErr.runId);
+      else if (agentErr.reason === "unavailable" && shouldReportUnavailable()) {
+        report(agentErr, agentErr.runId);
+      }
+      return fail(agentErr.status, {
+        reason: agentErr.reason,
+        ...(agentErr.pending && { pending: agentErr.pending }),
+        ...(agentErr.fallbackSeed && { fallback_seed: agentErr.fallbackSeed }),
+        ...(agentErr.field && { field: agentErr.field }),
       });
     }
     console.error("api proxy failed:", err);
