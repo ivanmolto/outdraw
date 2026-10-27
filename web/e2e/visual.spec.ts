@@ -82,9 +82,11 @@ test("the house-lights switch flips the palette and remembers it", async ({ page
   const html = page.locator("html");
   const toggle = page.getByTestId("theme-toggle");
   await expect(toggle).toHaveAttribute("aria-label", "Switch to dark theme");
+  await expect(toggle).toHaveAttribute("data-theme-icon", "moon");
   await toggle.click();
   await expect(html).toHaveAttribute("data-theme", "dark");
   await expect(toggle).toHaveAttribute("aria-label", "Switch to light theme");
+  await expect(toggle).toHaveAttribute("data-theme-icon", "sun");
   // The choice survives a reload, applied before paint.
   await page.reload();
   await expect(html).toHaveAttribute("data-theme", "dark");

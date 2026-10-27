@@ -56,18 +56,26 @@ export function ThemeToggle() {
       aria-pressed={theme === "dark"}
       title="House lights"
       data-testid="theme-toggle"
+      data-theme-icon={theme === "dark" ? "sun" : "moon"}
       className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line text-ink hover:bg-surface-2"
     >
-      <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4" fill="none">
-        {/* A spotlight: a lamp head and its beam. */}
-        <circle cx="8" cy="8" r="3" fill="currentColor" />
-        <path
-          d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
-      </svg>
+      {theme === "dark" ? (
+        // Lights down: a sun, to bring them up.
+        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4" fill="none">
+          <circle cx="8" cy="8" r="3" fill="currentColor" />
+          <path
+            d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
+      ) : (
+        // Lights up (or not yet known): a moon, to bring them down.
+        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4" fill="currentColor">
+          <path d="M9.5 1.5a6.5 6.5 0 1 0 5 10.3 5.5 5.5 0 0 1-5-10.3z" />
+        </svg>
+      )}
     </button>
   );
 }
