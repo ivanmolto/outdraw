@@ -69,7 +69,9 @@ describe("fresh run", () => {
 
     expect((await screen.findByRole("alert")).textContent).toContain("Confirm every Qloo match");
     expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Back to crowd profile" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Confirm the matches" }).getAttribute("href")).toBe(
+      "/venue/new",
+    );
   });
 });
 

@@ -3,6 +3,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { agent } from "@/src/server/agent";
 import { AGENT_URL, fakeAgent, KEY } from "@/src/server/test-agent";
 import venue from "../fixtures/venue.json";
 import run from "./fixtures/run.json";
@@ -74,10 +75,33 @@ describe("/venue/[id]/shortlist", () => {
     });
   });
 
-  it("maps an agent outage to the user-facing reason", async () => {
+  it("maps an agent outage to the user-facing reason, with a reload and a way back", async () => {
     fakeAgent(new TypeError("fetch failed"));
     await renderPage();
 
     expect(screen.getByRole("alert").textContent).toContain("Can't reach Outdraw right now");
+    expect(screen.getByRole("link", { name: "Try again" }).getAttribute("href")).toBe(
+      "/venue/ven_fixture/shortlist",
+    );
+    expect(screen.getByRole("link", { name: "Back to crowd profile" }).getAttribute("href")).toBe(
+      "/venue/ven_fixture",
+    );
+  });
+
+  it("lists the matches still to confirm on the agent's 409", async () => {
+    fakeAgent(
+      Response.json(venue),
+      Response.json({ detail: { pending: ["Synthetic Act"] } }, { status: 409 }),
+    );
+    await renderPage("ven_fixture", { run: "run_fixture" });
+
+    expect(screen.getByRole("alert").getAttribute("data-reason")).toBe("conflict");
+    expect(screen.getByRole("list", { name: "Still to confirm" }).textContent).toBe("Synthetic Act");
+  });
+
+  it("lets anything but an AgentError reach the page's error boundary", async () => {
+    vi.spyOn(agent, "getVenue").mockRejectedValue(new TypeError("a bug of ours"));
+
+    await expect(ShortlistPage(props("ven_fixture"))).rejects.toThrow("a bug of ours");
   });
 });

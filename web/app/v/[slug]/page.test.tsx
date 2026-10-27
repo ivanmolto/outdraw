@@ -112,10 +112,22 @@ describe("/v/[slug]", () => {
     expect(sent).toEqual([]);
   });
 
-  it("maps an agent outage to the user-facing reason", async () => {
+  it("maps an agent outage to the user-facing reason, with a reload to retry", async () => {
     fakeAgent(new TypeError("fetch failed"));
     render(await DemoVenuePage(props("nola-jazz")));
 
-    expect(screen.getByRole("alert").textContent).toContain("Can't reach Outdraw right now");
+    const alert = screen.getByRole("alert");
+    expect(alert.getAttribute("data-reason")).toBe("unavailable");
+    expect(alert.textContent).toContain("Can't reach Outdraw right now");
+    expect(screen.getByRole("link", { name: "Try again" }).getAttribute("href")).toBe("/v/nola-jazz");
+  });
+
+  it("maps the agent's 500 to the unknown state, never its body", async () => {
+    fakeAgent(Response.json({ detail: "Internal Server Error" }, { status: 500 }));
+    render(await DemoVenuePage(props("nola-jazz")));
+
+    const alert = screen.getByRole("alert");
+    expect(alert.getAttribute("data-reason")).toBe("unknown");
+    expect(alert.textContent).not.toContain("Internal Server Error");
   });
 });

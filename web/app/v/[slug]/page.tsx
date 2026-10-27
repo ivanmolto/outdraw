@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { reasonText } from "@/src/lib/api-client";
+import { ErrorState } from "@/src/components/error-state";
 import { PrecomputedProvider } from "@/src/lib/precomputed";
 import { parseRun } from "@/src/lib/run-result";
 import { crossDomain } from "@/src/lib/soundcheck";
-import { AgentError } from "@/src/server/agent";
+import { agentError } from "@/src/server/agent";
 import { seedPage, type SeedPage } from "@/src/server/seeds";
 import { ProfileView } from "../../venue/[id]/profile-view";
 import { RefinableRun } from "../../venue/[id]/shortlist/refinable-run";
@@ -36,10 +36,14 @@ export default async function DemoVenuePage({ params }: PageProps<"/v/[slug]">) 
   try {
     page = await seedPage(slug);
   } catch (err) {
-    const reason = err instanceof AgentError ? err.reason : "unavailable";
+    // The agent's own refusals are states of this page, read off the digest (the read ran
+    // in a `use cache` scope, which hands back a stripped error); anything else is ours (a
+    // bug) and goes to ./error.tsx, reported by instrumentation.ts.
+    const agentErr = agentError(err);
+    if (!agentErr) throw err;
     return (
       <Shell>
-        <Message title="Couldn't load this demo venue" body={reasonText(reason)} />
+        <ErrorState reason={agentErr.reason} retryHref={`/v/${encodeURIComponent(slug)}`} />
       </Shell>
     );
   }

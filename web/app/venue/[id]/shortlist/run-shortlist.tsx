@@ -5,11 +5,12 @@
 // into the URL (`?run=`), so a reload or a shared link reads the stored run instead of
 // spending Qloo calls on a new one. A run refused for want of live analysis (busy, budget,
 // LIVE_MODE=off) shows the closest seed's precomputed sample instead of an error.
-import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { ErrorState } from "@/src/components/error-state";
 import { Elapsed, Spinner } from "@/src/components/progress";
-import { ApiError, api, reasonText, sampleSeed, type Reason } from "@/src/lib/api-client";
+import { api, errorOf, sampleSeed, type Reason } from "@/src/lib/api-client";
+import type { ErrorDetails } from "@/src/lib/error-states";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
 import type { SeedSlug } from "@/src/lib/seeds";
 import type { CrossDomain } from "@/src/lib/soundcheck";
@@ -22,10 +23,7 @@ type State =
   | { name: "running" }
   | { name: "done"; run: ParsedRun }
   | { name: "sample"; slug: SeedSlug }
-  | { name: "failed"; reason: Reason };
-
-/** Reasons a retry can fix; the rest need the user to do something else first. */
-const RETRYABLE: ReadonlySet<Reason> = new Set(["busy", "unavailable", "unknown"]);
+  | { name: "failed"; reason: Reason; details: ErrorDetails };
 
 /** In-flight runs by venue: Strict Mode mounts effects twice, and a run costs Qloo quota. */
 const inFlight = new Map<string, Promise<ParsedRun>>();
@@ -64,11 +62,7 @@ export function RunShortlist({ venueId, venueName, constraints, crossDomain }: P
       (err: unknown) => {
         if (!active) return;
         const slug = sampleSeed(err);
-        setState(
-          slug
-            ? { name: "sample", slug }
-            : { name: "failed", reason: err instanceof ApiError ? err.reason : "unavailable" },
-        );
+        setState(slug ? { name: "sample", slug } : { name: "failed", ...errorOf(err) });
       },
     );
     return () => {
@@ -98,28 +92,11 @@ export function RunShortlist({ venueId, venueName, constraints, crossDomain }: P
     setAttempt((n) => n + 1);
   };
 
-  const failed = (reason: Reason) => (
-    <div role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-6">
-      <h1 className="text-xl font-semibold tracking-tight">Couldn&apos;t build the shortlist</h1>
-      <p className="mt-2 text-sm text-ink/70">{reasonText(reason)}</p>
-      <div className="mt-4 flex flex-wrap items-center gap-4">
-        {RETRYABLE.has(reason) && (
-          <button
-            type="button"
-            onClick={retry}
-            className="rounded-md bg-ink px-4 py-2 text-sm font-semibold text-paper"
-          >
-            Try again
-          </button>
-        )}
-        <Link href={`/venue/${encodeURIComponent(venueId)}`} className="text-sm font-medium underline">
-          Back to crowd profile
-        </Link>
-      </div>
-    </div>
+  const failed = (reason: Reason, details: ErrorDetails = {}) => (
+    <ErrorState reason={reason} details={{ venueId, ...details }} onRetry={retry} />
   );
 
-  if (state.name === "failed") return failed(state.reason);
+  if (state.name === "failed") return failed(state.reason, state.details);
 
   if (state.name === "sample") {
     return (
@@ -130,7 +107,7 @@ export function RunShortlist({ venueId, venueName, constraints, crossDomain }: P
             Try a live run again
           </button>
         }
-        fallback={failed("busy")}
+        fallback={failed("busy", { fallbackSeed: state.slug })}
       />
     );
   }

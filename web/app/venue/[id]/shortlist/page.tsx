@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { reasonText } from "@/src/lib/api-client";
+import { ErrorState } from "@/src/components/error-state";
 import { defaultConstraints, parseRun, type ParsedRun } from "@/src/lib/run-result";
 import { idSchema } from "@/src/lib/schemas";
 import { crossDomain } from "@/src/lib/soundcheck";
@@ -59,11 +59,17 @@ export default async function ShortlistPage({
     const run = await storedRun(id, (await searchParams).run);
     chain = run && (await runChain(run));
   } catch (err) {
-    if (err instanceof AgentError && err.reason === "not_found") notFound();
-    const reason = err instanceof AgentError ? err.reason : "unknown";
+    // The agent's own refusals are states of this page; anything else is ours (a bug) and
+    // goes to ./error.tsx, reported by instrumentation.ts.
+    if (!(err instanceof AgentError)) throw err;
+    if (err.reason === "not_found") notFound();
     return (
       <Shell>
-        <Message title="Couldn't load this shortlist" body={reasonText(reason)} />
+        <ErrorState
+          reason={err.reason}
+          details={{ venueId: id, pending: err.pending }}
+          retryHref={`/venue/${encodeURIComponent(id)}/shortlist`}
+        />
       </Shell>
     );
   }

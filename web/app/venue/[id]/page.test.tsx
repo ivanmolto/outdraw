@@ -3,6 +3,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { agent } from "@/src/server/agent";
 import { AGENT_URL, fakeAgent, KEY } from "@/src/server/test-agent";
 import fixture from "./fixtures/venue.json";
 import VenueNotFound from "./not-found";
@@ -68,10 +69,35 @@ describe("/venue/[id]", () => {
     );
   });
 
-  it("maps an agent outage to the user-facing reason", async () => {
-    fakeAgent(new TypeError("fetch failed"));
+  it("maps an agent outage to the user-facing reason, with a reload to retry", async () => {
+    fakeAgent(new TypeError("fetch failed to http://agent.test"));
     await renderPage();
 
-    expect(screen.getByRole("alert").textContent).toContain("Can't reach Outdraw right now");
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("Can't reach Outdraw right now");
+    expect(alert.textContent).not.toContain("agent.test");
+    expect(screen.getByRole("link", { name: "Try again" }).getAttribute("href")).toBe(
+      "/venue/ven_fixture",
+    );
+  });
+
+  it("maps the agent's 500 to the unknown state, never its body", async () => {
+    fakeAgent(
+      Response.json(
+        { detail: "Internal Server Error", trace: "Traceback (most recent call last)" },
+        { status: 500 },
+      ),
+    );
+    await renderPage();
+
+    const alert = screen.getByRole("alert");
+    expect(alert.getAttribute("data-reason")).toBe("unknown");
+    expect(alert.textContent).not.toMatch(/Internal Server Error|Traceback/);
+  });
+
+  it("lets anything but an AgentError reach the page's error boundary", async () => {
+    vi.spyOn(agent, "getVenue").mockRejectedValue(new TypeError("a bug of ours"));
+
+    await expect(VenuePage(props("ven_fixture"))).rejects.toThrow("a bug of ours");
   });
 });

@@ -12,12 +12,14 @@ import type {
   VenueId,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
+import { SAMPLED, reasonText, type ErrorDetails } from "./error-states";
 import type { ConfirmInput, PencilInput, RefineInput, RunInput, VenueUpsert } from "./schemas";
 import { FALLBACK_SEED, isSeedSlug, type SeedSlug } from "./seeds";
 import type { Precomputed } from "./precomputed";
 import type { CrossDomain, SoundcheckData } from "./soundcheck";
 
 export type { BriefOut, CandidateOut, CompareOut, EntityCandidate, Reason, ResolutionItem, Resolutions };
+export { reasonText };
 
 export class ApiError extends Error {
   constructor(
@@ -34,31 +36,20 @@ export class ApiError extends Error {
   }
 }
 
-const MESSAGES: Record<Reason, string> = {
-  invalid_input: "Some details were rejected. Check the highlighted fields.",
-  not_found: "That venue no longer exists. Start again.",
-  conflict: "Confirm every Qloo match before building the profile.",
-  budget: "Outdraw has used today's Qloo budget. Try again tomorrow.",
-  busy: "Outdraw is busy with another request. Try again in a moment.",
-  live_mode_off: "Live Qloo lookups are switched off right now.",
-  unavailable: "Can't reach Outdraw right now. Check your connection and try again.",
-  unknown: "Something went wrong on our side. Try again.",
-};
-
-/** User-facing text for a `{reason}`; also used by server components on an AgentError. */
-export function reasonText(reason: Reason): string {
-  return MESSAGES[reason];
-}
-
 export function reasonMessage(err: unknown): string {
   return reasonText(err instanceof ApiError ? err.reason : "unavailable");
 }
 
-/** Refusals of live analysis (the web's rate limit, the daily budget, `LIVE_MODE=off`): the
- * UI shows a precomputed sample for these instead of an error. */
-const SAMPLED: ReadonlySet<Reason> = new Set(["busy", "budget", "live_mode_off"]);
+/** The reason and what came with it, for `<ErrorState>`; a failure that is no ApiError
+ * (fetch itself threw) is `unavailable`. */
+export function errorOf(err: unknown): { reason: Reason; details: ErrorDetails } {
+  if (!(err instanceof ApiError)) return { reason: "unavailable", details: {} };
+  const { reason, field, pending, fallbackSeed } = err;
+  return { reason, details: { field, pending, fallbackSeed } };
+}
 
-/** The seed to show instead of `err`, or null when `err` is a real failure. */
+/** The seed to show instead of `err` (a refusal of live analysis: the web's rate limit,
+ * the daily budget, `LIVE_MODE=off`), or null when `err` is a real failure. */
 export function sampleSeed(err: unknown): SeedSlug | null {
   if (!(err instanceof ApiError) || !SAMPLED.has(err.reason)) return null;
   return err.fallbackSeed ?? FALLBACK_SEED;

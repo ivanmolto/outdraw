@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { reasonText } from "@/src/lib/api-client";
+import { ErrorState } from "@/src/components/error-state";
 import { idSchema } from "@/src/lib/schemas";
 import { AgentError, agent, type VenueOut } from "@/src/server/agent";
 import { ProfileView } from "./profile-view";
@@ -21,11 +21,13 @@ export default async function VenuePage({ params }: PageProps<"/venue/[id]">) {
   try {
     venue = await agent.getVenue(id);
   } catch (err) {
-    if (err instanceof AgentError && err.reason === "not_found") notFound();
-    const reason = err instanceof AgentError ? err.reason : "unknown";
+    // The agent's own refusals are states of this page; anything else is ours (a bug) and
+    // goes to ./error.tsx, reported by instrumentation.ts.
+    if (!(err instanceof AgentError)) throw err;
+    if (err.reason === "not_found") notFound();
     return (
       <Shell>
-        <Message title="Couldn't load this venue" body={reasonText(reason)} />
+        <ErrorState reason={err.reason} retryHref={`/venue/${encodeURIComponent(id)}`} />
       </Shell>
     );
   }

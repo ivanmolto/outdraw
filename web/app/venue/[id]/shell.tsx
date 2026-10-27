@@ -1,4 +1,5 @@
-// Page chrome shared by /venue/[id], its not-found page and its error states.
+// Page chrome shared by /venue/[id], its not-found page and its notices. API error states
+// render src/components/error-state.tsx inside the Shell instead of Message.
 import Link from "next/link";
 
 /** `wide` makes room for two lists side by side (the shortlist's LLM-only comparison). */
