@@ -22,7 +22,7 @@ export function LivePaused({
     <div
       role="status"
       aria-label="Live analysis paused"
-      className={`rounded-lg border border-dashed border-ink/40 p-4 text-sm ${className}`}
+      className={`rounded-card border border-dashed border-ink/40 p-4 text-sm ${className}`}
     >
       <p className="font-medium text-ink">{PAUSED_TITLE}</p>
       <p className="mt-1 text-ink/70">{children}</p>

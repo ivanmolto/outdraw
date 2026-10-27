@@ -34,7 +34,7 @@ function Field({
 }) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className="border-t border-ink/15 pt-3">
+    <section aria-labelledby={id} className="border-t border-line pt-3">
       <div className="flex items-start justify-between gap-3">
         <h3 id={id} className="text-sm font-semibold text-ink">
           {title}
@@ -192,7 +192,7 @@ export function Brief({
             </div>
             <p
               data-testid="email-body"
-              className="mt-0.5 rounded-md bg-ink/5 p-2 break-words whitespace-pre-wrap text-ink"
+              className="mt-0.5 rounded-md bg-surface-2 p-2 break-words whitespace-pre-wrap text-ink"
             >
               {email.body}
             </p>
@@ -369,7 +369,7 @@ export function PencilToggle({
         aria-busy={saving}
         onClick={toggle}
         className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-sm font-medium ${
-          on ? "border-ink bg-ink text-brand-amber" : "border-ink/30 text-ink"
+          on ? "border-stage bg-stage text-brand-amber" : "border-stage/30 text-ink"
         }`}
       >
         <span

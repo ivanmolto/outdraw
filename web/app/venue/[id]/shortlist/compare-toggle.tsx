@@ -95,14 +95,14 @@ const normalise = (name: string) => name.toLowerCase().replace(/[^\p{L}\p{N}]+/g
 function LlmList({ load, qlooNames }: { load: Load; qlooNames: string[] }) {
   if (load.name === "loading") {
     return (
-      <p role="status" className="flex items-center gap-2 rounded-lg border border-ink/15 bg-white/60 p-4 text-sm text-ink/70">
+      <p role="status" className="flex items-center gap-2 rounded-card border border-line bg-surface p-4 text-sm text-ink/70">
         <Spinner /> Asking the model for its own list, with no Qloo data…
       </p>
     );
   }
   if (load.name === "paused") {
     return (
-      <LivePaused slug={load.slug} className="bg-white/60">
+      <LivePaused slug={load.slug} className="bg-surface">
         The LLM-only list can&apos;t be fetched right now. Outdraw&apos;s shortlist is unaffected;
         try the toggle again later.
       </LivePaused>
@@ -110,14 +110,14 @@ function LlmList({ load, qlooNames }: { load: Load; qlooNames: string[] }) {
   }
   if (load.name === "failed") {
     return (
-      <p role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-4 text-sm text-ink/70">
+      <p role="alert" className="rounded-card border border-line bg-surface p-4 text-sm text-ink/70">
         {reasonText(load.reason)}
       </p>
     );
   }
   if (load.name === "absent") {
     return (
-      <p role="status" className="rounded-lg border border-ink/15 bg-white/60 p-4 text-sm text-ink/70">
+      <p role="status" className="rounded-card border border-line bg-surface p-4 text-sm text-ink/70">
         This demo has no LLM-only list. Refine the shortlist for a live run to compare one.
       </p>
     );
@@ -128,11 +128,11 @@ function LlmList({ load, qlooNames }: { load: Load; qlooNames: string[] }) {
   const shared = acts.filter((a) => ours.has(normalise(a.name))).length;
   return (
     <div>
-      <p data-testid="disclaimer" className="mb-3 rounded-lg border border-dashed border-ink/40 p-3 text-xs text-ink/70">
+      <p data-testid="disclaimer" className="mb-3 rounded-card border border-dashed border-ink/40 p-3 text-xs text-ink/70">
         {out.disclaimer}
       </p>
       {out.error || acts.length === 0 ? (
-        <p role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-4 text-sm text-ink/70">
+        <p role="alert" className="rounded-card border border-line bg-surface p-4 text-sm text-ink/70">
           The model gave no usable list for this run.
         </p>
       ) : (
@@ -147,7 +147,7 @@ function LlmList({ load, qlooNames }: { load: Load; qlooNames: string[] }) {
                 <li
                   key={`${i}:${act.name}`}
                   data-overlap={both}
-                  className="rounded-lg border border-dashed border-ink/30 p-4"
+                  className="rounded-card border border-dashed border-ink/30 p-4"
                 >
                   <div className="flex items-baseline gap-3">
                     <span className="shrink-0 font-mono text-sm text-ink/50" aria-hidden="true">
@@ -210,7 +210,7 @@ export function CompareToggle({
           aria-checked={on}
           aria-labelledby={`${id}-label`}
           onClick={() => setOn((v) => !v)}
-          className={`relative h-6 w-11 shrink-0 rounded-full border border-ink ${on ? "bg-ink" : "bg-transparent"}`}
+          className={`relative h-6 w-11 shrink-0 rounded-full border ${on ? "border-stage bg-stage ring-1 ring-line" : "border-ink bg-transparent"}`}
         >
           <span
             aria-hidden="true"
@@ -223,7 +223,7 @@ export function CompareToggle({
         children
       ) : mobile ? (
         <div data-testid="compare-tabs">
-          <div role="tablist" aria-label="With Qloo / LLM only" className="mb-4 grid grid-cols-2 rounded-lg border border-ink/20 p-1 text-sm">
+          <div role="tablist" aria-label="With Qloo / LLM only" className="mb-4 grid grid-cols-2 rounded-card border border-ink/20 p-1 text-sm">
             {VIEWS.map((v) => (
               <button
                 key={v.key}

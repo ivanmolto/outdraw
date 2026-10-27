@@ -36,9 +36,9 @@ export function ErrorState({
     <div
       role="alert"
       data-reason={state.reason}
-      className={`rounded-lg border border-ink/15 bg-white/60 ${compact ? "p-4" : "p-6"}`}
+      className={`rounded-card border border-line bg-surface ${compact ? "p-4" : "p-6"}`}
     >
-      <Heading className={compact ? "font-semibold" : "text-xl font-semibold tracking-tight"}>
+      <Heading className={compact ? "font-semibold" : "display text-2xl"}>
         {state.title}
       </Heading>
       <p className="mt-2 text-sm text-ink/70">{state.message}</p>

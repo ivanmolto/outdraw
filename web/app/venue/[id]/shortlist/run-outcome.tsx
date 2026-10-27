@@ -50,8 +50,8 @@ export function RunOutcome({
   if (run.kind === "ask") {
     return (
       <>
-        <div role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-6">
-          <h1 className="text-xl font-semibold tracking-tight">Outdraw needs a choice first</h1>
+        <div role="alert" className="rounded-card border border-line bg-surface p-6">
+          <h1 className="display text-2xl">Outdraw needs a choice first</h1>
           <p className="mt-2 text-sm text-ink/70">{run.question}</p>
           {run.options.length > 0 && (
             <ul className="mt-2 list-disc pl-5 text-sm text-ink/70">
@@ -68,8 +68,8 @@ export function RunOutcome({
   }
   return (
     <>
-      <div role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-6">
-        <h1 className="text-xl font-semibold tracking-tight">Couldn&apos;t build the shortlist</h1>
+      <div role="alert" className="rounded-card border border-line bg-surface p-6">
+        <h1 className="display text-2xl">Couldn&apos;t build the shortlist</h1>
         <p className="mt-2 text-sm text-ink/70">{reasonText("unknown")}</p>
         {back}
       </div>

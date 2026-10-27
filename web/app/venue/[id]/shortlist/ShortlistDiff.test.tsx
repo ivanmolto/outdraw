@@ -74,7 +74,7 @@ describe("shortlist view with a diff", () => {
     const entered = row("Emerging Fixture Quartet");
     expect(entered.dataset.change).toBe("entered");
     expect(within(entered).getByTestId("change").textContent).toBe("New");
-    expect(within(entered).getByTestId("change").className).toMatch(/emerald/);
+    expect(within(entered).getByTestId("change").className).toMatch(/\bgood\b/);
 
     const up = within(row("Fixture Collective")).getByTestId("change");
     expect(up.dataset.change).toBe("moved");

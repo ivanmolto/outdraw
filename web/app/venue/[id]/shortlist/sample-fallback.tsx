@@ -63,10 +63,10 @@ export function SampleFallback({ slug, action, fallback }: Props) {
       <aside
         role="status"
         aria-label="Sample shortlist"
-        className="mb-8 rounded-lg border border-dashed border-ink/40 p-4 text-sm"
+        className="mb-8 rounded-card border border-dashed border-ink/40 p-4 text-sm"
       >
         <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
-          <span className="rounded-sm bg-ink px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-brand-amber uppercase">
+          <span className="rounded-sm bg-stage px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-brand-amber uppercase">
             Sample
           </span>
           {SAMPLE_BANNER}

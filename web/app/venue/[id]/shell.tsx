@@ -15,8 +15,8 @@ export function Shell({ children, wide = false }: { children: React.ReactNode; w
 
 export function Message({ title, body }: { title: string; body: string }) {
   return (
-    <div role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-6">
-      <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+    <div role="alert" className="rounded-card border border-line bg-surface p-6">
+      <h1 className="display text-2xl">{title}</h1>
       <p className="mt-2 text-sm text-ink/70">{body}</p>
       <Link href="/venue/new" className="mt-4 inline-block text-sm font-medium underline">
         Set up a venue

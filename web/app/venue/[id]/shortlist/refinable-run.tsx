@@ -97,7 +97,7 @@ export function RefinableRun({
         slug={sample}
         action={back}
         fallback={
-          <div role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-6 text-sm">
+          <div role="alert" className="rounded-card border border-line bg-surface p-6 text-sm">
             <p className="text-ink/70">Live analysis is busy right now. Try again in a moment.</p>
             <div className="mt-3">{back}</div>
           </div>

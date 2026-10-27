@@ -58,7 +58,7 @@ function Chip({
       title={qloo ? "Qloo data" : "Outdraw's own data"}
       className={
         qloo
-          ? "rounded-full bg-ink px-2 py-0.5 text-paper"
+          ? "rounded-full bg-stage px-2 py-0.5 text-house ring-1 ring-line"
           : "rounded-full border border-ink/30 px-2 py-0.5 text-ink"
       }
     >
@@ -89,15 +89,15 @@ function Act({
   return (
     <li
       data-change={change?.kind}
-      className={`rounded-lg border bg-white/60 p-4 ${
-        change?.kind === "entered" ? "border-emerald-700 border-l-4" : "border-ink/15"
+      className={`rounded-card border bg-surface p-4 ${
+        change?.kind === "entered" ? "border-good border-l-4" : "border-line"
       }`}
     >
       <div className="flex items-baseline gap-3">
-        <span className="shrink-0 font-mono text-sm text-ink/50" aria-hidden="true">
+        <span className="display w-6 shrink-0 text-xl text-ink/60" aria-hidden="true">
           {rank}
         </span>
-        <h2 className="min-w-0 flex-1 font-semibold break-words text-ink">{entry.name}</h2>
+        <h2 className="display min-w-0 flex-1 text-xl break-words text-ink">{entry.name}</h2>
         <ChangeBadge change={change} />
         <span className="shrink-0 font-mono text-sm text-ink" data-testid="total">
           <span className="sr-only">Score </span>
@@ -107,9 +107,9 @@ function Act({
       <div
         aria-hidden="true"
         data-testid="total-bar"
-        className="mt-2 h-2 w-full rounded-full bg-ink/10"
+        className="mt-2 h-2 w-full rounded-full bg-stage ring-1 ring-line"
       >
-        <div className="h-full rounded-full bg-ink" style={{ width: pct(entry.total) }} />
+        <div className="h-full rounded-full bg-brand-amber" style={{ width: pct(entry.total) }} />
       </div>
       {reason && <p className="mt-3 text-sm text-ink/80">{reason}</p>}
       {entry.sub_scores && (
@@ -153,7 +153,7 @@ function QualityBanner({ result }: { result: ShortlistResult }) {
   return (
     <aside
       aria-label="Data quality"
-      className="mb-6 rounded-lg border border-ink/30 bg-white p-4 text-sm"
+      className="mb-6 rounded-card border border-ink/30 bg-surface p-4 text-sm"
     >
       <div className="flex items-start justify-between gap-3">
         <p className="font-medium text-ink">{heading}</p>
@@ -177,7 +177,7 @@ function Header({ venueName, runId }: { venueName: string; runId: string }) {
         <p className="text-sm font-medium text-ink/60">Shortlist</p>
         <PrecomputedLabel runId={runId} />
       </div>
-      <h1 className="mt-1 text-2xl font-semibold tracking-tight break-words">{venueName}</h1>
+      <h1 className="mt-1 display text-3xl sm:text-4xl break-words">{venueName}</h1>
       <p className="mt-2 text-sm text-ink/70">
         Acts ranked by Outdraw&apos;s score: a fixed weighting of Qloo signals and your
         venue&apos;s own data. The model explains; it never orders.
@@ -214,7 +214,7 @@ export function ShortlistView({
       <Header venueName={venueName} runId={runId} />
       <QualityBanner result={result} />
       {result.shortlist.length === 0 ? (
-        <div role="alert" className="rounded-lg border border-ink/15 bg-white/60 p-6">
+        <div role="alert" className="rounded-card border border-line bg-surface p-6">
           <p className="font-semibold">No acts made the shortlist</p>
           <p className="mt-2 text-sm text-ink/70">
             Qloo found no candidates that fit this venue&apos;s constraints.
@@ -227,7 +227,8 @@ export function ShortlistView({
               <SourceBadge source="outdraw" /> Total score
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded-full bg-ink" aria-hidden="true" /> Qloo data
+              <span className="h-3 w-3 rounded-full bg-stage ring-1 ring-line" aria-hidden="true" />{" "}
+              Qloo data
             </span>
             <span className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-full border border-ink/30" aria-hidden="true" />{" "}
@@ -267,7 +268,7 @@ export function ShortlistView({
 }
 
 function Line({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded bg-ink/10 ${className}`} />;
+  return <div className={`animate-pulse rounded bg-surface-2 ${className}`} />;
 }
 
 /** Same footprint as ShortlistView, shown while the agent runs or the page loads. */
@@ -284,7 +285,7 @@ export function ShortlistSkeleton({ label = "Loading shortlist" }: { label?: str
           <li
             key={i}
             data-testid="skeleton-act"
-            className="space-y-3 rounded-lg border border-ink/15 bg-white/60 p-4"
+            className="space-y-3 rounded-card border border-line bg-surface p-4"
           >
             <div className="flex justify-between gap-3">
               <Line className="h-5 w-1/2" />

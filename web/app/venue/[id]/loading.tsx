@@ -3,7 +3,7 @@
 const CARDS = ["genres", "related-artists", "places", "films", "brands", "demographics"];
 
 function Line({ className }: { className: string }) {
-  return <div className={`animate-pulse rounded bg-ink/10 ${className}`} />;
+  return <div className={`animate-pulse rounded bg-surface-2 ${className}`} />;
 }
 
 export default function Loading() {
@@ -25,7 +25,7 @@ export default function Loading() {
             <div
               key={card}
               data-testid="skeleton-card"
-              className="space-y-3 rounded-lg border border-ink/15 bg-white/60 p-4"
+              className="space-y-3 rounded-card border border-line bg-surface p-4"
             >
               <Line className="h-5 w-1/3" />
               <Line className="h-3 w-2/3" />

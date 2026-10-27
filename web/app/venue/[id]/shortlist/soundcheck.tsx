@@ -33,9 +33,9 @@ const STRIP_ITEMS = 3;
 function StatusChip({ status }: { status: QlooStatus }) {
   const style =
     status === "ok"
-      ? "bg-ink text-paper"
+      ? "bg-stage text-house ring-1 ring-line"
       : status === "partial" || status === "degraded"
-        ? "bg-ink text-brand-amber"
+        ? "bg-stage text-brand-amber"
         : "border border-dashed border-ink/40 text-ink/70";
   return (
     <span
@@ -85,7 +85,7 @@ function Branch({
   children: React.ReactNode;
 }) {
   return (
-    <details open={open} className="group border-t border-ink/15 py-2">
+    <details open={open} className="group border-t border-line py-2">
       <summary className="flex cursor-pointer list-none items-center gap-2 py-1 text-sm font-semibold text-ink">
         <span aria-hidden="true" className="inline-block w-3 transition-transform group-open:rotate-90">
           ›
@@ -235,11 +235,11 @@ export function Soundcheck({
         </Branch>
       </div>
 
-      <section aria-labelledby="streaming-misses" className="rounded-lg bg-ink p-3 text-paper">
+      <section aria-labelledby="streaming-misses" className="rounded-card bg-stage p-4 text-house ring-1 ring-line">
         <h3 id="streaming-misses" className="text-sm font-semibold">
           What streaming data misses
         </h3>
-        <p className="mt-0.5 text-xs text-paper/70">
+        <p className="mt-0.5 text-xs text-house/70">
           The crowd&apos;s taste outside music, and where it is, behind this shortlist.
         </p>
         <ul aria-label="Cross-domain contributors" className="mt-2 flex flex-wrap gap-2 text-xs">
@@ -270,7 +270,7 @@ export function Soundcheck({
           )}
         </ul>
         {strip.length === 0 && (
-          <p className="mt-2 text-xs text-paper/70">
+          <p className="mt-2 text-xs text-house/70">
             Qloo returned no places, films or brands for this crowd.
           </p>
         )}
@@ -299,7 +299,7 @@ function Breakdown({
       data-testid="trail-item"
       data-sub-score={name}
       {...refProps(name)}
-      className="border-b border-ink/10 py-1.5 data-[highlight]:bg-brand-amber/25"
+      className="border-b border-line py-1.5 data-[highlight]:bg-brand-amber/25"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
@@ -343,12 +343,12 @@ function Contributor({
     <li
       data-testid="trail-item"
       {...refProps(evRef)}
-      className="flex items-center gap-1.5 rounded-full border border-paper/30 py-0.5 pr-1 pl-2 data-[highlight]:border-brand-amber"
+      className="flex items-center gap-1.5 rounded-full border border-house/30 py-0.5 pr-1 pl-2 data-[highlight]:border-brand-amber"
     >
-      <span className="text-paper/60">{kind}</span>
+      <span className="text-house/60">{kind}</span>
       <span>{children}</span>
       {/* Paper ground for the badge so its own ink/amber pair stays legible on ink. */}
-      <span className="rounded-sm bg-paper">
+      <span className="rounded-sm bg-house">
         <Provenance source={source} />
       </span>
     </li>
@@ -532,7 +532,7 @@ function Panel({
         data-testid="soundcheck-panel"
         className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-ink/20 bg-paper sm:inset-y-0 sm:right-0 sm:left-auto sm:max-h-none sm:w-[28rem] sm:rounded-none sm:border-t-0 sm:border-l"
       >
-        <header className="flex items-start justify-between gap-3 border-b border-ink/15 p-4">
+        <header className="flex items-start justify-between gap-3 border-b border-line p-4">
           <div className="min-w-0">
             <p className="text-xs font-medium tracking-wide text-ink/60 uppercase">Soundcheck</p>
             <h2 id={titleId} className="mt-0.5 font-semibold break-words text-ink">
@@ -568,7 +568,7 @@ function Panel({
           </button>
         </header>
         {load.name === "done" && (
-          <div role="tablist" aria-label="Soundcheck views" className="flex gap-1 border-b border-ink/15 px-4">
+          <div role="tablist" aria-label="Soundcheck views" className="flex gap-1 border-b border-line px-4">
             {TABS.map(([key, label]) => (
               <button
                 key={key}

@@ -37,7 +37,7 @@ const bucketLabel = (key: string) => key.replaceAll("_", " ");
 
 export function SourceBadge({ source }: { source: "qloo" | "outdraw" }) {
   return source === "qloo" ? (
-    <span className="inline-block shrink-0 rounded-sm bg-ink px-1.5 whitespace-nowrap py-0.5 text-[11px] font-semibold tracking-wide text-brand-amber uppercase">
+    <span className="inline-block shrink-0 rounded-sm bg-stage px-1.5 whitespace-nowrap py-0.5 text-[11px] font-semibold tracking-wide text-brand-amber uppercase">
       Qloo data
     </span>
   ) : (
@@ -58,7 +58,7 @@ function Card({
 }) {
   const id = `card-${title.toLowerCase().replaceAll(" ", "-")}`;
   return (
-    <section aria-labelledby={id} className="rounded-lg border border-ink/15 bg-white/60 p-4">
+    <section aria-labelledby={id} className="rounded-card border border-line bg-surface p-4">
       <header className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 id={id} className="font-semibold text-ink">
@@ -77,8 +77,8 @@ function Card({
 function Bar({ value }: { value: number }) {
   const pct = Math.round(Math.min(Math.max(value, 0), 1) * 100);
   return (
-    <div aria-hidden="true" data-testid="bar" className="h-1.5 w-full rounded-full bg-ink/10">
-      <div className="h-full rounded-full bg-ink" style={{ width: `${pct}%` }} />
+    <div aria-hidden="true" data-testid="bar" className="h-1.5 w-full rounded-full bg-stage ring-1 ring-line">
+      <div className="h-full rounded-full bg-brand-amber" style={{ width: `${pct}%` }} />
     </div>
   );
 }
@@ -160,7 +160,7 @@ function QualityBanner({ profile }: { profile: Profile }) {
   return (
     <aside
       aria-label="Data quality"
-      className="mb-6 rounded-lg border border-ink/30 bg-white p-4 text-sm"
+      className="mb-6 rounded-card border border-ink/30 bg-surface p-4 text-sm"
     >
       <div className="flex items-start justify-between gap-3">
         <p className="font-medium text-ink">{heading}</p>
@@ -182,7 +182,7 @@ export function ProfileView({ venueId, venueName, profile, action = true }: Prop
     <>
       <header className="mb-6">
         <p className="text-sm font-medium text-ink/60">Crowd profile</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight break-words">{venueName}</h1>
+        <h1 className="mt-1 display text-3xl sm:text-4xl break-words">{venueName}</h1>
         <p className="mt-2 text-sm text-ink/70">
           What the crowd that turns out for your past acts also likes, from Qloo&apos;s taste
           graph.
@@ -196,7 +196,7 @@ export function ProfileView({ venueId, venueName, profile, action = true }: Prop
         {profile.demographics && <DemographicsCard demographics={profile.demographics} />}
       </div>
       {action && (
-        <div className="sticky bottom-0 mt-8 -mx-4 border-t border-ink/10 bg-paper px-4 py-4">
+        <div className="sticky bottom-0 mt-8 -mx-4 border-t border-line bg-paper px-4 py-4">
           <Link
             href={`/venue/${encodeURIComponent(venueId)}/shortlist`}
             className="block w-full rounded-md bg-ink px-4 py-3 text-center font-semibold text-paper sm:inline-block sm:w-auto"

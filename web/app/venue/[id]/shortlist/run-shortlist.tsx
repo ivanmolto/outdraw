@@ -73,7 +73,7 @@ export function RunShortlist({ venueId, venueName, constraints, crossDomain }: P
   if (state.name === "running") {
     return (
       <>
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-ink/15 bg-white p-4 text-sm">
+        <div className="mb-6 flex items-center gap-3 rounded-card border border-line bg-surface p-4 text-sm">
           <Spinner className="text-ink" />
           <div className="min-w-0">
             <p className="text-ink" aria-live="polite">

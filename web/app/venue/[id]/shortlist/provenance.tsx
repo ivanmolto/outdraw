@@ -8,7 +8,7 @@ export function Provenance({ source }: { source: SourceLabel | undefined }) {
         data-testid="source"
         data-source="qloo"
         title="Qloo data"
-        className="inline-block shrink-0 rounded-sm bg-ink px-1 py-px text-[10px] font-semibold tracking-wide text-brand-amber uppercase"
+        className="inline-block shrink-0 rounded-sm bg-stage px-1 py-px text-[10px] font-semibold tracking-wide text-brand-amber uppercase"
       >
         Qloo
       </span>

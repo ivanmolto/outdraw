@@ -36,7 +36,7 @@ const typeLabel = (type: string) => type.split(":").at(-1) ?? type;
 
 export function QlooBadge() {
   return (
-    <span className="inline-block rounded-sm bg-ink px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-brand-amber uppercase">
+    <span className="inline-block rounded-sm bg-stage px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-brand-amber uppercase">
       Qloo match
     </span>
   );
@@ -68,7 +68,7 @@ function MatchRow({
 
   if (item.confirmed && !editing) {
     return (
-      <li className="rounded-lg border border-ink/15 bg-white/60 p-4" data-testid="match-row">
+      <li className="rounded-card border border-line bg-surface p-4" data-testid="match-row">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-xs text-ink/60">{kind}</p>
@@ -106,7 +106,7 @@ function MatchRow({
 
   return (
     <li
-      className="rounded-lg border-2 border-ink/40 bg-white p-4"
+      className="rounded-card border-2 border-ink/40 bg-surface p-4"
       data-testid="match-row"
       data-pending={!item.confirmed || undefined}
     >
@@ -127,7 +127,7 @@ function MatchRow({
             return (
               <label
                 key={value}
-                className="flex cursor-pointer items-start gap-3 rounded-md border border-ink/15 p-3 has-checked:border-ink has-checked:bg-paper"
+                className="flex cursor-pointer items-start gap-3 rounded-md border border-line p-3 has-checked:border-ink has-checked:bg-paper"
               >
                 <input
                   type="radio"
@@ -157,7 +157,7 @@ function MatchRow({
         </div>
       </fieldset>
       {error && (
-        <p role="alert" className="mt-2 text-sm text-red-700">
+        <p role="alert" className="mt-2 text-sm text-danger">
           {error}
         </p>
       )}
@@ -246,7 +246,7 @@ export function ConfirmMatches({ venueId, venueName, items: initial, onBack, onD
     <section aria-labelledby="confirm-heading" className="space-y-6">
       <header className="space-y-2">
         <QlooBadge />
-        <h2 id="confirm-heading" className="text-xl font-semibold text-ink">
+        <h2 id="confirm-heading" className="display text-2xl text-ink">
           Confirm matches
         </h2>
         <p className="text-sm text-ink/70">
@@ -286,7 +286,7 @@ export function ConfirmMatches({ venueId, venueName, items: initial, onBack, onD
       )}
 
       {error && (
-        <p role="alert" className="rounded-md border border-red-700/30 bg-red-50 p-3 text-sm text-red-800">
+        <p role="alert" className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm text-danger">
           {error}
         </p>
       )}

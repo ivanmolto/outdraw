@@ -66,10 +66,10 @@ export default async function DemoVenuePage({ params }: PageProps<"/v/[slug]">) 
       <Shell wide>
         <aside
           aria-label="About this demo"
-          className="mb-8 rounded-lg border border-dashed border-ink/40 p-4 text-sm"
+          className="mb-8 rounded-card border border-dashed border-ink/40 p-4 text-sm"
         >
           <p className="flex flex-wrap items-center gap-2 font-medium text-ink">
-            <span className="rounded-sm bg-ink px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-brand-amber uppercase">
+            <span className="rounded-sm bg-stage px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-brand-amber uppercase">
               Precomputed demo
             </span>
             {seed.title}
@@ -90,7 +90,7 @@ export default async function DemoVenuePage({ params }: PageProps<"/v/[slug]">) 
             action={false}
           />
         </section>
-        <section aria-label="Shortlist" className="mt-12 border-t border-ink/15 pt-8">
+        <section aria-label="Shortlist" className="mt-12 border-t border-line pt-8">
           <RefinableRun
             venueId={venueId}
             venueName={seed.venueName}

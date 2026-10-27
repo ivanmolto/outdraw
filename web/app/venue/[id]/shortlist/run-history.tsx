@@ -35,8 +35,8 @@ export function RunHistory({
                 type="button"
                 aria-current={current ? "true" : undefined}
                 onClick={() => onSelect(i)}
-                className={`w-full rounded-lg border p-3 text-left text-sm ${
-                  current ? "border-ink bg-white" : "border-ink/15 bg-white/60 hover:border-ink/40"
+                className={`w-full rounded-card border p-3 text-left text-sm ${
+                  current ? "border-ink bg-surface" : "border-line bg-surface hover:border-ink/40"
                 }`}
               >
                 <span className="flex items-baseline justify-between gap-2">

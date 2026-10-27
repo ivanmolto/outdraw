@@ -10,7 +10,7 @@ export function ChangeBadge({ change }: { change?: ActChange }) {
       <span
         data-testid="change"
         data-change="entered"
-        className="shrink-0 rounded-full border border-emerald-700 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800"
+        className="shrink-0 rounded-full border border-good bg-good-soft px-2 py-0.5 text-xs font-medium text-good"
       >
         New
       </span>
@@ -46,7 +46,7 @@ export function LeftList({ diff }: { diff?: ShortlistDiff }) {
           <li
             key={entry.entity_id}
             data-change="left"
-            className="flex items-baseline gap-3 rounded-lg border border-ink/10 bg-ink/5 px-4 py-2 text-sm text-ink/45"
+            className="flex items-baseline gap-3 rounded-card border border-line bg-surface-2 px-4 py-2 text-sm text-ink/45"
           >
             <span className="shrink-0 font-mono" aria-hidden="true">
               {rank}

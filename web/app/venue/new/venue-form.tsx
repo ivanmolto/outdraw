@@ -37,9 +37,9 @@ interface Props {
 const fieldId = (path: string) => `f-${path.replaceAll(".", "-")}`;
 
 const INPUT =
-  "block w-full min-w-0 rounded-md border border-ink/20 bg-white px-3 py-2 text-base text-ink " +
+  "block w-full min-w-0 rounded-md border border-ink/20 bg-surface px-3 py-2 text-base text-ink " +
   "placeholder:text-ink/40 focus:border-ink focus:outline-2 focus:outline-offset-1 focus:outline-ink " +
-  "aria-[invalid=true]:border-red-700";
+  "aria-[invalid=true]:border-danger";
 
 function Field({
   path,
@@ -89,7 +89,7 @@ function Field({
         </p>
       )}
       {error && (
-        <p id={`${id}-error`} className="mt-1 text-sm text-red-700">
+        <p id={`${id}-error`} className="mt-1 text-sm text-danger">
           {error}
         </p>
       )}
@@ -151,11 +151,11 @@ export function VenueForm({ draft, onChange, onSubmit, busy, serverError }: Prop
   return (
     <form onSubmit={submit} noValidate className="space-y-8">
       {errorCount > 0 && (
-        <div role="alert" className="rounded-md border border-red-700/30 bg-red-50 p-3 text-sm">
-          <p className="font-medium text-red-800">
+        <div role="alert" className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm">
+          <p className="font-medium text-danger">
             {errorCount === 1 ? "1 field needs attention" : `${errorCount} fields need attention`}
           </p>
-          <ul className="mt-1 list-disc pl-5 text-red-800">
+          <ul className="mt-1 list-disc pl-5 text-danger">
             {Object.entries(errors).map(([path, msg]) => (
               <li key={path}>
                 <a href={`#${fieldId(path)}`} className="underline">
@@ -174,14 +174,14 @@ export function VenueForm({ draft, onChange, onSubmit, busy, serverError }: Prop
         </LivePaused>
       ) : (
         serverError && (
-          <p role="alert" className="rounded-md border border-red-700/30 bg-red-50 p-3 text-sm text-red-800">
+          <p role="alert" className="rounded-md border border-danger/30 bg-danger-soft p-3 text-sm text-danger">
             {serverError.message}
           </p>
         )
       )}
 
       <section aria-labelledby="venue-heading" className="space-y-4">
-        <h2 id="venue-heading" className="text-lg font-semibold text-ink">
+        <h2 id="venue-heading" className="display text-xl text-ink">
           Venue
         </h2>
         <Field
@@ -225,7 +225,7 @@ export function VenueForm({ draft, onChange, onSubmit, busy, serverError }: Prop
 
       <section aria-labelledby="shows-heading" className="space-y-4">
         <div className="flex items-baseline justify-between gap-4">
-          <h2 id="shows-heading" className="text-lg font-semibold text-ink">
+          <h2 id="shows-heading" className="display text-xl text-ink">
             Past shows
           </h2>
           <span className="text-sm text-ink/60">
@@ -234,13 +234,13 @@ export function VenueForm({ draft, onChange, onSubmit, busy, serverError }: Prop
         </div>
 
         {shown.past_shows && (
-          <p className="text-sm text-red-700" role="alert">
+          <p className="text-sm text-danger" role="alert">
             {shown.past_shows}
           </p>
         )}
 
         {draft.past_shows.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-ink/30 p-6 text-center">
+          <div className="rounded-card border border-dashed border-ink/30 p-6 text-center">
             <p className="font-medium text-ink">No past shows yet</p>
             <p className="mt-1 text-sm text-ink/70">
               Add up to {MAX_SHOWS} acts you&apos;ve booked recently. Outdraw reads your crowd
@@ -260,7 +260,7 @@ export function VenueForm({ draft, onChange, onSubmit, busy, serverError }: Prop
               const p = `past_shows.${i}`;
               return (
                 <li key={show.key}>
-                  <fieldset className="relative rounded-lg border border-ink/15 bg-white/60 p-4">
+                  <fieldset className="relative rounded-card border border-line bg-surface p-4">
                     <legend className="sr-only">Show {i + 1}</legend>
                     <p aria-hidden className="mb-3 text-sm font-semibold text-ink">
                       Show {i + 1}
