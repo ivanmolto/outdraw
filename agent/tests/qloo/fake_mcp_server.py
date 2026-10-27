@@ -16,7 +16,9 @@ mirrors what the real harness does on 0.1.26:
   hit (same number twice) is distinguishable from a second call.
 
 `FAKE_QLOO_MODE=auth_error` keeps readiness green but answers every workflow with the
-`QLOO_AUTH` error envelope (the key vanished after startup).
+`QLOO_AUTH` error envelope (the key vanished after startup). With `FAKE_QLOO_LOG=<file>`
+every workflow call appends `tool <workflow>` to that file (the cache audit's ledger, see
+`fake_qloo.py`).
 """
 
 from __future__ import annotations
@@ -74,8 +76,16 @@ def _fixture(workflow: str, name: str) -> dict[str, Any]:
     return data
 
 
+def _log_call(workflow: str) -> None:
+    path = os.environ.get("FAKE_QLOO_LOG")
+    if path:
+        with open(path, "a", encoding="utf-8") as fh:
+            fh.write(f"tool {workflow}\n")
+
+
 def _answer(workflow: str, envelope: dict[str, Any]) -> dict[str, Any]:
     """Return an envelope (text + structured content), or raise it so it arrives `isError`."""
+    _log_call(workflow)
     if _mode() == "auth_error" or not _has_key():
         envelope = {**AUTH_ERROR, "operation": workflow}
     envelope.setdefault("operation", workflow)

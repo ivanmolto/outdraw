@@ -111,6 +111,7 @@ cd agent && uv run uvicorn draw.main:app --reload
 cd agent && uv run pytest && uv run ruff check . && uv run mypy .
 cd agent && make migrate                            # alembic upgrade head, DATABASE_URL from ../.env.local
 cd agent && uv run python scripts/precompute.py     # seed venues, QLOO_RECORD=1
+cd agent && uv run python scripts/cache_audit.py    # T39: repeat flow spends nothing (Docker)
 
 # qloo harness (inside /agent, after npm ci)
 qloo setup --status && qloo doctor
