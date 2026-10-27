@@ -82,7 +82,8 @@ test("the header underlines the current page, across client-side navigation", as
   const nav = page.getByRole("navigation", { name: "Primary" });
   const demos = nav.getByRole("link", { name: "Demo venues" });
   const setup = nav.getByRole("link", { name: "Set up a venue" });
-  await expect(demos).toHaveAttribute("aria-current", "page");
+  // The landing is home: nothing is current there.
+  await expect(demos).not.toHaveAttribute("aria-current", "page");
   await expect(setup).not.toHaveAttribute("aria-current", "page");
 
   await setup.click();
@@ -90,11 +91,16 @@ test("the header underlines the current page, across client-side navigation", as
   await expect(setup).toHaveAttribute("aria-current", "page");
   await expect(demos).not.toHaveAttribute("aria-current", "page");
 
-  // Back without a reload: the marker follows the page, and no link disappears.
+  // Back without a reload: the marker clears, and no link disappears.
   await demos.click();
   await expect(page).toHaveURL(/\/#demos$/);
-  await expect(demos).toHaveAttribute("aria-current", "page");
+  await expect(demos).not.toHaveAttribute("aria-current", "page");
   await expect(setup).toBeVisible();
+  await expect(setup).not.toHaveAttribute("aria-current", "page");
+
+  // A demo venue's own page is where the demos link is current.
+  await page.goto("/v/nola-jazz");
+  await expect(demos).toHaveAttribute("aria-current", "page");
   await expect(setup).not.toHaveAttribute("aria-current", "page");
 });
 
