@@ -70,18 +70,30 @@ function Chip({
   );
 }
 
+/** Totals are shown to two decimals, except where a neighbour rounds to the same two: then
+ * both show three, so the order never looks like a tie the score didn't break. */
+export function precisionOf(totals: readonly number[]): number[] {
+  const rounded = totals.map((t) => t.toFixed(2));
+  return totals.map((_, i) =>
+    rounded[i] === rounded[i - 1] || rounded[i] === rounded[i + 1] ? 3 : 2,
+  );
+}
+
 function Act({
   entry,
   rank,
   runId,
   crossDomain,
   change,
+  precision = 2,
 }: {
   entry: ShortlistEntry;
   rank: number;
   runId: string;
   crossDomain?: CrossDomain;
   change?: ActChange;
+  /** Decimals of the total (see precisionOf). */
+  precision?: number;
 }) {
   const reason = entry.top_reason ?? entry.reason;
   const neutral = new Set(entry.neutral ?? []);
@@ -99,9 +111,17 @@ function Act({
         </span>
         <h2 className="display min-w-0 flex-1 text-xl break-words text-ink">{entry.name}</h2>
         <ChangeBadge change={change} />
-        <span className="shrink-0 font-mono text-sm text-ink" data-testid="total">
+        <span
+          className="shrink-0 font-mono text-sm text-ink"
+          data-testid="total"
+          title={
+            precision > 2
+              ? "Three decimals: a neighbouring act rounds to the same score"
+              : undefined
+          }
+        >
           <span className="sr-only">Score </span>
-          {entry.total.toFixed(2)}
+          {entry.total.toFixed(precision)}
         </span>
       </div>
       <div
@@ -209,6 +229,7 @@ export function ShortlistView({
   /** Shown under the list: the refinement box. */
   children?: ReactNode;
 }) {
+  const precision = precisionOf(result.shortlist.map((e) => e.total));
   return (
     <>
       <Header venueName={venueName} runId={runId} />
@@ -252,6 +273,7 @@ export function ShortlistView({
                   runId={runId}
                   crossDomain={crossDomain}
                   change={diff?.changes.get(entry.entity_id)}
+                  precision={precision[i]}
                 />
               ))}
             </ol>

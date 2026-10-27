@@ -53,6 +53,28 @@ describe("shortlist view", () => {
     expect((bar.firstElementChild as HTMLElement).style.width).toBe("81%");
   });
 
+  it("shows three decimals where two neighbours round to the same score", () => {
+    const result = shortlist();
+    const [first, second, third] = result.shortlist;
+    // 0.863 and 0.858 both read 0.86 at two decimals; the third act is clear of them.
+    setup({
+      ...result,
+      shortlist: [
+        { ...first, total: 0.863 },
+        { ...second, total: 0.858 },
+        { ...third, total: 0.41 },
+      ],
+    });
+
+    expect(screen.getAllByTestId("total").map((t) => t.textContent)).toEqual([
+      "Score 0.863",
+      "Score 0.858",
+      "Score 0.41",
+    ]);
+    expect(screen.getAllByTestId("total")[0].getAttribute("title")).toMatch(/same score/);
+    expect(screen.getAllByTestId("total")[2].getAttribute("title")).toBeNull();
+  });
+
   it("shows each act's top reason", () => {
     setup();
 
