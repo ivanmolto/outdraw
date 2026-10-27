@@ -1,25 +1,124 @@
 @import "tailwindcss";
 
-/* One palette, no dark mode: the brand is off-white paper with near-black ink everywhere
-   (public/brand/README.txt); amber appears only on ink grounds. */
+/* Outdraw's two stage palettes, from the three brand colours (public/brand/README.txt).
+   "House lights up" (light): off-white paper, near-black ink. "House lights down" (dark):
+   near-black paper, off-white ink. Amber is the spotlight: it only ever sits on a dark
+   ground, so anything amber is drawn on `stage` (always near-black), never on `paper`.
+   Semantic tokens below are the only colours components use; every utility (text-ink/70,
+   border-line, bg-surface…) follows the theme on its own. */
 :root {
-  --background: #f6f4ee;
-  --foreground: #0e0f14;
+  color-scheme: light;
+  --paper: #f6f4ee;
+  --ink: #0e0f14;
+  --surface: #ffffff;
+  --surface-2: #ebe8e0;
+  --line: #d6d3ca;
+  --good: #1f6b3a;
+  --good-soft: #e3f1e7;
+  --danger: #a4262c;
+  --danger-soft: #f8e3e4;
+  --show-light: inline-flex;
+  --show-dark: none;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #0e0f14;
+  --ink: #f6f4ee;
+  --surface: #171920;
+  --surface-2: #1f222b;
+  --line: #30333d;
+  --good: #7fd49a;
+  --good-soft: #15291c;
+  --danger: #f29a9e;
+  --danger-soft: #3a1a1c;
+  --show-light: none;
+  --show-dark: inline-flex;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0e0f14;
+    --ink: #f6f4ee;
+    --surface: #171920;
+    --surface-2: #1f222b;
+    --line: #30333d;
+    --good: #7fd49a;
+    --good-soft: #15291c;
+    --danger: #f29a9e;
+    --danger-soft: #3a1a1c;
+    --show-light: none;
+    --show-dark: inline-flex;
+  }
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  /* Brand palette; amber only on ink grounds. */
-  --color-ink: #0e0f14;
-  --color-paper: #f6f4ee;
+  /* Themed. */
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  /* Fixed: the lit stage and what sits on it. */
+  --color-stage: #0e0f14;
+  --color-stage-2: #171920;
+  --color-house: #f6f4ee;
   --color-brand-amber: #f5b400;
+  /* Legacy aliases. */
+  --color-background: var(--paper);
+  --color-foreground: var(--ink);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+
+  --radius-card: 0.75rem;
+}
+
+html {
+  background: var(--paper);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Display type: the one display face, tight and heavy, for page titles and big numerals. */
+.display {
+  font-family: var(--font-display), var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.02;
+  font-optical-sizing: auto;
+}
+
+/* Brand assets come in a near-black and an off-white cut; show the one for the theme. */
+.theme-light-only {
+  display: var(--show-light);
+}
+.theme-dark-only {
+  display: var(--show-dark);
+}
+
+/* Visible focus everywhere, in the ink of the theme. */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
