@@ -44,8 +44,12 @@ test("chip click updates the list, and three refinements chain with diffs", asyn
   page,
   request,
 }, info) => {
-  // Its own rate-limit bucket per attempt: three refinements fill the 3-a-minute burst.
-  await page.setExtraHTTPHeaders({ "x-forwarded-for": `203.0.113.${info.retry + 1}` });
+  // Its own rate-limit bucket per attempt: three refinements fill the 3-a-minute burst. The
+  // 203.0.113.2xx range is this spec's alone (errors.spec.ts takes 203.0.113.1-40, and runs
+  // first, so sharing a bucket with it leaves this spec's refinements refused as busy).
+  await page.setExtraHTTPHeaders({
+    "x-forwarded-for": `203.0.113.${201 + info.retry * 10 + info.workerIndex}`,
+  });
   const runId = await seed(request);
   const earlier = (await agentRefines(request)).length;
   await page.goto(`/venue/ven_fixture/shortlist?run=${runId}`);
