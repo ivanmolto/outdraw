@@ -7,6 +7,11 @@ while any item is unconfirmed, so no taste workflow ever runs on an unconfirmed 
 The venue's own row is keyed `venue:<name>` so it cannot collide with a same-named act;
 clients treat each item's `query` as an opaque key and echo it back to `confirm`, never
 build one (`kind` says whether a row is the venue or an act).
+
+Repeating the flow changes nothing (T39): an update that keeps every field, a confirm that
+repeats the stored choice and a profile rebuilt from the same Qloo data leave the stored
+rows and their timestamps alone, so the semantic run cache (T36), which only reuses a run
+made after the venue and its profile last changed, still answers the next run.
 """
 
 from __future__ import annotations
@@ -25,7 +30,7 @@ from draw.api.deps import Deps, get_deps
 from draw.api.inputs import INVALID_INPUT, ConfirmBody, VenueUpsert
 from draw.api.live import live_call
 from draw.db.models import CrowdProfileRow, ResolutionRow, VenueRow
-from draw.profile.crowd import build_crowd_profile
+from draw.profile.crowd import build_crowd_profile, same_profile
 from draw.profile.resolve import confirm_entity, resolve_entity, resolve_venue, synthetic_venue
 from draw.schemas import CrowdProfile, EntityCandidate, ResolvedEntity, VenueInput
 
@@ -190,7 +195,8 @@ async def _drop_profile(session: AsyncSession, venue_id: str) -> None:
 
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def upsert_venue(body: VenueUpsert, deps: DepsDep) -> VenueId:
-    """Create a venue, or update one by `id`; an update drops stale resolutions and profile."""
+    """Create a venue, or update one by `id`; an update drops stale resolutions and profile.
+    An update that changes no field is a no-op (nothing dropped, `updated_at` kept)."""
     venue = body.venue()
     fields: dict[str, Any] = {
         **venue.model_dump(mode="json", exclude={"past_shows"}),
@@ -205,6 +211,8 @@ async def upsert_venue(body: VenueUpsert, deps: DepsDep) -> VenueId:
             row = await session.get(VenueRow, venue_id)
             if row is None:
                 raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown venue {venue_id!r}.")
+            if all(getattr(row, name) == value for name, value in fields.items()):
+                return VenueId(id=venue_id)
             for name, value in fields.items():
                 setattr(row, name, value)
             row.updated_at = func.now()
@@ -256,6 +264,8 @@ async def resolve(venue_id: str, deps: DepsDep) -> Resolutions:
 
 @router.post("/{venue_id}/confirm", responses={422: {"description": "Not one of the candidates."}})
 async def confirm(venue_id: str, body: ConfirmBody, deps: DepsDep) -> ResolutionItem:
+    """Record the choice and drop the profile built before it; the same choice again, already
+    confirmed, changes nothing and keeps the profile."""
     async with deps.sessions.begin() as session:
         venue_row, venue = await load_venue(session, venue_id)
         row = await session.get(ResolutionRow, (venue_id, body.query))
@@ -272,10 +282,11 @@ async def confirm(venue_id: str, body: ConfirmBody, deps: DepsDep) -> Resolution
                 chosen = confirm_entity(current, body.chosen_entity_id)
             except ValueError as exc:
                 raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+        kind: Literal["venue", "act"] = "venue" if body.query.startswith(VENUE_PREFIX) else "act"
+        if row.confirmed and row.chosen_entity_id == chosen.entity_id:
+            return _item(kind, body.query, chosen)
         await _upsert_resolution(session, venue_id, body.query, chosen)
-        kind: Literal["venue", "act"] = "act"
-        if body.query.startswith(VENUE_PREFIX):
-            kind = "venue"
+        if kind == "venue":
             venue_row.qloo_venue_id = chosen.entity_id
         await _drop_profile(session, venue_id)
     return _item(kind, body.query, chosen)
@@ -283,7 +294,9 @@ async def confirm(venue_id: str, body: ConfirmBody, deps: DepsDep) -> Resolution
 
 @router.post("/{venue_id}/profile")
 async def profile(venue_id: str, deps: DepsDep) -> CrowdProfile:
-    """Build and store the crowd profile; 409 while any item is unresolved or unconfirmed."""
+    """Build and store the crowd profile; 409 while any item is unresolved or unconfirmed.
+    A rebuild that reads the same Qloo data as the stored profile keeps the stored row (and
+    its `updated_at`), so earlier runs on it stay reusable."""
     async with deps.sessions() as session:
         _, venue = await load_venue(session, venue_id)
         venue_entity, acts, missing = await load_resolutions(session, venue_id, venue)
@@ -305,6 +318,11 @@ async def profile(venue_id: str, deps: DepsDep) -> CrowdProfile:
         )
     data = built.model_dump(mode="json")
     async with deps.sessions.begin() as session:
+        stored = await session.get(CrowdProfileRow, venue_id)
+        if stored is not None:
+            kept = CrowdProfile.model_validate(stored.profile)
+            if same_profile(kept, built):
+                return kept
         stmt = insert(CrowdProfileRow).values(venue_id=venue_id, profile=data)
         await session.execute(
             stmt.on_conflict_do_update(

@@ -253,6 +253,7 @@ export interface paths {
         /**
          * Upsert Venue
          * @description Create a venue, or update one by `id`; an update drops stale resolutions and profile.
+         *     An update that changes no field is a no-op (nothing dropped, `updated_at` kept).
          */
         post: operations["upsert_venue_venues_post"];
         delete?: never;
@@ -287,7 +288,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Confirm */
+        /**
+         * Confirm
+         * @description Record the choice and drop the profile built before it; the same choice again, already
+         *     confirmed, changes nothing and keeps the profile.
+         */
         post: operations["confirm_venues__venue_id__confirm_post"];
         delete?: never;
         options?: never;
@@ -307,6 +312,8 @@ export interface paths {
         /**
          * Profile
          * @description Build and store the crowd profile; 409 while any item is unresolved or unconfirmed.
+         *     A rebuild that reads the same Qloo data as the stored profile keeps the stored row (and
+         *     its `updated_at`), so earlier runs on it stay reusable.
          */
         post: operations["profile_venues__venue_id__profile_post"];
         delete?: never;

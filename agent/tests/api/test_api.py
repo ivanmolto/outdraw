@@ -293,6 +293,26 @@ def test_venue_create_read_update(client: TestClient) -> None:
     assert {i["query"] for i in got["resolutions"]} == {VENUE_KEY, "Synthetic Entity 3"}
 
 
+def test_unchanged_update_and_repeated_confirm_keep_the_profile(client: TestClient) -> None:
+    """T39: saving the same fields again and confirming the same choice again change nothing."""
+    venue_id = profiled_venue(client)
+    before = client.get(f"/venues/{venue_id}").json()
+    assert before["profile"] is not None
+
+    res = client.post("/venues", json={**VENUE, "id": venue_id})
+    assert res.status_code == 201 and res.json() == {"id": venue_id}
+    assert client.get(f"/venues/{venue_id}").json() == before, "no field changed: nothing dropped"
+
+    confirm_all(client, venue_id)
+    assert client.get(f"/venues/{venue_id}").json() == before, "the same choices: profile kept"
+
+    other = client.post(
+        f"/venues/{venue_id}/confirm", json={"query": "Unknown Act", "chosen_entity_id": None}
+    )
+    assert other.status_code == 200 and not other.json()["entity_id"]
+    assert client.get(f"/venues/{venue_id}").json()["profile"] is None, "a new choice drops it"
+
+
 def test_venue_errors(client: TestClient) -> None:
     assert client.get("/venues/ven_missing").status_code == 404
     assert client.post("/venues", json={**VENUE, "id": "ven_missing"}).status_code == 404

@@ -2837,7 +2837,7 @@
     },
     "/venues": {
       "post": {
-        "description": "Create a venue, or update one by `id`; an update drops stale resolutions and profile.",
+        "description": "Create a venue, or update one by `id`; an update drops stale resolutions and profile.\nAn update that changes no field is a no-op (nothing dropped, `updated_at` kept).",
         "operationId": "upsert_venue_venues_post",
         "parameters": [
           {
@@ -2949,6 +2949,7 @@
     },
     "/venues/{venue_id}/confirm": {
       "post": {
+        "description": "Record the choice and drop the profile built before it; the same choice again, already\nconfirmed, changes nothing and keeps the profile.",
         "operationId": "confirm_venues__venue_id__confirm_post",
         "parameters": [
           {
@@ -3017,7 +3018,7 @@
     },
     "/venues/{venue_id}/profile": {
       "post": {
-        "description": "Build and store the crowd profile; 409 while any item is unresolved or unconfirmed.",
+        "description": "Build and store the crowd profile; 409 while any item is unresolved or unconfirmed.\nA rebuild that reads the same Qloo data as the stored profile keeps the stored row (and\nits `updated_at`), so earlier runs on it stay reusable.",
         "operationId": "profile_venues__venue_id__profile_post",
         "parameters": [
           {

@@ -56,6 +56,7 @@ __all__ = [
     "DEFAULT_MAX_CALLS",
     "FILL_CALLS",
     "build_crowd_profile",
+    "same_profile",
     "sell_through_weight",
     "venue_region",
     "weigh_signals",
@@ -377,6 +378,19 @@ async def build_crowd_profile(
     profile.evidence = evidence
     profile.data_quality = _data_quality(o.status for o in outcomes)
     return profile
+
+
+def same_profile(a: CrowdProfile, b: CrowdProfile) -> bool:
+    """Whether two builds read the same Qloo data: everything equal but the call ids.
+
+    A rebuild mints a new `call_id` per gateway call, cache hit or not, so the evidence refs
+    never compare equal; the items they point at (`item_ref`) and every other field do when
+    the envelopes behind them were the same. The profile route keeps the stored row then, so
+    the runs built on it stay reusable (the semantic run cache, T36).
+    """
+    return a.model_dump(exclude={"evidence"}) == b.model_dump(exclude={"evidence"}) and [
+        e.item_ref for e in a.evidence
+    ] == [e.item_ref for e in b.evidence]
 
 
 def _data_quality(statuses: Iterable[str]) -> DataQuality:

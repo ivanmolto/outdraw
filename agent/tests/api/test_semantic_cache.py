@@ -15,16 +15,20 @@ import math
 from typing import Any
 
 import pytest
+from conftest import RouterHarness
 from fastapi.testclient import TestClient
 from test_api import (  # noqa: F401  (fixtures)
     CONSTRAINTS,
     VENUE,
     Scripts,
+    _sql,
     client,
     confirm_all,
     db_url,
+    fixture,
     harness,
     profiled_venue,
+    route,
     scripts,
 )
 
@@ -217,12 +221,60 @@ def test_edited_past_shows_miss(client: TestClient, scripts: Scripts) -> None:
     assert run(client, venue_id, "Thursday jazz.")["result"]["cache_source"] is None
 
 
-def test_rebuilt_profile_misses(client: TestClient, scripts: Scripts) -> None:
+def test_rebuilt_profile_from_the_same_data_still_hits(
+    client: TestClient, scripts: Scripts, harness: RouterHarness
+) -> None:
+    """T39: a rebuild that reads the same envelopes (cache hits) keeps the stored profile."""
+    venue_id = profiled_venue(client)
+    scripts.pipeline()
+    first = run(client, venue_id, "Thursday jazz.")
+    spawned = harness.spawns
+    before = client.get(f"/venues/{venue_id}").json()["profile"]
+    assert client.post(f"/venues/{venue_id}/profile").status_code == 200
+    assert client.get(f"/venues/{venue_id}").json()["profile"] == before, "the stored row stays"
+    assert harness.spawns == spawned, "the rebuild was cache hits only"
+    second = run(client, venue_id, "Thursday jazz.")
+    assert second["result"]["cache_source"] == "semantic"
+    assert second["result"]["cached_from"] == first["run_id"]
+
+
+def test_rebuilt_profile_with_new_data_misses(
+    client: TestClient, scripts: Scripts, harness: RouterHarness, db_url: str
+) -> None:
+    """The envelopes expired and Qloo answers differently (a partial related-artists list):
+    the profile changes, so the run is new."""
     venue_id = profiled_venue(client)
     scripts.pipeline()
     run(client, venue_id, "Thursday jazz.")
+    _sql(db_url, "TRUNCATE qloo_cache")
+    harness.router = lambda workflow, payload: (
+        fixture("recommend", "derived_partial")
+        if workflow == "recommend" and payload["target_type"] == "artist"
+        else route(workflow, payload)
+    )
     assert client.post(f"/venues/{venue_id}/profile").status_code == 200
+    assert client.get(f"/venues/{venue_id}").json()["profile"]["data_quality"] == "partial"
     assert run(client, venue_id, "Thursday jazz.")["result"]["cache_source"] is None
+
+
+def test_repeating_the_venue_flow_spends_nothing(
+    client: TestClient, scripts: Scripts, harness: RouterHarness
+) -> None:
+    """T39, as the web replays it: the venue saved again by id, its matches confirmed again,
+    the profile rebuilt, then the run: no Qloo spawn, no model, the run from the cache."""
+    venue_id = profiled_venue(client)
+    scripts.pipeline()
+    first = run(client, venue_id, "Thursday jazz.")
+    spawned, models = harness.spawns, len(scripts.models)
+
+    assert client.post("/venues", json={**VENUE, "id": venue_id}).status_code == 201
+    assert client.post(f"/venues/{venue_id}/resolve").status_code == 200
+    confirm_all(client, venue_id)
+    assert client.post(f"/venues/{venue_id}/profile").status_code == 200
+    second = run(client, venue_id, "Thursday jazz.")
+    assert harness.spawns == spawned and len(scripts.models) == models
+    assert second["result"]["cache_source"] == "semantic"
+    assert second["result"]["cached_from"] == first["run_id"]
 
 
 def test_failing_embedder_runs_uncached(client: TestClient, scripts: Scripts) -> None:

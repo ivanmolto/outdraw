@@ -17,6 +17,7 @@ from conftest import FIXTURES_DIR, FakeHarness, FakeProc, load_script
 from draw.profile.crowd import (
     DEFAULT_MAX_CALLS,
     build_crowd_profile,
+    same_profile,
     sell_through_weight,
     venue_region,
     weigh_signals,
@@ -375,6 +376,21 @@ async def test_six_calls_notes_the_skipped_demographics_read(
     routed()
     profile = await build_crowd_profile(VENUE, ACTS, qloo=client(), max_calls=6)
     assert profile.notes == [BUDGET_NOTE]
+
+
+async def test_same_profile_ignores_call_ids_only(routed: Callable[..., RoutedHarness]) -> None:
+    """T39: two builds from the same envelopes differ only in call ids; anything else counts."""
+    routed()
+    first = await build_crowd_profile(VENUE, ACTS, qloo=client())
+    second = await build_crowd_profile(VENUE, ACTS, qloo=client())
+    assert first != second, "every call minted a new call_id"
+    assert {e.call_id for e in first.evidence}.isdisjoint(e.call_id for e in second.evidence)
+    assert same_profile(first, second)
+
+    fewer = second.model_copy(update={"genres": second.genres[:-1]})
+    assert not same_profile(first, fewer)
+    assert not same_profile(first, second.model_copy(update={"data_quality": "partial"}))
+    assert not same_profile(first, second.model_copy(update={"evidence": second.evidence[:-1]}))
 
 
 # --- integration ----------------------------------------------------------------------
