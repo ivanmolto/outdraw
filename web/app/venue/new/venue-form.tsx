@@ -4,6 +4,7 @@
 // survives a trip back from the confirm step; validation uses the T17 zod schema.
 import { useState, type FormEvent } from "react";
 
+import { DateField } from "@/src/components/date-field";
 import { LivePaused } from "@/src/components/live-paused";
 import { Elapsed, Spinner } from "@/src/components/progress";
 import type { VenueUpsert } from "@/src/lib/schemas";
@@ -71,18 +72,30 @@ function Field({
       <label htmlFor={id} className="mb-1 block text-sm font-medium text-ink">
         {label}
       </label>
-      <input
-        id={id}
-        name={path}
-        type={type}
-        inputMode={inputMode}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={described || undefined}
-        className={INPUT}
-      />
+      {type === "date" ? (
+        <DateField
+          id={id}
+          name={path}
+          value={value}
+          onChange={onChange}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={described || undefined}
+          className={INPUT}
+        />
+      ) : (
+        <input
+          id={id}
+          name={path}
+          type={type}
+          inputMode={inputMode}
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={described || undefined}
+          className={INPUT}
+        />
+      )}
       {hint && !error && (
         <p id={`${id}-hint`} className="mt-1 text-xs text-ink/60">
           {hint}

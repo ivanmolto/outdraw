@@ -104,6 +104,35 @@ test("the header underlines the current page, across client-side navigation", as
   await expect(setup).not.toHaveAttribute("aria-current", "page");
 });
 
+test("the venue form's date grid opens, picks a day and passes the axe check", async ({ page }) => {
+  // Desktop Chrome has a fine pointer, so the form draws its own grid (a phone keeps the
+  // native picker; the mobile project's venue flow covers that path).
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/venue/new");
+  await page.getByRole("button", { name: "Add a past show" }).click();
+  const date = page.getByLabel("Date", { exact: true });
+  await expect(date).toHaveAttribute("type", "text");
+
+  await page.getByRole("button", { name: "Choose a date" }).click();
+  const grid = page.getByRole("dialog", { name: "Choose a date" });
+  await expect(grid.getByRole("grid")).toBeVisible();
+  const open = await new AxeBuilder({ page })
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(open.violations.map((v) => ({ id: v.id, nodes: v.nodes.map((n) => n.target) }))).toEqual([]);
+
+  // Next month, then its first day: the field reads the picked ISO date.
+  await grid.getByRole("button", { name: "Next month" }).click();
+  await grid.getByRole("button", { name: /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),? 1 / }).first().click();
+  await expect(grid).toHaveCount(0);
+  await expect(date).toHaveValue(/^\d{4}-\d{2}-01$/);
+
+  // A typed date in another form normalises on blur.
+  await date.fill("27/10/2026");
+  await date.blur();
+  await expect(date).toHaveValue("2026-10-27");
+});
+
 test("the house-lights switch flips the palette and remembers it", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
