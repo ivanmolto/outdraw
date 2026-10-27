@@ -1,0 +1,5 @@
+# Repo Markdown is hand-formatted at about 100 columns; tables and code blocks run long.
+MD013:
+  line_length: 100
+  code_blocks: false
+  tables: false
