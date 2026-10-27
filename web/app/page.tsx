@@ -448,7 +448,7 @@ async function CrowdSignals() {
           Precomputed demo
         </span>
       </div>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         {SIGNAL_LISTS.map(([key, label], i) => {
           const [top, ...rest] = page.profile[key].slice(0, SIGNAL_ITEMS);
           return (
@@ -498,7 +498,7 @@ async function CrowdSignals() {
         {act && (
           <section
             aria-label="Top act"
-            className="rounded-card border-2 border-brand-amber bg-stage-2 p-4 sm:col-span-2 lg:col-span-1"
+            className="rounded-card border-2 border-brand-amber bg-stage-2 p-4 sm:col-span-2 lg:p-6"
           >
             <div className="flex items-baseline justify-between gap-2">
               <h4 className="text-xs font-semibold tracking-wide text-brand-amber uppercase">
@@ -508,9 +508,9 @@ async function CrowdSignals() {
                 05
               </span>
             </div>
-            <p className="display mt-4 text-xl break-words">{act.name}</p>
+            <p className="display mt-4 text-xl break-words lg:text-3xl">{act.name}</p>
             {act.sub_scores?.crowd_affinity != null && (
-              <p className="display mt-1 text-3xl text-brand-amber">
+              <p className="display mt-1 text-3xl text-brand-amber lg:text-5xl">
                 <span className="sr-only">Crowd affinity </span>
                 {act.sub_scores.crowd_affinity.toFixed(2)}
               </p>
