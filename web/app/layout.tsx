@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 
+import { NavLinks, PrimaryNav } from "@/src/components/primary-nav";
 import { THEME_SCRIPT, ThemeToggle } from "@/src/components/theme-toggle";
 import "./globals.css";
 
@@ -85,20 +87,10 @@ function Header() {
           <Lockup cut="dark" />
         </Link>
         <nav aria-label="Primary" className="flex items-center gap-4 sm:gap-6">
-          <Link
-            href="/#demos"
-            className="hidden text-sm font-medium text-ink/70 hover:text-ink sm:inline"
-          >
-            Demo venues
-          </Link>
-          {/* Hidden on the set-up page itself: globals.css, keyed on main[data-route]. */}
-          <Link
-            href="/venue/new"
-            data-setup-link
-            className="text-sm font-medium whitespace-nowrap text-ink hover:underline"
-          >
-            Set up a venue
-          </Link>
+          {/* The current page underlined; the fallback is the same links, uncounted. */}
+          <Suspense fallback={<NavLinks pathname={null} />}>
+            <PrimaryNav />
+          </Suspense>
           <ThemeToggle />
         </nav>
       </div>

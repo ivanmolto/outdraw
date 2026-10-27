@@ -19,6 +19,8 @@
   --danger-soft: #f8e3e4;
   --show-light: inline-flex;
   --show-dark: none;
+  /* The one accent allowed on this ground: ink on paper, amber on the dark stage. */
+  --spot: #0e0f14;
 }
 
 :root[data-theme="dark"] {
@@ -34,6 +36,7 @@
   --danger-soft: #3a1a1c;
   --show-light: none;
   --show-dark: inline-flex;
+  --spot: #f5b400;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -50,6 +53,7 @@
     --danger-soft: #3a1a1c;
     --show-light: none;
     --show-dark: inline-flex;
+    --spot: #f5b400;
   }
 }
 
@@ -60,6 +64,7 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-line: var(--line);
+  --color-spot: var(--spot);
   --color-good: var(--good);
   --color-good-soft: var(--good-soft);
   --color-danger: var(--danger);
@@ -106,12 +111,6 @@ body {
 }
 .theme-dark-only {
   display: var(--show-dark);
-}
-
-/* The header's "Set up a venue" link stays out of the set-up page itself. Pure CSS: a
-   pathname hook in the root layout would make every page's static shell dynamic. */
-body:has(main[data-route="setup"]) [data-setup-link] {
-  display: none;
 }
 
 /* Visible focus everywhere, in the ink of the theme. */

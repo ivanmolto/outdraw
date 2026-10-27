@@ -76,6 +76,28 @@ for (const theme of THEMES) {
   });
 }
 
+test("the header underlines the current page, across client-side navigation", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/");
+  const nav = page.getByRole("navigation", { name: "Primary" });
+  const demos = nav.getByRole("link", { name: "Demo venues" });
+  const setup = nav.getByRole("link", { name: "Set up a venue" });
+  await expect(demos).toHaveAttribute("aria-current", "page");
+  await expect(setup).not.toHaveAttribute("aria-current", "page");
+
+  await setup.click();
+  await expect(page).toHaveURL(/\/venue\/new$/);
+  await expect(setup).toHaveAttribute("aria-current", "page");
+  await expect(demos).not.toHaveAttribute("aria-current", "page");
+
+  // Back without a reload: the marker follows the page, and no link disappears.
+  await demos.click();
+  await expect(page).toHaveURL(/\/#demos$/);
+  await expect(demos).toHaveAttribute("aria-current", "page");
+  await expect(setup).toBeVisible();
+  await expect(setup).not.toHaveAttribute("aria-current", "page");
+});
+
 test("the house-lights switch flips the palette and remembers it", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await page.goto("/");
