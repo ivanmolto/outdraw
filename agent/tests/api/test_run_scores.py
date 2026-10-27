@@ -3,11 +3,12 @@ sub-scores and validates into the typed shape the contract exposes."""
 
 from __future__ import annotations
 
+import datetime as dt
 from typing import Any
 
 import pytest
 
-from draw.api.runs import RunResult, _with_scores
+from draw.api.runs import RunResult, _with_candidates, _with_scores
 from draw.db.models import CandidateRow
 from draw.ranking.score import WEIGHTS
 
@@ -97,3 +98,33 @@ def test_run_result_validates_every_stored_shape() -> None:
 
     failed = RunResult.model_validate({"error": "boom"})
     assert failed.error == "boom" and failed.data_quality == "degraded"
+
+
+def test_entries_carry_hold_genres_and_band_from_their_candidate() -> None:
+    result = RunResult.model_validate(
+        {
+            "shortlist": [
+                {"candidate_id": "c1", "entity_id": "E1", "name": "One", "total": 0.8},
+                {"candidate_id": "c2", "entity_id": "E2", "name": "Two", "total": 0.7},
+                {"candidate_id": "c3", "entity_id": "E3", "name": "Three", "total": 0.6},
+            ],
+            "data_quality": "ok",
+        }
+    )
+    held = row("E1")
+    held.evidence = {"genres": ["Synthetic Genre"], "popularity": 0.9995}
+    held.pencilled, held.pencil_date = True, dt.date(2026, 11, 14)
+    released = row("E2")
+    released.evidence = {"popularity": 0.5}  # stored before genres were kept
+    released.pencilled, released.pencil_date = False, dt.date(2026, 11, 20)
+
+    first, second, third = _with_candidates(result, [held, released]).shortlist
+
+    assert first.genres == ["Synthetic Genre"]
+    assert first.size_band is not None
+    assert first.pencil_hold is not None and first.pencil_hold.date == dt.date(2026, 11, 14)
+    assert second.genres == []
+    assert second.size_band is not None
+    assert second.pencil_hold is None, "released: no hold, and no night"
+    assert (third.genres, third.size_band, third.pencil_hold) == ([], None, None)
+    assert result.shortlist[0].genres == [], "the input is not mutated"

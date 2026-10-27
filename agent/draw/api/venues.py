@@ -12,10 +12,14 @@ Repeating the flow changes nothing (T39): an update that keeps every field, a co
 repeats the stored choice and a profile rebuilt from the same Qloo data leave the stored
 rows and their timestamps alone, so the semantic run cache (T36), which only reuses a run
 made after the venue and its profile last changed, still answers the next run.
+
+`GET /venues/{id}/holds` (T44) lists the pencil holds across every run of the venue, so the
+shortlist's calendar shows what the booker has pencilled whichever run is on screen.
 """
 
 from __future__ import annotations
 
+import datetime as dt
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -29,7 +33,7 @@ from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
 from draw.api.inputs import INVALID_INPUT, ConfirmBody, VenueUpsert
 from draw.api.live import live_call
-from draw.db.models import CrowdProfileRow, ResolutionRow, VenueRow
+from draw.db.models import CandidateRow, CrowdProfileRow, ResolutionRow, RunRow, VenueRow
 from draw.profile.crowd import build_crowd_profile, same_profile
 from draw.profile.resolve import confirm_entity, resolve_entity, resolve_venue, synthetic_venue
 from draw.schemas import CrowdProfile, EntityCandidate, ResolvedEntity, VenueInput
@@ -68,6 +72,24 @@ class VenueOut(BaseModel):
     venue: VenueInput
     resolutions: list[ResolutionItem]
     profile: CrowdProfile | None
+
+
+class VenueHold(BaseModel):
+    """One pencilled act of one run of the venue."""
+
+    run_id: str
+    entity_id: str
+    name: str
+    date: dt.date | None = None
+    """The night held; None while the hold has no date."""
+    pencilled_in_run_at: dt.datetime | None = None
+    """When the run the hold sits on was made (holds carry no time of their own)."""
+
+
+class VenueHolds(BaseModel):
+    venue_id: str
+    holds: list[VenueHold]
+    """Dated holds first by night, then the undated, newest run first within a night."""
 
 
 # --- helpers shared with the run routes -----------------------------------------------
@@ -234,6 +256,39 @@ async def get_venue(venue_id: str, deps: DepsDep) -> VenueOut:
         profile_row = await session.get(CrowdProfileRow, venue_id)
     profile = CrowdProfile.model_validate(profile_row.profile) if profile_row else None
     return VenueOut(id=venue_id, venue=venue, resolutions=items, profile=profile)
+
+
+@router.get("/{venue_id}/holds")
+async def holds(venue_id: str, deps: DepsDep) -> VenueHolds:
+    """Every pencil hold across the venue's runs (seed runs take none). 404 for an unknown
+    venue. Reads our own rows only: no Qloo call, no model call."""
+    async with deps.sessions() as session:
+        await load_venue(session, venue_id)
+        rows = (
+            await session.execute(
+                select(CandidateRow, RunRow.created_at)
+                .join(RunRow, RunRow.id == CandidateRow.run_id)
+                .where(RunRow.venue_id == venue_id, CandidateRow.pencilled)
+                .order_by(RunRow.created_at.desc())
+            )
+        ).all()
+    out = [
+        VenueHold(
+            run_id=row.run_id,
+            entity_id=row.entity_id,
+            name=_candidate_name(row),
+            date=row.pencil_date,
+            pencilled_in_run_at=created_at,
+        )
+        for row, created_at in rows
+    ]
+    out.sort(key=lambda h: (h.date is None, h.date or dt.date.min))
+    return VenueHolds(venue_id=venue_id, holds=out)
+
+
+def _candidate_name(row: CandidateRow) -> str:
+    name = row.evidence.get("name")
+    return name if isinstance(name, str) and name else row.entity_id
 
 
 @router.post("/{venue_id}/resolve")

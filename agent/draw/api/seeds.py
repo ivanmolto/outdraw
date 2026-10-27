@@ -159,7 +159,7 @@ async def seed_page(slug: str, request: Request, response: Response, deps: DepsD
     page = SeedPageOut(
         seed=out,
         venue=venue,
-        run=run_out(run_row),
+        run=run_out(run_row, rows),
         candidates=[
             Evidence(
                 run_id=out.run_id,
@@ -167,6 +167,7 @@ async def seed_page(slug: str, request: Request, response: Response, deps: DepsD
                 score=r.score,
                 evidence=r.evidence,
                 pencilled=r.pencilled,
+                pencil_date=r.pencil_date if r.pencilled else None,
             )
             for r in ranked
         ],

@@ -21,6 +21,7 @@ from draw.ranking.signals import (
     SignalSet,
     calls_for,
     gather_signals,
+    genres_of,
     local_heat_of,
     top_n_within,
 )
@@ -261,6 +262,50 @@ async def test_past_fit_is_tag_overlap_with_top_two_past_acts(
     value = result.by_id["ID-C0"].past_fit.value
     assert value == pytest.approx(len(shared) / len(union))
     assert value is not None and 0.0 < value < 1.0
+
+
+async def test_genres_come_from_the_past_fit_call(
+    routed: Callable[..., RouterHarness],
+) -> None:
+    fake = routed()
+    result = await run(candidates(1))
+    assert len(fake.inputs_for("compare_audiences")) == 1, "no call of their own"
+    env = fixture("compare_audiences", "two_artists")["results"]
+    # Shared genre tags first, then the act's own (group a); never the past acts' (group b).
+    expected = [t["name"] for k in ("tags", "a") for t in env[k] if ":genre:" in t["subtype"]]
+    assert result.by_id["ID-C0"].genres == tuple(expected[:3])
+
+
+def tag_row(tag_id: str, name: str, subtype: str) -> dict[str, Any]:
+    return {"tag_id": tag_id, "name": name, "type": "urn:tag", "subtype": subtype}
+
+
+def test_genres_skip_other_subtypes_and_duplicates() -> None:
+    genre, subgenre = "urn:tag:genre:music", "urn:tag:subgenre:qloo"
+    results = {
+        "tags": [tag_row("T:a", "Alpha", genre), tag_row("T:b", "Beta", subgenre)],
+        "a": [tag_row("T:a", "Alpha", genre), tag_row("T:c", "Gamma", genre)],
+        "b": [tag_row("T:d", "Delta", genre)],
+    }
+
+    def result(body: Any) -> QlooResult:
+        return QlooResult(
+            status="ok",
+            summary="",
+            results=body,
+            result_count=0,
+            call_id="00000000-0000-0000-0000-000000000001",
+            workflow="compare_audiences",
+        )
+
+    assert genres_of(result(results)) == ("Alpha", "Gamma")
+    assert genres_of(result([])) == ()
+
+
+async def test_non_ok_compare_gives_no_genres(routed: Callable[..., RouterHarness]) -> None:
+    routed(compare=forced(fixture("compare_audiences", "two_artists"), "partial"))
+    result = await run(candidates(1))
+    assert result.by_id["ID-C0"].genres == ()
 
 
 async def test_local_heat_is_mean_heatmap_affinity_rank(

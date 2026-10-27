@@ -91,6 +91,9 @@ class CandidateSignals:
     momentum: SignalValue = SignalValue()
     months_since_booked: int | None = None
     """Whole months since the act's last show at this venue; `None` = never booked here."""
+    genres: tuple[str, ...] = ()
+    """The act's genre tag names, read from the past_fit call (no call of its own); not
+    scored, only shown and filtered on."""
 
 
 @dataclass
@@ -189,6 +192,34 @@ def past_fit_of(result: QlooResult) -> float | None:
     if not union:
         return None
     return len(shared) / len(union)
+
+
+GENRE_MARKER = ":genre:"
+GENRE_LIMIT = 3
+
+
+def genres_of(result: QlooResult) -> tuple[str, ...]:
+    """The candidate's genre tag names from its past_fit call (group a is the candidate):
+    the shared tags first, then its own, `*:genre:*` subtypes only (as the crowd profile
+    reads them), deduplicated by tag, at most `GENRE_LIMIT`."""
+    results = result.results
+    if not isinstance(results, dict):
+        return ()
+    names: list[str] = []
+    seen: set[str] = set()
+    for key in ("tags", "a"):
+        rows = results.get(key)
+        for row in rows if isinstance(rows, list) else []:
+            if not isinstance(row, dict):
+                continue
+            tag_id, name = row.get("tag_id"), row.get("name")
+            if not isinstance(tag_id, str) or not isinstance(name, str) or tag_id in seen:
+                continue
+            if GENRE_MARKER not in f"{row.get('subtype', '')}{tag_id}":
+                continue
+            seen.add(tag_id)
+            names.append(name)
+    return tuple(names[:GENRE_LIMIT])
 
 
 def local_heat_of(result: QlooResult) -> float | None:
@@ -347,6 +378,11 @@ async def gather_signals(
                 parsed.get(c.entity_id), outcome.call_id, outcome.status
             )
 
+    def genres(outcome: _Outcome | None) -> tuple[str, ...]:
+        if outcome is None or outcome.status != "ok" or not outcome.result:
+            return ()
+        return genres_of(outcome.result)
+
     by_id: dict[str, CandidateSignals] = {}
     for i, c in enumerate(top):
         last = booked.get(c.entity_id)
@@ -356,6 +392,7 @@ async def gather_signals(
             local_heat=value(heat_outcomes[i] if region else None, local_heat_of),
             momentum=momentum.get(c.entity_id, SignalValue()),
             months_since_booked=_months_between(last, today) if last is not None else None,
+            genres=genres(compare_outcomes[i] if past_acts else None),
         )
     for c in candidates[n:]:
         last = booked.get(c.entity_id)

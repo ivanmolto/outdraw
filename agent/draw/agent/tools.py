@@ -343,16 +343,19 @@ class DrawTools:
         }
 
     def evidence_trail(self, candidate_id: str) -> dict[str, Any]:
-        """The full stored EvidenceTrail plus the candidate's ids and popularity (what the
-        API stores; the brief reads the popularity band back from here)."""
+        """The full stored EvidenceTrail plus the candidate's ids, popularity and genre names
+        (what the API stores; the brief reads the popularity band back from here, the
+        shortlist the band and the genres)."""
         run, entity_id, item = self._ranked(candidate_id)
         trail = self.store.trail(candidate_id)
+        signals = run.signals.get(entity_id) if run.signals else None
         return {
             "candidate_id": candidate_id,
             "run_id": run.run_id,
             "entity_id": entity_id,
             "name": item.candidate.name,
             "popularity": item.candidate.popularity,
+            "genres": list(signals.genres) if signals else [],
             "top_reason": item.score.top_reason,
             "neutral": sorted(item.score.neutral or []),
             **trail.model_dump(mode="json", exclude_none=True),

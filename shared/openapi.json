@@ -176,6 +176,18 @@
       },
       "CandidateOut": {
         "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
           "entity_id": {
             "title": "Entity Id",
             "type": "string"
@@ -199,6 +211,18 @@
       },
       "CandidatePatch": {
         "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
           "pencilled": {
             "title": "Pencilled",
             "type": "boolean"
@@ -716,6 +740,18 @@
             "title": "Evidence",
             "type": "object"
           },
+          "pencil_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pencil Date"
+          },
           "pencilled": {
             "default": false,
             "title": "Pencilled",
@@ -1057,6 +1093,24 @@
           "date"
         ],
         "title": "PastShowBody",
+        "type": "object"
+      },
+      "PencilHold": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          }
+        },
+        "title": "PencilHold",
         "type": "object"
       },
       "ProfileItem": {
@@ -1785,6 +1839,13 @@
             "title": "Entity Id",
             "type": "string"
           },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -1804,6 +1865,16 @@
             "title": "Neutral",
             "type": "array"
           },
+          "pencil_hold": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PencilHold"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "reason": {
             "anyOf": [
               {
@@ -1814,6 +1885,16 @@
               }
             ],
             "title": "Reason"
+          },
+          "size_band": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SizeTier"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "source_labels": {
             "anyOf": [
@@ -1984,6 +2065,75 @@
           }
         },
         "title": "SupportPick",
+        "type": "object"
+      },
+      "VenueHold": {
+        "description": "One pencilled act of one run of the venue.",
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "entity_id": {
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "pencilled_in_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pencilled In Run At"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "entity_id",
+          "name"
+        ],
+        "title": "VenueHold",
+        "type": "object"
+      },
+      "VenueHolds": {
+        "properties": {
+          "holds": {
+            "items": {
+              "$ref": "#/components/schemas/VenueHold"
+            },
+            "title": "Holds",
+            "type": "array"
+          },
+          "venue_id": {
+            "title": "Venue Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "venue_id",
+          "holds"
+        ],
+        "title": "VenueHolds",
         "type": "object"
       },
       "VenueId": {
@@ -2425,7 +2575,7 @@
     },
     "/runs/{run_id}/candidates/{entity_id}": {
       "patch": {
-        "description": "Pencil (or release) a hold on the candidate; idempotent. 404 when unknown, 403 on a\nseed run (read-only).",
+        "description": "Pencil (or release) a hold on the candidate, for a night when `date` is given;\nidempotent. A release clears the date. 404 when unknown, 403 on a seed run (read-only).",
         "operationId": "patch_candidate_runs__run_id__candidates__entity_id__patch",
         "parameters": [
           {
@@ -3014,6 +3164,62 @@
           }
         },
         "summary": "Confirm"
+      }
+    },
+    "/venues/{venue_id}/holds": {
+      "get": {
+        "description": "Every pencil hold across the venue's runs (seed runs take none). 404 for an unknown\nvenue. Reads our own rows only: no Qloo call, no model call.",
+        "operationId": "holds_venues__venue_id__holds_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "venue_id",
+            "required": true,
+            "schema": {
+              "title": "Venue Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VenueHolds"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidInput"
+                }
+              }
+            },
+            "description": "Input out of bounds."
+          }
+        },
+        "summary": "Holds"
       }
     },
     "/venues/{venue_id}/profile": {

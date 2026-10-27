@@ -21,8 +21,11 @@ from the stored run (`draw.agent.brief`): one Qloo call for the support act thro
 scripted gateway under the run's id, one model call (plus one retry), then the brief is
 cached on the candidate row and served from there with `cached: true`.
 
-`PATCH /runs/{id}/candidates/{entity_id} {pencilled}` (T28) sets the candidate's pencil
-hold; the evidence route reads it back, so the Soundcheck panel opens with it.
+`PATCH /runs/{id}/candidates/{entity_id} {pencilled, date?}` (T28) sets the candidate's pencil
+hold and, optionally, the night it holds (T44; releasing clears it); the evidence route reads
+it back, so the Soundcheck panel opens with it. A run read back carries each entry's hold, and
+the genre names and size band from its stored evidence, so the shortlist filters and the
+holds calendar need no call per act.
 
 Seed runs (T29, `is_seed` with a `seed_slug`, written by `scripts/precompute.py`) are
 read-only: their GETs carry an `ETag` and answer `304` to a matching `If-None-Match`
@@ -40,10 +43,10 @@ embedding. Refined runs skip the cache: their hints steer the agent outside the 
 from __future__ import annotations
 
 import asyncio
+import datetime as dt
 import logging
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Annotated, Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -67,7 +70,7 @@ from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
 from draw.embed import semantic_cache, tag_map
 from draw.observability import RUN_ID_HEADER, bind_run_id, is_new_run_id
 from draw.qloo.exec_client import QlooExec
-from draw.ranking.score import WEIGHTS, SourceLabel, SubScore, source_labels
+from draw.ranking.score import WEIGHTS, SourceLabel, SubScore, band_of, source_labels
 from draw.schemas import (
     Constraints,
     CrowdProfile,
@@ -76,6 +79,7 @@ from draw.schemas import (
     ResolvedEntity,
     ScoreBreakdown,
     ScoreWeights,
+    SizeTier,
     VenueInput,
 )
 
@@ -87,6 +91,7 @@ __all__ = [
     "compare_for",
     "execute_run",
     "router",
+    "read_run",
     "run_out",
     "venue_for_run",
 ]
@@ -113,6 +118,11 @@ class Refinement(BaseModel):
     """The parse call's tokens; the run's own are on `RunOut.token_usage`."""
 
 
+class PencilHold(BaseModel):
+    date: dt.date | None = None
+    """The night held; None while the hold has no date."""
+
+
 class ShortlistEntry(BaseModel):
     """One ranked act, in `score_and_rank`'s order. The score fields come from the stored
     candidate; `reason` is the agent's own (templated for the top five, else the model's)."""
@@ -126,6 +136,12 @@ class ShortlistEntry(BaseModel):
     sub_scores: ScoreBreakdown | None = None
     neutral: list[SubScore] = Field(default_factory=list)
     source_labels: dict[SubScore, SourceLabel] | None = None
+    genres: list[str] = Field(default_factory=list)
+    """The act's genre tag names from its past_fit call (Qloo data); empty without one."""
+    size_band: SizeTier | None = None
+    """The size tier its Qloo popularity sits in (`band_of`), for the capacity filter."""
+    pencil_hold: PencilHold | None = None
+    """The booker's pencil hold on the act; None when it has none."""
 
 
 class AskOut(BaseModel):
@@ -159,7 +175,7 @@ class RunOut(BaseModel):
     constraints: Constraints
     result: RunResult | None
     token_usage: dict[str, Any] | None
-    created_at: datetime | None = None
+    created_at: dt.datetime | None = None
     parent_run_id: str | None = None
     """The run this one refined (`POST /runs/{id}/refine`); None for a first run."""
     is_seed: bool = False
@@ -173,16 +189,20 @@ class Evidence(BaseModel):
     score: dict[str, Any]
     evidence: dict[str, Any]
     pencilled: bool = False
+    pencil_date: dt.date | None = None
 
 
 class CandidatePatch(BaseModel):
     pencilled: bool
+    date: dt.date | None = None
+    """The night to hold; ignored (and cleared) on a release."""
 
 
 class CandidateOut(BaseModel):
     run_id: str
     entity_id: str
     pencilled: bool
+    date: dt.date | None = None
 
 
 class QlooCall(BaseModel):
@@ -192,17 +212,19 @@ class QlooCall(BaseModel):
     cache_hit: bool
     request: dict[str, Any]
     envelope: dict[str, Any]
-    created_at: datetime
+    created_at: dt.datetime
 
 
-def run_out(row: RunRow) -> RunOut:
-    """A stored run as the API serves it; also used by the seed page (`draw.api.seeds`)."""
+def run_out(row: RunRow, candidates: Sequence[CandidateRow] = ()) -> RunOut:
+    """A stored run as the API serves it, each entry with what its candidate row holds
+    (`_with_candidates`); also used by the seed page (`draw.api.seeds`)."""
+    result = RunResult.model_validate(row.result) if row.result is not None else None
     return RunOut(
         run_id=row.id,
         venue_id=row.venue_id,
         status=row.status,
         constraints=Constraints.model_validate(row.constraints),
-        result=RunResult.model_validate(row.result) if row.result is not None else None,
+        result=_with_candidates(result, candidates) if result is not None else None,
         token_usage=row.token_usage,
         created_at=row.created_at,
         parent_run_id=row.parent_run_id,
@@ -265,6 +287,41 @@ def _with_scores(result: dict[str, Any], candidates: list[CandidateRow]) -> dict
             }
         shortlist.append(entry)
     return {**result, "shortlist": shortlist, "weights": dict(WEIGHTS)}
+
+
+def _with_candidates(result: RunResult, candidates: Sequence[CandidateRow]) -> RunResult:
+    """Each entry with its pencil hold, and its genre names and size band from the stored
+    evidence. Read at serve time: the hold changes after the run is stored, and runs
+    stored before the genres were kept still read (with none)."""
+    rows = {r.entity_id: r for r in candidates}
+    shortlist = []
+    for entry in result.shortlist:
+        row = rows.get(entry.entity_id)
+        if row is not None:
+            genres = row.evidence.get("genres")
+            popularity = row.evidence.get("popularity")
+            entry = entry.model_copy(
+                update={
+                    "genres": [g for g in genres if isinstance(g, str)]
+                    if isinstance(genres, list)
+                    else [],
+                    "size_band": band_of(float(popularity))
+                    if isinstance(popularity, int | float) and not isinstance(popularity, bool)
+                    else None,
+                    "pencil_hold": PencilHold(date=row.pencil_date) if row.pencilled else None,
+                }
+            )
+        shortlist.append(entry)
+    return result.model_copy(update={"shortlist": shortlist})
+
+
+async def read_run(session: AsyncSession, run_id: str) -> RunOut | None:
+    """The stored run with its candidates' holds, or None for an unknown run."""
+    row = await session.get(RunRow, run_id)
+    if row is None:
+        return None
+    rows = (await session.scalars(select(CandidateRow).where(CandidateRow.run_id == run_id))).all()
+    return run_out(row, rows)
 
 
 @dataclass(frozen=True)
@@ -399,9 +456,9 @@ async def _execute_run(
         if vector is not None and result.status == "ok":
             semantic_cache.store(session, run_id, vector)
     async with deps.sessions() as session:
-        row = await session.get(RunRow, run_id)
-        assert row is not None
-        return run_out(row)
+        out = await read_run(session, run_id)
+        assert out is not None
+        return out
 
 
 def _log_run(result: AgentResult, qloo: QlooExec) -> None:
@@ -477,9 +534,9 @@ async def _reuse(
             for r in rows
         )
     async with deps.sessions() as session:
-        row = await session.get(RunRow, run_id)
-        assert row is not None
-        return run_out(row)
+        out = await read_run(session, run_id)
+        assert out is not None
+        return out
 
 
 async def _new_run_id(deps: Deps, request: Request, response: Response) -> str:
@@ -599,11 +656,10 @@ async def _tag_hints(deps: Deps, message: str) -> list[tag_map.PhraseTags]:
 @router.get("/{run_id}")
 async def get_run(run_id: str, request: Request, response: Response, deps: DepsDep) -> RunOut:
     async with deps.sessions() as session:
-        row = await session.get(RunRow, run_id)
-    if row is None:
+        out = await read_run(session, run_id)
+    if out is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
-    out = run_out(row)
-    conditional(request, response, out, seed=row.is_seed)
+    conditional(request, response, out, seed=out.is_seed)
     return out
 
 
@@ -624,6 +680,7 @@ async def get_evidence(
         score=row.score,
         evidence=row.evidence,
         pencilled=row.pencilled,
+        pencil_date=row.pencil_date if row.pencilled else None,
     )
     conditional(request, response, out, seed=run.is_seed)
     return out
@@ -633,8 +690,8 @@ async def get_evidence(
 async def patch_candidate(
     run_id: str, entity_id: str, body: CandidatePatch, deps: DepsDep
 ) -> CandidateOut:
-    """Pencil (or release) a hold on the candidate; idempotent. 404 when unknown, 403 on a
-    seed run (read-only)."""
+    """Pencil (or release) a hold on the candidate, for a night when `date` is given;
+    idempotent. A release clears the date. 404 when unknown, 403 on a seed run (read-only)."""
     async with deps.sessions.begin() as session:
         row = await session.get(CandidateRow, (run_id, entity_id))
         if row is None:
@@ -650,7 +707,13 @@ async def patch_candidate(
                 run.seed_slug,
             )
         row.pencilled = body.pencilled
-    return CandidateOut(run_id=run_id, entity_id=entity_id, pencilled=body.pencilled)
+        row.pencil_date = body.date if body.pencilled else None
+    return CandidateOut(
+        run_id=run_id,
+        entity_id=entity_id,
+        pencilled=body.pencilled,
+        date=row.pencil_date,
+    )
 
 
 _compare_locks: dict[str, asyncio.Lock] = {}

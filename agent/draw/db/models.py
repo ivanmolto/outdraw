@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
@@ -11,6 +11,7 @@ from sqlalchemy import (
     BigInteger,
     Boolean,
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -108,6 +109,8 @@ class CandidateRow(Base):
     score: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     evidence: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     pencilled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    # The night the pencil hold is for (T44); None while the hold has no date.
+    pencil_date: Mapped[date | None] = mapped_column(Date)
     # The booking brief, cached by GET /runs/{id}/candidates/{entity_id}/brief (BriefOut).
     brief: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
 

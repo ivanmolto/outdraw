@@ -111,8 +111,8 @@ export interface paths {
         head?: never;
         /**
          * Patch Candidate
-         * @description Pencil (or release) a hold on the candidate; idempotent. 404 when unknown, 403 on a
-         *     seed run (read-only).
+         * @description Pencil (or release) a hold on the candidate, for a night when `date` is given;
+         *     idempotent. A release clears the date. 404 when unknown, 403 on a seed run (read-only).
          */
         patch: operations["patch_candidate_runs__run_id__candidates__entity_id__patch"];
         trace?: never;
@@ -300,6 +300,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/venues/{venue_id}/holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Holds
+         * @description Every pencil hold across the venue's runs (seed runs take none). 404 for an unknown
+         *     venue. Reads our own rows only: no Qloo call, no model call.
+         */
+        get: operations["holds_venues__venue_id__holds_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/venues/{venue_id}/profile": {
         parameters: {
             query?: never;
@@ -416,6 +437,8 @@ export interface components {
         };
         /** CandidateOut */
         CandidateOut: {
+            /** Date */
+            date?: string | null;
             /** Entity Id */
             entity_id: string;
             /** Pencilled */
@@ -425,6 +448,8 @@ export interface components {
         };
         /** CandidatePatch */
         CandidatePatch: {
+            /** Date */
+            date?: string | null;
             /** Pencilled */
             pencilled: boolean;
         };
@@ -605,6 +630,8 @@ export interface components {
             evidence: {
                 [key: string]: unknown;
             };
+            /** Pencil Date */
+            pencil_date?: string | null;
             /**
              * Pencilled
              * @default false
@@ -720,6 +747,11 @@ export interface components {
             ticket_price?: number | null;
             /** Tickets Sold */
             tickets_sold?: number | null;
+        };
+        /** PencilHold */
+        PencilHold: {
+            /** Date */
+            date?: string | null;
         };
         /** ProfileItem */
         ProfileItem: {
@@ -966,12 +998,16 @@ export interface components {
             candidate_id: string;
             /** Entity Id */
             entity_id: string;
+            /** Genres */
+            genres?: string[];
             /** Name */
             name: string;
             /** Neutral */
             neutral?: ("crowd_affinity" | "past_fit" | "local_heat" | "novelty" | "size_fit" | "momentum")[];
+            pencil_hold?: components["schemas"]["PencilHold"] | null;
             /** Reason */
             reason?: string | null;
+            size_band?: components["schemas"]["SizeTier"] | null;
             /** Source Labels */
             source_labels?: {
                 [key: string]: "qloo" | "draw";
@@ -1016,6 +1052,29 @@ export interface components {
             pool: number;
             /** Status */
             status?: string | null;
+        };
+        /**
+         * VenueHold
+         * @description One pencilled act of one run of the venue.
+         */
+        VenueHold: {
+            /** Date */
+            date?: string | null;
+            /** Entity Id */
+            entity_id: string;
+            /** Name */
+            name: string;
+            /** Pencilled In Run At */
+            pencilled_in_run_at?: string | null;
+            /** Run Id */
+            run_id: string;
+        };
+        /** VenueHolds */
+        VenueHolds: {
+            /** Holds */
+            holds: components["schemas"]["VenueHold"][];
+            /** Venue Id */
+            venue_id: string;
         };
         /** VenueId */
         VenueId: {
@@ -1560,6 +1619,39 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    holds_venues__venue_id__holds_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                venue_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VenueHolds"];
+                };
+            };
+            /** @description Input out of bounds. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvalidInput"];
+                };
             };
         };
     };
