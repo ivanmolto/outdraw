@@ -280,7 +280,8 @@ async function Card({ seed }: { seed: SeedCard }) {
             Shown above
           </span>
         )}
-        <h3 className="display text-2xl text-ink">{seed.title}</h3>
+        {/* Two lines reserved: a longer title doesn't push its card's rows below its neighbours'. */}
+        <h3 className="display min-h-[3.1rem] text-2xl text-ink">{seed.title}</h3>
         <p className="mt-2 text-sm text-ink/60">
           {seed.venueName} · {seed.city} · {seed.capacity.toLocaleString("en-US")} cap
         </p>
@@ -332,7 +333,7 @@ function CardsSkeleton() {
 
 function Demos() {
   return (
-    <section aria-labelledby="demos-heading" id="demos" className="scroll-mt-8 py-16">
+    <section aria-labelledby="demos-heading" id="demos" className="scroll-mt-8 border-t border-line py-16">
       <div className="mx-auto w-full max-w-6xl px-4">
         <p className="text-sm font-semibold tracking-wide text-ink/60 uppercase">Demo venues</p>
         <h2 id="demos-heading" className="display mt-2 text-3xl sm:text-4xl">
@@ -432,7 +433,7 @@ async function CrowdSignals() {
     <div
       data-testid="crowd-signals"
       aria-label="Crowd signals"
-      className="mt-8 rounded-card bg-stage p-6 text-house"
+      className="mt-8 rounded-card bg-stage p-6 text-house ring-1 ring-house/15"
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -469,7 +470,8 @@ async function CrowdSignals() {
                 <p className="mt-4 text-sm text-house/60">Nothing here for this crowd.</p>
               ) : (
                 <>
-                  <p className="display mt-4 text-xl break-words">{top.name}</p>
+                  {/* Two lines reserved, so the numbers share a baseline whatever the name. */}
+                  <p className="display mt-4 min-h-[2.6rem] text-xl break-words">{top.name}</p>
                   {top.affinity != null && (
                     <p className="display mt-1 text-3xl text-brand-amber">
                       <span className="sr-only">Affinity </span>
@@ -565,7 +567,7 @@ function WhyQloo() {
               ))}
             </ul>
           </div>
-          <div className="rounded-card bg-stage p-6 text-house">
+          <div className="rounded-card bg-stage p-6 text-house ring-1 ring-house/15">
             <h3 className="display text-xl text-brand-amber">What Qloo adds for your room</h3>
             <ul className="mt-4 space-y-2 text-sm text-house/85">
               {QLOO.map((item) => (
