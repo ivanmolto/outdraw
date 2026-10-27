@@ -108,6 +108,12 @@ body {
   display: var(--show-dark);
 }
 
+/* The header's "Set up a venue" link stays out of the set-up page itself. Pure CSS: a
+   pathname hook in the root layout would make every page's static shell dynamic. */
+body:has(main[data-route="setup"]) [data-setup-link] {
+  display: none;
+}
+
 /* Visible focus everywhere, in the ink of the theme. */
 :focus-visible {
   outline: 2px solid var(--ink);

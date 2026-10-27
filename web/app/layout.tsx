@@ -91,7 +91,12 @@ function Header() {
           >
             Demo venues
           </Link>
-          <Link href="/venue/new" className="text-sm font-medium whitespace-nowrap text-ink hover:underline">
+          {/* Hidden on the set-up page itself: globals.css, keyed on main[data-route]. */}
+          <Link
+            href="/venue/new"
+            data-setup-link
+            className="text-sm font-medium whitespace-nowrap text-ink hover:underline"
+          >
             Set up a venue
           </Link>
           <ThemeToggle />
