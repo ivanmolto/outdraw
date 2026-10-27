@@ -8,6 +8,10 @@
 // profile, a first brief or compare) answer as the real agent refuses it (503 with
 // LIVE_MODE=off, 429 at the daily budget, both naming a fallback seed) until
 // `POST /__refuse {status: null}`; stored and cached reads still answer.
+// `POST /__fail {mode}` breaks the whole agent for T40's error states: "crash" answers
+// every call with FastAPI's bare 500 plus a traceback and its own URL in the body (what
+// must never reach a browser), "down" drops every connection (the agent unreachable);
+// `{mode: null}` restores it.
 // Three seed venues (T29) are stored from the start, read-only as the agent keeps them.
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
@@ -71,6 +75,20 @@ const REFUSALS = {
 };
 /** The status runs and refinements are refused with, or null to run them. */
 let refuseWith = null;
+
+/** How the whole agent fails ("crash" | "down"), or null when it works. */
+let failMode = null;
+/** A crashed route's body: what an unhandled exception in FastAPI leaks when debug is on. */
+const crashBody = (path) => ({
+  detail: "Internal Server Error",
+  traceback: [
+    "Traceback (most recent call last):",
+    '  File "/app/draw/api/routes.py", line 42, in get_venue',
+    "    raise RuntimeError(\"synthetic crash\")",
+    "RuntimeError: synthetic crash",
+  ].join("\n"),
+  url: `http://127.0.0.1:${PORT}${path}`,
+});
 
 // --- seeds ------------------------------------------------------------------------------
 
@@ -363,8 +381,15 @@ createServer(async (req, res) => {
     refuseWith = body?.status in REFUSALS ? body.status : null;
     return send(200, { status: refuseWith });
   }
+  if (url.pathname === "/__fail") {
+    failMode = body?.mode === "crash" || body?.mode === "down" ? body.mode : null;
+    return send(200, { mode: failMode });
+  }
+  if (failMode === "down") return req.socket.destroy();
   if (req.headers["x-draw-internal-key"] !== KEY) return send(401, { detail: "Bad key." });
 
+  // A crashed call is not recorded: other specs count the agent's real reads.
+  if (failMode === "crash") return send(500, crashBody(url.pathname));
   requests.push({ method: req.method, path: url.pathname, body });
   const [status, data] = await route(req.method, url.pathname, body);
   send(status, data);
