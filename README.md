@@ -23,8 +23,32 @@ npm install && npm --prefix web install && npm --prefix agent ci
 cd agent && uv sync
 ```
 
-Copy `.env.example` to `.env.local` and fill in keys. Enable the secret scan hook once per
-clone: `brew install gitleaks && git config core.hooksPath .githooks`.
+Copy `.env.example` to `.env.local` and fill in keys (see "Bring your own keys"). Enable the
+secret scan hook once per clone: `brew install gitleaks && git config core.hooksPath .githooks`.
+
+## Bring your own keys
+
+Outdraw ships without credentials. Every variable is listed in `.env.example` with a
+placeholder and a one-line comment; copy it to `.env.local` (gitignored) and fill in what you
+have. Keys are server-side only and never `NEXT_PUBLIC_`.
+
+- **Qloo**: request a hackathon key on [qloo.devpost.com](https://qloo.devpost.com). The
+  agent reaches Qloo only through the pinned harness CLI. Set the key with
+  `qloo setup --qloo` (stored in `~/.qloo/config`) or export `QLOO_API_KEY`; never pass it
+  with `--api-key`, which lands in your shell history. Hackathon keys only work against
+  `https://hackathon.api.qloo.com`, so set `QLOO_BASE_URL` and `QLOO_TRUSTED_BASE_URL` to it
+  where there is no config file (the Render container). Then `qloo setup --status && qloo doctor`.
+- **Anthropic**: an API key from the Claude Console as `ANTHROPIC_API_KEY`; the model is
+  `ANTHROPIC_MODEL` (Haiku 5.5 by default).
+- **Internal**: `INTERNAL_API_KEY` is the shared secret between the web server and the agent;
+  generate it with `openssl rand -hex 32` and set the same value on both.
+- **Optional**: Upstash Redis (rate limits and daily budgets), Postgres with pgvector (the
+  Qloo cache), Sentry and Telegram alerts. Each is off when its variable is unset.
+
+Secrets never go in code or git. The pre-commit hook and the `secrets` CI job run
+[gitleaks](https://github.com/gitleaks/gitleaks) over the history with the default rules plus
+a rule for the Qloo key format (`.gitleaks.toml`); a commit that contains a key is rejected.
+Qloo response data stays out of the public repo too: recordings are gitignored.
 
 ## Run
 

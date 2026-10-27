@@ -1,0 +1,15 @@
+# gitleaks config: the default rules plus one for Qloo hackathon keys. Used by the
+# pre-commit hook (.githooks/pre-commit) and the `secrets` CI job; gitleaks picks it up
+# automatically from the repo root.
+title = "outdraw"
+
+[extend]
+useDefault = true
+
+# Qloo hackathon keys are `hack_` followed by 40 lowercase hex characters. The default
+# rules do not know the prefix, so without this rule a pasted key goes unnoticed.
+[[rules]]
+id = "qloo-hackathon-key"
+description = "Qloo hackathon API key"
+regex = '''\bhack_[0-9a-f]{40}\b'''
+keywords = ["hack_"]
