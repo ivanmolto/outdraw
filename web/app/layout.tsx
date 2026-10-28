@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
-import { HackathonStrip } from "@/src/components/hackathon-banner";
 import { NavLinks, PrimaryNav } from "@/src/components/primary-nav";
 import { PlanLoader } from "@/src/components/pro";
 import { THEME_SCRIPT, ThemeToggle } from "@/src/components/theme-toggle";
@@ -109,6 +108,11 @@ function Footer() {
           live-music venues, built on Qloo&apos;s taste graph.
         </p>
         <p>Aggregate taste affinities only. Nothing about individuals, ever.</p>
+        <nav aria-label="Footer" className="flex items-center gap-4">
+          <Link href="/pricing" className="font-medium text-ink/80 underline-offset-2 hover:underline">
+            Pricing
+          </Link>
+        </nav>
       </div>
     </footer>
   );
@@ -126,10 +130,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col bg-paper text-ink">
-        {/* Per request (HACKATHON_MODE at runtime); streams into the static shell. */}
-        <Suspense fallback={null}>
-          <HackathonStrip />
-        </Suspense>
         <Header />
         {children}
         <PlanLoader />

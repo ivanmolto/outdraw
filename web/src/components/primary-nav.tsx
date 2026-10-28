@@ -23,6 +23,13 @@ const LINKS = [
     label: "Set up a venue",
     className: "",
   },
+  // Off the phone header (the footer links it everywhere); the judge path ends here.
+  {
+    href: "/pricing",
+    isCurrent: (p: string) => p === "/pricing",
+    label: "Pricing",
+    className: "hidden sm:inline",
+  },
 ] as const;
 
 export function NavLinks({ pathname }: { pathname: string | null }) {

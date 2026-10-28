@@ -21,6 +21,7 @@ const PAGES = [
   // The landing's seed-fed sections stream in behind skeletons: wait for each.
   { name: "landing", path: "/", ready: "Demo venues", streamed: ["hero-preview", "crowd-signals"] },
   { name: "shortlist", path: "/v/nola-jazz", ready: "Ranked acts", streamed: [] },
+  { name: "pricing", path: "/pricing", ready: "Plans", streamed: [] },
 ] as const;
 
 /** Loads `path` with every font and image in, so a snapshot never catches a swap. */
