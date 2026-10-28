@@ -4,6 +4,8 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
+import { HackathonPill } from "@/src/components/hackathon-banner";
+
 import {
   SUB_SCORES,
   SUB_SCORE_LABELS,
@@ -120,9 +122,13 @@ async function HeroPreview() {
       </p>
       <div className="mt-2 flex items-end justify-between gap-6">
         <p className="display min-w-0 text-3xl break-words sm:text-4xl">{entry.name}</p>
-        <p className="display shrink-0 text-6xl leading-none sm:text-7xl">
-          <span className="sr-only">Score </span>
-          {entry.total.toFixed(2)}
+        <p className="shrink-0 text-right">
+          <span className="block text-[0.65rem] font-semibold tracking-wide text-house/60 uppercase">
+            Outdraw score
+          </span>
+          <span className="display block text-6xl leading-none sm:text-7xl">
+            {entry.total.toFixed(2)}
+          </span>
         </p>
       </div>
       <div aria-hidden="true" className="mt-4 h-2 w-full rounded-full bg-stage ring-1 ring-house/15">
@@ -162,8 +168,12 @@ function HeroSkeleton() {
 function Hero() {
   return (
     <section aria-labelledby="hero" className="bg-stage text-house">
-      <div className="mx-auto grid w-full max-w-6xl gap-12 px-4 py-16 sm:py-24 lg:grid-cols-[minmax(0,1fr)_32rem] lg:items-center lg:gap-16">
+      <div className="mx-auto grid w-full max-w-6xl gap-12 px-4 py-14 sm:py-20 lg:grid-cols-[minmax(0,1fr)_32rem] lg:items-center lg:gap-16">
         <div>
+          {/* Per request (HACKATHON_MODE at runtime); streams into the static shell. */}
+          <Suspense fallback={null}>
+            <HackathonPill />
+          </Suspense>
           <p className="text-sm font-semibold tracking-[0.18em] text-brand-amber uppercase">
             Booking intelligence for live-music venues
           </p>
@@ -175,15 +185,17 @@ function Hero() {
             food, film and brands, then ranks acts with a fixed, explained score. Every pick
             carries its evidence.
           </p>
+          {/* The demo first while the hackathon is judged: it spends no Qloo call, and a
+              set-up does. Swap back once the landing is for venues, not judges. */}
           <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-            <Link href="/venue/new" className={`${CTA} bg-brand-amber text-stage hover:bg-[#ffc421]`}>
-              Set up your venue
+            <Link href="#demos" className={`${CTA} bg-brand-amber text-stage hover:bg-[#ffc421]`}>
+              Try a demo venue
             </Link>
             <Link
-              href="#demos"
+              href="/venue/new"
               className={`${CTA} border border-house/40 text-house hover:border-house`}
             >
-              Try a demo venue
+              Set up your venue
             </Link>
           </div>
           <p className="mt-12 max-w-2xl border-l-2 border-brand-amber pl-4 text-house/80">
