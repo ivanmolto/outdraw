@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { peekRateLimit, spendRateLimit } from "@/src/server/ratelimit";
+import { checkPlanRun } from "@/src/server/session";
 import { AGENT_URL, KEY, ctx, fakeAgent, jsonRequest } from "@/src/server/test-agent";
 import soundcheck from "../../venue/[id]/shortlist/fixtures/soundcheck.json";
 import { GET as getCalls } from "./[id]/calls/route";
@@ -22,6 +23,11 @@ vi.mock("@/src/server/ratelimit", () => ({
 const peek = vi.mocked(peekRateLimit);
 const spend = vi.mocked(spendRateLimit);
 
+// The plan's daily allowance (T48) gates runs and refinements; it is tested with the
+// session in src/server/session.test.ts and src/server/ratelimit.test.ts.
+vi.mock("@/src/server/session", () => ({ checkPlanRun: vi.fn(async () => null) }));
+const planRun = vi.mocked(checkPlanRun);
+
 const constraints = {
   include_tags: [],
   exclude_tags: [],
@@ -37,9 +43,33 @@ afterEach(() => {
   vi.restoreAllMocks();
   peek.mockReset().mockResolvedValue(null);
   spend.mockReset().mockResolvedValue(undefined);
+  planRun.mockReset().mockResolvedValue(null);
 });
 
 describe("POST /api/runs", () => {
+  it("answers the plan limit's 429 as it is, without calling the agent", async () => {
+    const sent = fakeAgent(Response.json(run));
+    const refused = { reason: "plan_limit", plan: "free", runs_per_day: 3, fallback_seed: "nola-jazz" };
+    planRun.mockResolvedValue(Response.json(refused, { status: 429 }));
+
+    const res = await createRun(jsonRequest({ venue_id: "ven_1", constraints }));
+
+    expect(res.status).toBe(429);
+    expect(await res.json()).toEqual(refused);
+    expect(sent).toEqual([]);
+
+    const refine = await refineRun(jsonRequest({ message: "more emerging" }), ctx({ id: "run_1" }));
+    expect(refine.status).toBe(429);
+    expect(sent).toEqual([]);
+  });
+
+  it("checks the plan only after the body is valid, so a bad request spends no run", async () => {
+    fakeAgent(Response.json(run));
+    const res = await createRun(jsonRequest({ venue_id: "ven_1", constraints: { max_candidates: 999 } }));
+    expect(res.status).toBe(400);
+    expect(planRun).not.toHaveBeenCalled();
+  });
+
   it("forwards the run with the default message", async () => {
     const sent = fakeAgent(Response.json(run));
 

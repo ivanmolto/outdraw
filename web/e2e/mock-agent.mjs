@@ -210,10 +210,15 @@ async function route(method, path, body) {
     sessions.set(id, "free");
     return [201, { id, plan: "free" }];
   }
-  const session = method === "GET" && /^\/sessions\/([^/]+)$/.exec(path);
+  const session = (method === "GET" || method === "PATCH") && /^\/sessions\/([^/]+)$/.exec(path);
   if (session) {
     const id = decodeURIComponent(session[1]);
     if (!sessions.has(id)) return [404, { detail: "Unknown session." }];
+    if (method === "PATCH") {
+      // The plan flip a payment webhook will make (T47 roadmap); a spec flips it directly.
+      if (body?.plan !== "free" && body?.plan !== "pro") return [422, { detail: "Bad plan." }];
+      sessions.set(id, body.plan);
+    }
     return [200, { id, plan: sessions.get(id) }];
   }
   if (method === "GET" && path === "/seeds") return [200, { seeds: SEEDS }];

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { remainingRuns } from "@/src/server/ratelimit";
+import { remainingPlanRuns, remainingRuns } from "@/src/server/ratelimit";
 import { SESSION_COOKIE } from "@/src/server/session";
 import { AGENT_URL, fakeAgent } from "@/src/server/test-agent";
 import { GET } from "./route";
@@ -20,6 +20,7 @@ vi.mock("next/headers", () => ({ cookies: async () => jar }));
 vi.mock("@/src/server/ratelimit", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/src/server/ratelimit")>()),
   remainingRuns: vi.fn(async () => 7),
+  remainingPlanRuns: vi.fn(async (_id: string, plan: string) => (plan === "pro" ? 29 : 2)),
 }));
 
 const SESSION = "ses_abcdefghijklmnopqrstuvwxyz01";
@@ -49,8 +50,10 @@ describe("GET /api/me", () => {
       plan: "free",
       stored_plan: "free",
       hackathon: false,
-      remaining_runs: 7,
+      // The tighter count: 2 of the free plan's 3 today, under 7 of the IP's 10 this hour.
+      remaining_runs: 2,
       runs_per_hour: 10,
+      runs_per_day: 3,
     });
     expect(Object.values(body.features).every((on) => on === false)).toBe(true);
     expect(JSON.stringify(body)).not.toContain(SESSION);
@@ -71,6 +74,9 @@ describe("GET /api/me", () => {
 
     expect(body).toMatchObject({ plan: "pro", stored_plan: "free", hackathon: true });
     expect(Object.values(body.features).every((on) => on === true)).toBe(true);
+    // The plan in force sets the allowance: the IP's 7 left is now the tighter count.
+    expect(body).toMatchObject({ remaining_runs: 7, runs_per_day: 30 });
+    expect(remainingPlanRuns).toHaveBeenCalledWith(SESSION, "pro");
     expect(sent.map((s) => `${s.method} ${s.url}`)).toEqual([
       `GET ${AGENT_URL}/sessions/${SESSION}`,
     ]);

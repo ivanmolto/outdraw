@@ -65,6 +65,7 @@ const REASONS: ReadonlySet<string> = new Set<Reason>([
   "budget",
   "busy",
   "live_mode_off",
+  "plan_limit",
   "unavailable",
   "unknown",
 ]);

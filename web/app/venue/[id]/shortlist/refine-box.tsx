@@ -5,9 +5,18 @@
 // (POST /api/runs/{id}/refine), so the box is locked while it runs.
 import { useId, useState } from "react";
 
+import Link from "next/link";
+
 import { Elapsed, Spinner } from "@/src/components/progress";
-import { reasonText, type Reason } from "@/src/lib/api-client";
+import { type Reason } from "@/src/lib/api-client";
+import { errorState, type ErrorDetails } from "@/src/lib/error-states";
 import { LIMITS } from "@/src/lib/schemas";
+
+/** A failed refinement: the reason and what came with it (`errorOf` in api-client.ts). */
+export interface RefineError {
+  reason: Reason;
+  details: ErrorDetails;
+}
 
 /** Chip label → the message it sends. */
 export const CHIPS = [
@@ -17,11 +26,22 @@ export const CHIPS = [
   { label: "Bigger acts", message: "Bigger acts" },
 ] as const;
 
-/** The agent's 422 (no change read from the message) arrives as invalid_input. */
-function errorText(reason: Reason): string {
-  return reason === "invalid_input"
-    ? "Outdraw couldn't read a change from that. Name genres to add or drop, the size of act, recent bookings to leave out, or how many candidates to consider."
-    : reasonText(reason);
+/** The agent's 422 (no change read from the message) arrives as invalid_input; the plan's
+ * daily allowance (plan_limit) names the plan and links to the plans. */
+function errorLine({ reason, details }: RefineError) {
+  if (reason === "invalid_input") {
+    return "Outdraw couldn't read a change from that. Name genres to add or drop, the size of act, recent bookings to leave out, or how many candidates to consider.";
+  }
+  const state = errorState(reason, details);
+  if (reason !== "plan_limit" || !state.link) return state.message;
+  return (
+    <>
+      {state.message}{" "}
+      <Link href={state.link.href} className="font-medium underline">
+        {state.link.label}
+      </Link>
+    </>
+  );
 }
 
 export function RefineBox({
@@ -30,7 +50,7 @@ export function RefineBox({
   onRefine,
 }: {
   pending: boolean;
-  error: Reason | null;
+  error: RefineError | null;
   onRefine: (message: string) => void;
 }) {
   const [message, setMessage] = useState("");
@@ -102,8 +122,8 @@ export function RefineBox({
         </div>
       )}
       {error && !pending && (
-        <p role="alert" className="mt-3 text-sm text-ink/80">
-          {errorText(error)}
+        <p role="alert" data-reason={error.reason} className="mt-3 text-sm text-ink/80">
+          {errorLine(error)}
         </p>
       )}
     </section>

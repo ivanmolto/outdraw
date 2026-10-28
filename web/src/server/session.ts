@@ -5,10 +5,23 @@ import "server-only";
 
 import { cookies } from "next/headers";
 
-import { hackathonMode, me, type Me } from "@/src/lib/entitlements";
+import {
+  effectivePlan,
+  hackathonMode,
+  me,
+  remainingOf,
+  type Me,
+  type Plan,
+} from "@/src/lib/entitlements";
 import { idSchema } from "@/src/lib/schemas";
 import { agent, agentError, type SessionOut } from "./agent";
-import { LIMITS, remainingRuns } from "./ratelimit";
+import {
+  checkPlanLimit,
+  LIMITS,
+  PLAN_LIMITS,
+  remainingPlanRuns,
+  remainingRuns,
+} from "./ratelimit";
 
 export const SESSION_COOKIE = "outdraw_session";
 
@@ -41,8 +54,31 @@ export async function currentSession(): Promise<SessionOut> {
   return created;
 }
 
-/** `GET /api/me` for `req`: the plan in force, its features and the runs left this hour. */
+/** The session and the plan in force for it. */
+async function sessionPlan(): Promise<{ id: string; plan: Plan }> {
+  const session = await currentSession();
+  return { id: session.id, plan: effectivePlan(session.plan, isHackathon()) };
+}
+
+/** `GET /api/me` for `req`: the plan in force, its features and the runs left (the tighter
+ * of the IP's hour and the plan's day). */
 export async function currentMe(req: Request): Promise<Me> {
-  const [session, remaining] = await Promise.all([currentSession(), remainingRuns(req)]);
-  return me(session.plan, isHackathon(), remaining, LIMITS.hourly.tokens);
+  const [session, hourly] = await Promise.all([currentSession(), remainingRuns(req)]);
+  const plan = effectivePlan(session.plan, isHackathon());
+  const daily = await remainingPlanRuns(session.id, plan);
+  return me(
+    session.plan,
+    isHackathon(),
+    remainingOf(hourly, daily),
+    LIMITS.hourly.tokens,
+    PLAN_LIMITS[plan].tokens,
+  );
+}
+
+/** The 429 `plan_limit` when the request's session has no run left today on its plan,
+ * else null with a run taken: the run routes call this before the agent. A browser
+ * without a session gets one here (and its cookie), on the free plan. */
+export async function checkPlanRun(): Promise<Response | null> {
+  const { id, plan } = await sessionPlan();
+  return checkPlanLimit(id, plan);
 }

@@ -13,6 +13,7 @@ import type {
   VenueId,
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
+import { PLANS, type Plan } from "./entitlements";
 import { SAMPLED, reasonText, type ErrorDetails } from "./error-states";
 import type { ConfirmInput, PencilInput, RefineInput, RunInput, VenueUpsert } from "./schemas";
 import { FALLBACK_SEED, isSeedSlug, type SeedSlug } from "./seeds";
@@ -30,8 +31,11 @@ export class ApiError extends Error {
     readonly field?: string,
     /** Resolution keys still to confirm, for conflict on profile. */
     readonly pending?: string[],
-    /** The demo venue to show instead, for busy, budget and live_mode_off. */
+    /** The demo venue to show instead, for busy, budget, live_mode_off and plan_limit. */
     readonly fallbackSeed?: SeedSlug,
+    /** The plan that ran out of runs today and its allowance, for plan_limit. */
+    readonly plan?: Plan,
+    readonly runsPerDay?: number,
   ) {
     super(reason);
     this.name = "ApiError";
@@ -46,8 +50,8 @@ export function reasonMessage(err: unknown): string {
  * (fetch itself threw) is `unavailable`. */
 export function errorOf(err: unknown): { reason: Reason; details: ErrorDetails } {
   if (!(err instanceof ApiError)) return { reason: "unavailable", details: {} };
-  const { reason, field, pending, fallbackSeed } = err;
-  return { reason, details: { field, pending, fallbackSeed } };
+  const { reason, field, pending, fallbackSeed, plan, runsPerDay } = err;
+  return { reason, details: { field, pending, fallbackSeed, plan, runsPerDay } };
 }
 
 /** The seed to show instead of `err` (a refusal of live analysis: the web's rate limit,
@@ -87,9 +91,13 @@ async function request<T>(method: "GET" | "POST" | "PATCH", path: string, body?:
       field?: string;
       pending?: string[];
       fallback_seed?: unknown;
+      plan?: unknown;
+      runs_per_day?: unknown;
     };
     const seed = isSeedSlug(err.fallback_seed) ? err.fallback_seed : undefined;
-    throw new ApiError(err.reason ?? "unknown", err.field, err.pending, seed);
+    const plan = PLANS.find((p) => p === err.plan);
+    const runsPerDay = typeof err.runs_per_day === "number" ? err.runs_per_day : undefined;
+    throw new ApiError(err.reason ?? "unknown", err.field, err.pending, seed, plan, runsPerDay);
   }
   return data as T;
 }

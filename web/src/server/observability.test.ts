@@ -17,6 +17,10 @@ import {
   shouldReportUnavailable,
 } from "./observability";
 
+// The run route's plan check (T48) would read the session from the agent first: a request
+// of its own, with its own id, and not what this file is about.
+vi.mock("@/src/server/session", () => ({ checkPlanRun: vi.fn(async () => null) }));
+
 const scope = vi.hoisted(() => ({ setTag: vi.fn() }));
 const isolationScope = vi.hoisted(() => ({ setTag: vi.fn() }));
 vi.mock("@sentry/nextjs", async (original) => ({

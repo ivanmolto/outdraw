@@ -8,6 +8,7 @@ const REASONS: Reason[] = [
   "busy",
   "budget",
   "live_mode_off",
+  "plan_limit",
   "invalid_input",
   "not_found",
   "conflict",
@@ -52,6 +53,23 @@ describe("errorState", () => {
       "The field refused was past_shows.0.act.",
     );
     expect(errorState("unknown", { field: "x" }).message).not.toContain("field");
+  });
+
+  it("names the plan that ran out of runs: free sees the plans, pro sees a sample", () => {
+    const free = errorState("plan_limit", { plan: "free", runsPerDay: 3 });
+    expect(free.message).toBe("You've used the Free plan's 3 runs for today. Venue Pro gets 30 a day.");
+    expect(free.link).toEqual({ label: "See the plans", href: "/pricing" });
+    expect(free.retryable).toBe(false);
+
+    const pro = errorState("plan_limit", { plan: "pro", runsPerDay: 30, fallbackSeed: "brooklyn-indie" });
+    expect(pro.message).toBe("You've used the Pro plan's 30 runs for today. Try again tomorrow.");
+    expect(pro.link).toEqual({ label: "See a sample shortlist", href: "/v/brooklyn-indie" });
+
+    // Without the details (an older body): the plain message, and the plans to look at.
+    expect(errorState("plan_limit")).toMatchObject({
+      message: reasonText("plan_limit"),
+      link: { href: "/pricing" },
+    });
   });
 
   it("points an outage back at the venue when one is known, else home", () => {

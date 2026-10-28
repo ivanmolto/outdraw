@@ -11,13 +11,13 @@
 import { useState } from "react";
 
 import { ProNote, useShows } from "@/src/components/pro";
-import { ApiError, api, sampleSeed, type Reason } from "@/src/lib/api-client";
+import { api, errorOf, sampleSeed } from "@/src/lib/api-client";
 import type { PlayedHereMap } from "@/src/lib/played-here";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
 import type { SeedSlug } from "@/src/lib/seeds";
 import { diffShortlists, type ShortlistDiff } from "@/src/lib/shortlist-diff";
 import type { CrossDomain } from "@/src/lib/soundcheck";
-import { RefineBox } from "./refine-box";
+import { RefineBox, type RefineError } from "./refine-box";
 import { RunHistory } from "./run-history";
 import { RunOutcome } from "./run-outcome";
 import { SampleFallback } from "./sample-fallback";
@@ -57,7 +57,7 @@ export function RefinableRun({
   const [chain, setChain] = useState(initial);
   const [selected, setSelected] = useState(initial.length - 1);
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<Reason | null>(null);
+  const [error, setError] = useState<RefineError | null>(null);
   const [sample, setSample] = useState<SeedSlug | null>(null);
   const history = useShows("run_history");
 
@@ -86,7 +86,7 @@ export function RefinableRun({
         (err: unknown) => {
           const seed = sampleSeed(err);
           if (seed) setSample(seed);
-          else setError(err instanceof ApiError ? err.reason : "unavailable");
+          else setError(errorOf(err));
         },
       )
       .finally(() => setPending(false));

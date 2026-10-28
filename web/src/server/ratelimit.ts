@@ -5,10 +5,14 @@
 // One read can spend: the first brief per act drafts it (a Qloo call and a model call).
 // The proxy cannot tell a draft from the agent's cached copy, so the brief route limits
 // itself: `peekRateLimit` before the call, `spendRateLimit` after it when `cached` is false.
+// Under those, the plan's daily run allowance per session (T48): free 3 a day, pro 30, a
+// sliding day keyed by the session id, checked by the run routes themselves (they hold the
+// session, the proxy does not) through `checkPlanLimit`, and read by `GET /api/me`.
 // No `server-only` here: the proxy is not bundled with the react-server condition.
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
+import { PLANS, RUNS_PER_DAY, type Plan } from "@/src/lib/entitlements";
 import { FALLBACK_SEED } from "@/src/lib/seeds";
 import type { ErrorBody } from "./proxy";
 
@@ -18,6 +22,13 @@ export const LIMITS = {
   burst: { tokens: 3, window: "1 m" },
   hourly: { tokens: 10, window: "1 h" },
 } as const;
+
+/** Runs a session gets in a sliding day, per plan: both under the per-IP hourly cap and
+ * the agent's daily budget, so a plan never buys past the global caps. */
+export const PLAN_LIMITS: Record<Plan, { tokens: number; window: "1 d" }> = {
+  free: { tokens: RUNS_PER_DAY.free, window: "1 d" },
+  pro: { tokens: RUNS_PER_DAY.pro, window: "1 d" },
+};
 
 /** POSTs under the limited prefixes that only write our own database, never Qloo or Claude. */
 const FREE_POSTS = [/^\/api\/venues\/?$/, /^\/api\/venues\/[^/]+\/confirm\/?$/];
@@ -57,27 +68,54 @@ export function createLimiters(redis: Redis): Limiter[] {
   );
 }
 
-let shared: Limiter[] | null | undefined;
+export type PlanLimiters = Record<Plan, Limiter>;
+
+/** One daily limiter per plan over `redis`, keyed by session id. */
+export function createPlanLimiters(redis: Redis): PlanLimiters {
+  return Object.fromEntries(
+    PLANS.map((plan) => [
+      plan,
+      new Ratelimit({
+        redis,
+        prefix: `outdraw:rl:day:${plan}`,
+        limiter: Ratelimit.slidingWindow(PLAN_LIMITS[plan].tokens, PLAN_LIMITS[plan].window),
+        timeout: 1000,
+      }),
+    ]),
+  ) as unknown as PlanLimiters;
+}
+
+let shared: { ip: Limiter[]; plan: PlanLimiters } | null | undefined;
 
 /** Limiters from UPSTASH_REDIS_REST_URL/TOKEN, or null (limits off) when they are unset. */
-function defaultLimiters(): Limiter[] | null {
+function defaults(): { ip: Limiter[]; plan: PlanLimiters } | null {
   if (shared === undefined) {
     const configured = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN;
     if (!configured) console.warn("rate limits off: UPSTASH_REDIS_REST_URL/TOKEN not set");
-    shared = configured ? createLimiters(Redis.fromEnv()) : null;
+    if (configured) {
+      const redis = Redis.fromEnv();
+      shared = { ip: createLimiters(redis), plan: createPlanLimiters(redis) };
+    } else shared = null;
   }
   return shared;
 }
 
+const defaultLimiters = (): Limiter[] | null => defaults()?.ip ?? null;
+const defaultPlanLimiters = (): PlanLimiters | null => defaults()?.plan ?? null;
+
 export type BusyBody = ErrorBody & Required<Pick<ErrorBody, "fallback_seed">>;
 
-function busy(reset: number): Response {
-  const body: BusyBody = { reason: "busy", fallback_seed: FALLBACK_SEED };
+function refuse(body: ErrorBody, reset: number): Response {
   const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
   return Response.json(body, {
     status: 429,
     headers: { "retry-after": String(retryAfter) },
   });
+}
+
+function busy(reset: number): Response {
+  const body: BusyBody = { reason: "busy", fallback_seed: FALLBACK_SEED };
+  return refuse(body, reset);
 }
 
 /** The 429 for `req`'s IP when it is over a limit, else null. `rate` 1 takes a token; 0
@@ -138,4 +176,48 @@ export async function spendRateLimit(
   limiters: Limiter[] | null = defaultLimiters(),
 ): Promise<void> {
   if (limiters) await enforce(req, limiters, 1);
+}
+
+/** The 429 `plan_limit` when session `id` on `plan` has no run left today, else null (and
+ * a run is taken). The body names the plan and its allowance, so the UI can say which plan
+ * ran out, and the demo venue to show instead. Fails open like the IP limits. */
+export async function checkPlanLimit(
+  id: string,
+  plan: Plan,
+  limiters: PlanLimiters | null = defaultPlanLimiters(),
+): Promise<Response | null> {
+  if (!limiters) return null;
+  try {
+    const { success, reset } = await limiters[plan].limit(id);
+    if (!success) {
+      return refuse(
+        {
+          reason: "plan_limit",
+          plan,
+          runs_per_day: PLAN_LIMITS[plan].tokens,
+          fallback_seed: FALLBACK_SEED,
+        },
+        reset,
+      );
+    }
+  } catch (err) {
+    console.error("plan limit check failed:", err);
+  }
+  return null;
+}
+
+/** Runs session `id` has left today on `plan`, without taking one (for `GET /api/me`);
+ * null while limits are off or Redis fails. */
+export async function remainingPlanRuns(
+  id: string,
+  plan: Plan,
+  limiters: PlanLimiters | null = defaultPlanLimiters(),
+): Promise<number | null> {
+  if (!limiters) return null;
+  try {
+    return (await limiters[plan].limit(id, { rate: 0 })).remaining;
+  } catch (err) {
+    console.error("plan limit read failed:", err);
+    return null;
+  }
 }

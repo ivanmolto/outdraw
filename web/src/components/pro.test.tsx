@@ -3,7 +3,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { HACKATHON_BANNER, me } from "@/src/lib/entitlements";
-import { HackathonBanner, HackathonStrip } from "./hackathon-banner";
+import { HackathonBanner, HackathonPill } from "./hackathon-banner";
 import { PlanLoader, ProBadge, ProGate, resetPlan } from "./pro";
 
 afterEach(() => {
@@ -33,7 +33,7 @@ function gated() {
 
 describe("ProGate", () => {
   it("hides a Pro feature from a free plan once /api/me answers", async () => {
-    const fetch = serve(me("free", false, 10, 10));
+    const fetch = serve(me("free", false, 10, 10, 3));
     gated();
     expect(await screen.findByText("Upgrade for more")).toBeTruthy();
     expect(screen.queryByText("Act six")).toBeNull();
@@ -42,7 +42,7 @@ describe("ProGate", () => {
   });
 
   it("shows it to everyone in hackathon mode", async () => {
-    const fetch = serve(me("free", true, 10, 10));
+    const fetch = serve(me("free", true, 10, 10, 30));
     gated();
     await vi.waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(screen.getByText("Act six")).toBeTruthy();
@@ -57,7 +57,7 @@ describe("ProGate", () => {
   });
 
   it("falls back to the feature's note by default", async () => {
-    const fetch = serve(me("free", false, 10, 10));
+    const fetch = serve(me("free", false, 10, 10, 3));
     render(
       <>
         <ProGate feature="briefs">
@@ -107,11 +107,13 @@ describe("HackathonBanner", () => {
 
   it("reads HACKATHON_MODE per request", async () => {
     vi.stubEnv("HACKATHON_MODE", "true");
-    render(await HackathonStrip());
-    expect(screen.getByRole("note")).toBeTruthy();
+    render(await HackathonPill());
+    expect(screen.getByRole("link", { name: /Qloo hackathon/ }).getAttribute("href")).toBe(
+      "/pricing",
+    );
     cleanup();
     vi.stubEnv("HACKATHON_MODE", "false");
-    render(await HackathonStrip());
+    render(await HackathonPill());
     expect(screen.queryByRole("note")).toBeNull();
   });
 });

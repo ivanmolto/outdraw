@@ -7,6 +7,7 @@ import "server-only";
 import * as Sentry from "@sentry/nextjs";
 import type { z } from "zod";
 
+import type { Plan } from "@/src/lib/entitlements";
 import { idSchema } from "@/src/lib/schemas";
 import { agentError, type Reason } from "./agent";
 import { shouldReportUnavailable } from "./observability";
@@ -21,8 +22,11 @@ export interface ErrorBody {
   field?: string;
   /** Resolution keys still to confirm, for conflict on profile. */
   pending?: string[];
-  /** The demo venue to show instead, for busy, budget and live_mode_off. */
+  /** The demo venue to show instead, for busy, budget, live_mode_off and plan_limit. */
   fallback_seed?: string;
+  /** The plan that ran out of runs today and its daily allowance, for plan_limit. */
+  plan?: Plan;
+  runs_per_day?: number;
 }
 
 export function fail(status: number, body: ErrorBody): Response {
@@ -70,10 +74,12 @@ function report(err: unknown, runId?: string): void {
   });
 }
 
-/** Run `fn` and answer with its JSON, or with `{reason}` on any failure. */
-export async function proxy<T>(fn: () => Promise<T>, status = 200): Promise<Response> {
+/** Run `fn` and answer with its JSON (or the Response it made itself, such as a 429 from
+ * the plan limit), or with `{reason}` on any failure. */
+export async function proxy<T>(fn: () => Promise<T | Response>, status = 200): Promise<Response> {
   try {
-    return Response.json(await fn(), { status });
+    const out = await fn();
+    return out instanceof Response ? out : Response.json(out, { status });
   } catch (err) {
     if (err instanceof InvalidInput) {
       return fail(400, { reason: "invalid_input", ...(err.field && { field: err.field }) });

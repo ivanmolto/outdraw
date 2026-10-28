@@ -30,12 +30,13 @@ export default defineConfig({
     {
       name: "mobile",
       use: { ...devices["Pixel 7"] },
-      testIgnore: ["visual.spec.ts", "plan-free.spec.ts"],
+      testIgnore: ["visual.spec.ts", "plan-free.spec.ts", "plan-limit.spec.ts"],
     },
-    // Hackathon mode off (T46): the free plan's gates, against the second server.
+    // Hackathon mode off (T46, T48): the free plan's gates and its daily run allowance,
+    // against the second server.
     {
       name: "free",
-      testMatch: "plan-free.spec.ts",
+      testMatch: ["plan-free.spec.ts", "plan-limit.spec.ts"],
       use: { ...devices["Pixel 7"], baseURL: `http://localhost:${FREE_PORT}` },
     },
     // Visual snapshots and the axe check (T43), at scale 1 so a snapshot is CSS pixels.

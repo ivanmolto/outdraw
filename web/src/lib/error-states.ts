@@ -4,6 +4,7 @@
 // on a page, in a panel and under a button. Nothing here comes from the backend: never a
 // message, URL or stack of its own.
 import type { Reason } from "@/types/agent";
+import { RUNS_PER_DAY, type Plan } from "./entitlements";
 import { FALLBACK_SEED, type SeedSlug } from "./seeds";
 
 export type { Reason };
@@ -36,6 +37,9 @@ export interface ErrorDetails {
   fallbackSeed?: SeedSlug;
   /** Dotted path of the field the agent refused, for invalid_input. */
   field?: string;
+  /** From a 429 plan_limit: the plan that ran out today and its daily allowance. */
+  plan?: Plan;
+  runsPerDay?: number;
 }
 
 const MESSAGES: Record<Reason, string> = {
@@ -45,6 +49,7 @@ const MESSAGES: Record<Reason, string> = {
   budget: "Outdraw has used today's Qloo budget. Try again tomorrow.",
   busy: "Outdraw is busy with another request. Try again in a moment.",
   live_mode_off: "Live Qloo lookups are switched off right now.",
+  plan_limit: "This plan's runs for today are used up. Try again tomorrow.",
   unavailable: "Can't reach Outdraw right now. Check your connection and try again.",
   unknown: "Something went wrong on our side. Try again.",
 };
@@ -56,9 +61,20 @@ const TITLES: Record<Reason, string> = {
   budget: "Today's Qloo budget is spent",
   busy: "Outdraw is busy",
   live_mode_off: "Live lookups are paused",
+  plan_limit: "Today's runs are used up",
   unavailable: "Can't reach Outdraw",
   unknown: "Something went wrong",
 };
+
+/** The plan_limit message for the plan that ran out: Free points at Venue Pro, Pro at
+ * tomorrow. Without the details (an older body), the plain message. */
+function planLimitMessage({ plan, runsPerDay }: ErrorDetails): string {
+  if (!plan || runsPerDay == null) return MESSAGES.plan_limit;
+  const used = `You've used the ${plan === "pro" ? "Pro" : "Free"} plan's ${runsPerDay} runs for today.`;
+  return plan === "pro"
+    ? `${used} Try again tomorrow.`
+    : `${used} Venue Pro gets ${RUNS_PER_DAY.pro} a day.`;
+}
 
 /** Reasons a retry can clear; the rest need the booker to do something else first. */
 export const RETRYABLE: ReadonlySet<Reason> = new Set<Reason>(["busy", "unavailable", "unknown"]);
@@ -79,6 +95,11 @@ const sampleLink = (slug: SeedSlug): NextLink => ({
 function nextLink(reason: Reason, details: ErrorDetails): NextLink | null {
   if (SAMPLED.has(reason)) return sampleLink(details.fallbackSeed ?? FALLBACK_SEED);
   switch (reason) {
+    case "plan_limit":
+      // A free plan has an upgrade to look at; a pro plan is at the top already.
+      return details.plan === "pro"
+        ? sampleLink(details.fallbackSeed ?? FALLBACK_SEED)
+        : { label: "See the plans", href: "/pricing" };
     case "not_found":
       return { label: "Set up a venue", href: "/venue/new" };
     case "conflict":
@@ -95,10 +116,16 @@ function nextLink(reason: Reason, details: ErrorDetails): NextLink | null {
 /** The UI state for a `{reason}` and what came with it. */
 export function errorState(reason: Reason, details: ErrorDetails = {}): ErrorState {
   const field = reason === "invalid_input" && details.field;
+  const message =
+    reason === "plan_limit"
+      ? planLimitMessage(details)
+      : field
+        ? `${MESSAGES[reason]} The field refused was ${field}.`
+        : MESSAGES[reason];
   return {
     reason,
     title: TITLES[reason],
-    message: field ? `${MESSAGES[reason]} The field refused was ${field}.` : MESSAGES[reason],
+    message,
     retryable: RETRYABLE.has(reason),
     link: nextLink(reason, details),
     pending: reason === "conflict" ? (details.pending ?? []) : [],

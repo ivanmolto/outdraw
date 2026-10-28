@@ -10,15 +10,20 @@ import { NextRequest } from "next/server";
 import { config, proxy } from "@/proxy";
 import { createFakeRedis } from "./fake-redis.mjs";
 import {
+  checkPlanLimit,
   checkRateLimit,
   clientIp,
   createLimiters,
+  createPlanLimiters,
   FALLBACK_SEED,
   isAgentWork,
   peekRateLimit,
+  PLAN_LIMITS,
+  remainingPlanRuns,
   remainingRuns,
   spendRateLimit,
   type Limiter,
+  type PlanLimiters,
 } from "./ratelimit";
 
 const HOUR = Date.UTC(2026, 9, 25, 12);
@@ -162,6 +167,76 @@ describe("remainingRuns", () => {
     const broken: Limiter = { limit: async () => Promise.reject(new Error("redis down")) };
     expect(await remainingRuns(req("/api/me"), null)).toBeNull();
     expect(await remainingRuns(req("/api/me"), [broken])).toBeNull();
+  });
+});
+
+describe("plan limits", () => {
+  const DAY = 24 * 60 * MINUTE;
+  const SESSION = "ses_abcdefghijklmnopqrstuvwxyz01";
+  let plans: PlanLimiters;
+
+  beforeEach(() => {
+    plans = createPlanLimiters(redis.client as unknown as Redis);
+  });
+
+  it("gives a free session 3 runs a day and refuses the 4th, naming the plan", async () => {
+    for (let i = 0; i < 3; i++) {
+      vi.setSystemTime(HOUR + i * 60 * MINUTE);
+      expect(await checkPlanLimit(SESSION, "free", plans), `run ${i + 1}`).toBeNull();
+    }
+    const res = await checkPlanLimit(SESSION, "free", plans);
+
+    expect(res?.status).toBe(429);
+    expect(await res?.json()).toEqual({
+      reason: "plan_limit",
+      plan: "free",
+      runs_per_day: 3,
+      fallback_seed: FALLBACK_SEED,
+    });
+    expect(Number(res?.headers.get("retry-after"))).toBeGreaterThan(0);
+
+    // A day on, the window has moved past them.
+    vi.setSystemTime(HOUR + DAY + 3 * 60 * MINUTE);
+    expect(await checkPlanLimit(SESSION, "free", plans)).toBeNull();
+  });
+
+  it("lets a pro session carry on where a free one stops, on its own counter", async () => {
+    for (let i = 0; i < 3; i++) await checkPlanLimit(SESSION, "free", plans);
+    expect((await checkPlanLimit(SESSION, "free", plans))?.status).toBe(429);
+
+    for (let i = 0; i < PLAN_LIMITS.pro.tokens; i++) {
+      expect(await checkPlanLimit(SESSION, "pro", plans), `pro run ${i + 1}`).toBeNull();
+    }
+    const res = await checkPlanLimit(SESSION, "pro", plans);
+    expect(res?.status).toBe(429);
+    expect(await res?.json()).toMatchObject({ reason: "plan_limit", plan: "pro", runs_per_day: 30 });
+  });
+
+  it("counts each session on its own, apart from the IP windows", async () => {
+    for (let i = 0; i < 3; i++) await checkPlanLimit(SESSION, "free", plans);
+    expect(await checkPlanLimit("ses_other", "free", plans)).toBeNull();
+    expect(await run()).toBeNull();
+    const keys = [...redis.store.keys()];
+    expect(keys.some((k) => k.startsWith(`outdraw:rl:day:free:${SESSION}:`))).toBe(true);
+    expect(keys.some((k) => k.startsWith("outdraw:rl:hourly:") && k.includes(SESSION))).toBe(false);
+  });
+
+  it("reads the runs left today without spending one", async () => {
+    expect(await remainingPlanRuns(SESSION, "free", plans)).toBe(3);
+    expect(await remainingPlanRuns(SESSION, "free", plans)).toBe(3);
+    await checkPlanLimit(SESSION, "free", plans);
+    expect(await remainingPlanRuns(SESSION, "free", plans)).toBe(2);
+    expect(await remainingPlanRuns(SESSION, "pro", plans)).toBe(30);
+  });
+
+  it("lets runs through when Redis fails or limits are off", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const broken: Limiter = { limit: () => Promise.reject(new Error("down")) };
+    const down: PlanLimiters = { free: broken, pro: broken };
+    expect(await checkPlanLimit(SESSION, "free", down)).toBeNull();
+    expect(await checkPlanLimit(SESSION, "free", null)).toBeNull();
+    expect(await remainingPlanRuns(SESSION, "free", down)).toBeNull();
+    expect(await remainingPlanRuns(SESSION, "free", null)).toBeNull();
   });
 });
 

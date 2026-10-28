@@ -22,6 +22,13 @@ export type Features = Record<ProFeature, boolean>;
 /** Acts a free plan sees on a shortlist; the rest are Pro. */
 export const FREE_SHORTLIST = 5;
 
+/** Shortlist runs (fresh or refined) a session gets in a day, per plan (T48). The server
+ * counts them (src/server/ratelimit.ts); the pricing page and the limit message quote them. */
+export const RUNS_PER_DAY: Record<Plan, number> = { free: 3, pro: 30 };
+
+/** Venue Pro, a month, in US dollars: under Gigwell's listed $99 (docs/briefing.md). */
+export const PRO_PRICE_USD = 39;
+
 export const HACKATHON_BANNER = "All Pro features free during the Qloo hackathon";
 
 /** Whether HACKATHON_MODE is on: only the exact word `true` (any case) turns it on. */
@@ -48,9 +55,19 @@ export interface Me {
   stored_plan: Plan;
   hackathon: boolean;
   features: Features;
-  /** Runs left this hour for this IP; null while rate limits are off. */
+  /** Runs left now: the smaller of this IP's hourly and this plan's daily counts; null
+   * while rate limits are off. */
   remaining_runs: number | null;
+  /** The IP's hourly cap and the plan's daily allowance (T48). */
   runs_per_hour: number;
+  runs_per_day: number;
+}
+
+/** The runs left: the tighter of the two counts, or null when neither is known. */
+export function remainingOf(hourly: number | null, daily: number | null): number | null {
+  if (hourly === null) return daily;
+  if (daily === null) return hourly;
+  return Math.min(hourly, daily);
 }
 
 export function me(
@@ -58,6 +75,7 @@ export function me(
   hackathon: boolean,
   remainingRuns: number | null,
   runsPerHour: number,
+  runsPerDay: number,
 ): Me {
   const plan = effectivePlan(stored, hackathon);
   return {
@@ -67,6 +85,7 @@ export function me(
     features: entitlements(plan),
     remaining_runs: remainingRuns,
     runs_per_hour: runsPerHour,
+    runs_per_day: runsPerDay,
   };
 }
 
