@@ -81,6 +81,8 @@ PROTECTED = [
     ("get", "/runs/run_x/compare"),
     ("post", "/runs/run_x/refine"),
     ("get", "/limits"),
+    ("post", "/sessions"),
+    ("get", "/sessions/ses_x"),
 ]
 
 

@@ -241,6 +241,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Session
+         * @description A new session on the free plan.
+         */
+        post: operations["create_session_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Session
+         * @description The session's stored plan; 404 for an unknown id.
+         */
+        get: operations["get_session_sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/venues": {
         parameters: {
             query?: never;
@@ -988,6 +1028,16 @@ export interface components {
             /** Seeds */
             seeds: components["schemas"]["SeedOut"][];
         };
+        /** SessionOut */
+        SessionOut: {
+            /** Id */
+            id: string;
+            /**
+             * Plan
+             * @enum {string}
+             */
+            plan: "free" | "pro";
+        };
         /**
          * ShortlistEntry
          * @description One ranked act, in `score_and_rank`'s order. The score fields come from the stored
@@ -1506,6 +1556,52 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SeedPageOut"];
+                };
+            };
+        };
+    };
+    create_session_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+        };
+    };
+    get_session_sessions__session_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
                 };
             };
         };

@@ -1828,6 +1828,28 @@
         "title": "SeedsOut",
         "type": "object"
       },
+      "SessionOut": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "plan": {
+            "enum": [
+              "free",
+              "pro"
+            ],
+            "title": "Plan",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "plan"
+        ],
+        "title": "SessionOut",
+        "type": "object"
+      },
       "ShortlistEntry": {
         "description": "One ranked act, in `score_and_rank`'s order. The score fields come from the stored\ncandidate; `reason` is the agent's own (templated for the top five, else the model's).",
         "properties": {
@@ -2983,6 +3005,89 @@
           }
         },
         "summary": "Seed Page"
+      }
+    },
+    "/sessions": {
+      "post": {
+        "description": "A new session on the free plan.",
+        "operationId": "create_session_sessions_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Create Session"
+      }
+    },
+    "/sessions/{session_id}": {
+      "get": {
+        "description": "The session's stored plan; 404 for an unknown id.",
+        "operationId": "get_session_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Session"
       }
     },
     "/venues": {

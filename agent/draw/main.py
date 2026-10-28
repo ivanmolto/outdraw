@@ -32,7 +32,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from draw import __version__
-from draw.api import limits, runs, seeds, venues
+from draw.api import limits, runs, seeds, sessions, venues
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps
 from draw.api.etag import CACHE_CONTROL, NotModified
@@ -163,6 +163,7 @@ def create_app(deps_factory: DepsFactory = Deps.from_env) -> FastAPI:
     app.include_router(runs.router)
     app.include_router(limits.router)
     app.include_router(seeds.router)
+    app.include_router(sessions.router)
     app.add_exception_handler(BudgetExceeded, _budget_exceeded)
     app.add_exception_handler(QlooError, _qloo_error)
     app.add_exception_handler(QlooGatewayError, _gateway_error)
