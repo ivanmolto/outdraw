@@ -3,7 +3,7 @@
 // Soundcheck: everything behind one act's score, as a slide-over (a bottom sheet under
 // 640px). "Why this act" first, then the trail as an expandable tree (inputs → Qloo calls →
 // affinities → score breakdown with weights) and the cross-domain strip. Every item carries
-// the agent's own source label (`source_labels`): Qloo data or Draw's interpretation. The UI
+// the agent's own source label (`source_labels`): Qloo data or Outdraw's interpretation. The UI
 // labels nothing itself: the top reason and the profile lists have keys in the trail too.
 // A second tab holds the act's booking brief (brief.tsx), and the header its pencil hold.
 import { useCallback, useEffect, useId, useRef, useState } from "react";

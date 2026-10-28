@@ -41,7 +41,7 @@ describe("Soundcheck panel", () => {
     }
     expect(screen.getByRole("heading", { name: "What streaming data misses" })).toBeTruthy();
 
-    expect(items("Inputs").map((i) => i.textContent?.replace(/(Qloo|Draw)$/, ""))).toEqual([
+    expect(items("Inputs").map((i) => i.textContent?.replace(/(Qloo|Outdraw)$/, ""))).toEqual([
       "Crowd signal Synthetic Act, weight 0.95 (sell-through)",
       "Venue region: New York, United States",
       "Requested size tier: mid",
@@ -89,12 +89,12 @@ describe("Soundcheck panel", () => {
     expect(contributors).toEqual([
       "PlaceSynthetic Bar 0.67Qloo",
       "BrandSynthetic Brand 0.52Qloo",
-      "RegionNew York, United StatesDraw",
+      "RegionNew York, United StatesOutdraw",
       "Local heat0.70Qloo",
     ]);
   });
 
-  it("puts a Qloo or Draw label from source_labels on every item", () => {
+  it("puts a Qloo or Outdraw label from source_labels on every item", () => {
     setup();
 
     const all = screen.getAllByTestId("trail-item");
@@ -125,7 +125,7 @@ describe("Soundcheck panel", () => {
       ["draw"],
     ]);
     expect(screen.getAllByText("Qloo").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Draw").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Outdraw").length).toBeGreaterThan(0);
   });
 
   it("takes the top reason's and the profile lists' labels from the trail, not the UI", () => {

@@ -1,4 +1,5 @@
-// The Qloo / Draw badge on every Soundcheck item, from the agent's `source_labels`.
+// The Qloo / Outdraw badge on every Soundcheck item, from the agent's `source_labels` (whose
+// value for Outdraw's own interpretation is still `draw`: the contract, not the wordmark).
 import type { SourceLabel } from "@/types/schemas";
 
 export function Provenance({ source }: { source: SourceLabel | undefined }) {
@@ -22,7 +23,7 @@ export function Provenance({ source }: { source: SourceLabel | undefined }) {
         title="Outdraw's interpretation"
         className="inline-block shrink-0 rounded-sm border border-ink/30 px-1 py-px text-[10px] font-semibold tracking-wide text-ink/70 uppercase"
       >
-        Draw
+        Outdraw
       </span>
     );
   }
