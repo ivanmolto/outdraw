@@ -96,7 +96,7 @@ export function Brief({
   const { brief, evidence = {}, support } = data;
   const labels = (data.source_labels ?? {}) as Partial<Record<BriefField, SourceLabel>>;
   const email = brief.outreach_email;
-  const supportName = brief.support_act ?? support.name;
+  const supportName = supportOf(data);
 
   return (
     <div className="space-y-4">
@@ -222,6 +222,28 @@ const loaded = new Map<string, BriefOut>();
 
 export function resetBriefCache() {
   loaded.clear();
+}
+
+/** A brief's support act: the drafted one, else the pick behind it. */
+export function supportOf(data: BriefOut): string | null {
+  return data.brief.support_act ?? data.support.name ?? null;
+}
+
+/** Support acts of the run's briefs drafted so far (cached here, or `seed` for a seed run),
+ * by entity ID: what the export can say without drafting more. */
+export function draftedSupport(
+  runId: string,
+  seed: Record<string, BriefOut> | null = null,
+): Record<string, string> {
+  const briefs = seed
+    ? Object.values(seed)
+    : [...loaded].flatMap(([key, data]) => (key.startsWith(`${runId} `) ? [data] : []));
+  return Object.fromEntries(
+    briefs.flatMap((data) => {
+      const name = supportOf(data);
+      return name ? [[data.entity_id, name]] : [];
+    }),
+  );
 }
 
 /** A seed run's briefs come precomputed with the page (src/lib/precomputed.tsx): no fetch. */

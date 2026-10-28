@@ -1,5 +1,7 @@
 // Sessions and plans (T46) as deployed for judging: HACKATHON_MODE=true (playwright.config.ts)
 // shows the banner, makes every anonymous session Pro and leaves every Pro feature open.
+import { readFileSync } from "node:fs";
+
 import { expect, test } from "@playwright/test";
 
 test("hackathon mode: banner, a Pro session cookie, badges and nothing blocked", async ({
@@ -33,4 +35,17 @@ test("hackathon mode: banner, a Pro session cookie, badges and nothing blocked",
   const panel = page.getByRole("dialog", { name: "Synthetic Headliner" });
   await panel.getByRole("tab", { name: "Brief" }).click();
   await expect(panel.getByRole("heading", { name: "Outreach email" })).toBeVisible();
+  await panel.getByRole("button", { name: "Close" }).click();
+
+  // The export downloads a CSV a spreadsheet reads: the header, then one row per act.
+  await page.getByText("Export to my booking tool").click();
+  const [csv] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Download shortlist (CSV)" }).click(),
+  ]);
+  expect(csv.suggestedFilename()).toMatch(/^outdraw-.+-shortlist-\d{4}-\d{2}-\d{2}\.csv$/);
+  const text = readFileSync(await csv.path(), "utf8").replace(/^\uFEFF/, "");
+  const [header, first] = text.split("\r\n");
+  expect(header).toBe("act,qloo_id,score,top_reason,pencilled_date,support_act");
+  expect(first).toMatch(/^Synthetic Headliner,/);
 });

@@ -2,9 +2,12 @@
 
 // Ways through a shortlist without changing it: the filters (shortlist-filters.tsx) and a
 // List / Calendar switch whose calendar places the pencilled acts on the nights they hold
-// (holds-calendar.tsx). Holds the run's pencil holds for both (holds.tsx).
+// (holds-calendar.tsx), and the export to a booking tool (export-menu.tsx). Holds the run's
+// pencil holds for all three (holds.tsx).
 import { useState, type ReactNode } from "react";
 
+import type { ExportAct } from "@/src/lib/export";
+import { ExportMenu } from "./export-menu";
 import { HoldsProvider, type Holds } from "./holds";
 import { HoldsCalendar } from "./holds-calendar";
 import { ShortlistFilters, type BrowsableAct } from "./shortlist-filters";
@@ -15,14 +18,19 @@ type View = "list" | "calendar";
 
 export function ShortlistBrowser({
   venueId,
+  venueName,
   runId,
   acts,
+  exportActs,
   holds,
   children,
 }: {
   venueId: string;
+  venueName: string;
   runId: string;
   acts: BrowsableAct[];
+  /** The acts as the export writes them, in shortlist order. */
+  exportActs: ExportAct[];
   /** The holds stored with the run. */
   holds: Holds;
   /** The ranked list, its acts wrapped in FilterGate. */
@@ -30,7 +38,13 @@ export function ShortlistBrowser({
 }) {
   return (
     <HoldsProvider runId={runId} initial={holds}>
-      <Browser venueId={venueId} runId={runId} acts={acts}>
+      <Browser
+        venueId={venueId}
+        venueName={venueName}
+        runId={runId}
+        acts={acts}
+        exportActs={exportActs}
+      >
         {children}
       </Browser>
     </HoldsProvider>
@@ -39,13 +53,17 @@ export function ShortlistBrowser({
 
 function Browser({
   venueId,
+  venueName,
   runId,
   acts,
+  exportActs,
   children,
 }: {
   venueId: string;
+  venueName: string;
   runId: string;
   acts: BrowsableAct[];
+  exportActs: ExportAct[];
   children: ReactNode;
 }) {
   const [view, setView] = useState<View>("list");
@@ -71,6 +89,7 @@ function Browser({
             </button>
           ))}
         </div>
+        <ExportMenu venueName={venueName} runId={runId} acts={exportActs} />
       </div>
       {view === "list" ? (
         <ShortlistFilters acts={acts}>{children}</ShortlistFilters>

@@ -1,5 +1,6 @@
 // Hackathon mode off (T46), on the `free` project's server: no banner, a new session is
-// free, and each Pro feature gives way to its note: the brief and the run history here;
+// free, and each Pro feature gives way to its note: the export, the brief and the run
+// history here;
 // the mock's runs have three acts, so the shortlist gate past the top 5 is covered by the
 // component tests and `full_shortlist` through /api/me's feature map.
 import { expect, test } from "@playwright/test";
@@ -15,8 +16,14 @@ test("free plan: no banner, free session, Pro features give way to their notes",
   expect(me).toMatchObject({ plan: "free", stored_plan: "free", hackathon: false });
   expect(Object.values(me.features).every((on) => on === false)).toBe(true);
 
-  // The brief: tab still there, badged; its panel is the note.
+  // The export: the note stands where the menu would.
   await page.goto("/v/nola-jazz");
+  await expect(page.getByRole("note").filter({ hasText: "Exports" })).toHaveText(
+    /Exports to your booking tool: a Pro feature/,
+  );
+  await expect(page.getByText("Export to my booking tool")).toHaveCount(0);
+
+  // The brief: tab still there, badged; its panel is the note.
   await page.getByRole("button", { name: "Soundcheck for Synthetic Headliner" }).click();
   const panel = page.getByRole("dialog", { name: "Synthetic Headliner" });
   await panel.getByRole("tab", { name: "Brief" }).click();

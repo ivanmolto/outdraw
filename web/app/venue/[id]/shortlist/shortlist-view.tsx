@@ -8,7 +8,7 @@
 // against the parent run, and the acts that left are listed under it. An act that has played
 // the venue carries a "Played here" chip from the venue's own past shows; the list can be
 // filtered by genre and capacity band, or seen as a calendar of pencil holds
-// (shortlist-browser.tsx).
+// (shortlist-browser.tsx), and exported to a booking tool as a CSV and a hold summary.
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -328,7 +328,19 @@ export function ShortlistView({
               No Qloo signal (run median)
             </span>
           </div>
-          <ShortlistBrowser venueId={venueId} runId={runId} acts={acts} holds={holds}>
+          <ShortlistBrowser
+            venueId={venueId}
+            venueName={venueName}
+            runId={runId}
+            acts={acts}
+            exportActs={result.shortlist.map((e) => ({
+              entityId: e.entity_id,
+              name: e.name,
+              total: e.total,
+              topReason: e.top_reason ?? e.reason ?? null,
+            }))}
+            holds={holds}
+          >
             <CompareToggle runId={runId} qlooNames={result.shortlist.map((e) => e.name)}>
               <ol aria-label="Ranked acts" className="space-y-3">
                 {result.shortlist.map((entry, i) => {
