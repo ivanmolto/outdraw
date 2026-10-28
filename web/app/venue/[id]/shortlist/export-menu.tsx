@@ -32,7 +32,11 @@ function download(name: string, type: string, text: string) {
   setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
-const today = () => new Date().toISOString().slice(0, 10);
+/** The booker's own date (not UTC: an export just after midnight is dated today here). */
+export function today(now = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
 
 const BUTTON = "rounded-md border border-ink/20 px-3 py-1.5 text-sm font-medium text-ink";
 

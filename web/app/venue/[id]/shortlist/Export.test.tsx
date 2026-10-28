@@ -7,6 +7,7 @@ import { PlanLoader, resetPlan } from "@/src/components/pro";
 import { parseRun } from "@/src/lib/run-result";
 import type { RunOut } from "@/types/agent";
 import fixture from "./fixtures/pencilled-run.json";
+import { today } from "./export-menu";
 import { ShortlistView } from "./shortlist-view";
 
 function setup(features: Record<string, boolean> | null = null) {
@@ -120,5 +121,13 @@ describe("Export to my booking tool", () => {
 
     expect(await screen.findByText(/Exports to your booking tool: a Pro feature/)).toBeTruthy();
     expect(screen.queryByText("Export to my booking tool")).toBeNull();
+  });
+});
+
+describe("today", () => {
+  it("dates the export by the booker's clock, not UTC", () => {
+    // 00:22 local on the 29th: in any zone east of UTC this is still the 28th in UTC.
+    expect(today(new Date(2026, 9, 29, 0, 22))).toBe("2026-10-29");
+    expect(today(new Date(2026, 0, 5, 23, 59))).toBe("2026-01-05");
   });
 });
