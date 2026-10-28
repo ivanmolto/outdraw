@@ -115,6 +115,22 @@ export async function peekRateLimit(
   return limiters ? enforce(req, limiters, 0) : null;
 }
 
+/** Runs `req`'s IP has left in the hourly window, without taking one (for `GET /api/me`);
+ * null while limits are off or Redis fails. The hourly limiter is last in createLimiters. */
+export async function remainingRuns(
+  req: Request,
+  limiters: Limiter[] | null = defaultLimiters(),
+): Promise<number | null> {
+  const hourly = limiters?.at(-1);
+  if (!hourly) return null;
+  try {
+    return (await hourly.limit(clientIp(req.headers), { rate: 0 })).remaining;
+  } catch (err) {
+    console.error("rate limit read failed:", err);
+    return null;
+  }
+}
+
 /** Take one token for `req`'s IP after the fact. Never blocks: the peek before the call is
  * the gate, and two first requests racing past it cost one more call, not a refusal. */
 export async function spendRateLimit(

@@ -38,6 +38,8 @@ let venue = null;
 let profiled = false;
 /** Stored runs by id: the seeds', fresh and refined. @type {Map<string, any>} */
 const runs = new Map();
+/** Anonymous sessions (T46) by id: their stored plan. */
+const sessions = new Map();
 /** Pencil holds by `${run_id} ${entity_id}`, as the real agent stores them on the row. */
 const pencilled = new Map();
 /** The night each hold is for, by the same key (cleared on a release). */
@@ -203,6 +205,17 @@ function refine(parent, message) {
 }
 
 async function route(method, path, body) {
+  if (method === "POST" && path === "/sessions") {
+    const id = `ses_mock${String(sessions.size + 1).padStart(24, "0")}`;
+    sessions.set(id, "free");
+    return [201, { id, plan: "free" }];
+  }
+  const session = method === "GET" && /^\/sessions\/([^/]+)$/.exec(path);
+  if (session) {
+    const id = decodeURIComponent(session[1]);
+    if (!sessions.has(id)) return [404, { detail: "Unknown session." }];
+    return [200, { id, plan: sessions.get(id) }];
+  }
   if (method === "GET" && path === "/seeds") return [200, { seeds: SEEDS }];
   const seedPage = method === "GET" && /^\/seeds\/([^/]+)\/page$/.exec(path);
   if (seedPage) {

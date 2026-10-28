@@ -2,6 +2,7 @@
 // each with the booker's message and the agent's explanation of what changed. Picking one
 // shows that run with its diff against its own parent.
 import type { ParsedRun } from "@/src/lib/run-result";
+import { ProBadge } from "@/src/components/pro";
 import { SourceBadge } from "../profile-view";
 
 const outcome = (run: ParsedRun) =>
@@ -23,7 +24,9 @@ export function RunHistory({
   return (
     <aside aria-label="Run history" className="min-w-0">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium text-ink/60">Run history</h2>
+        <h2 className="flex items-center gap-2 text-sm font-medium text-ink/60">
+          Run history <ProBadge />
+        </h2>
         <SourceBadge source="outdraw" />
       </div>
       <ol className="mt-3 space-y-2">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { ProBadge } from "@/src/components/pro";
 import { NewVenue } from "./new-venue";
 
 export const metadata: Metadata = {
@@ -17,6 +18,9 @@ export default function NewVenuePage() {
           <p className="mt-2 text-sm text-ink/70">
             Your room and the acts that drew. We match them in Qloo, you confirm, and Outdraw
             builds your crowd profile.
+          </p>
+          <p className="mt-3 flex items-center gap-2 text-xs text-ink/60">
+            <ProBadge /> More than one venue is a Pro feature.
           </p>
         </header>
         <NewVenue />

@@ -20,12 +20,15 @@ interface Counters {
 const counters = async (request: APIRequestContext): Promise<Counters> =>
   (await (await request.get(`${AGENT}/__counters`)).json()) as Counters;
 
-/** Every request the page sends to our /api routes, from here on. */
+/** Every request the page sends to our /api routes, from here on, but the plan read every
+ * page makes (`GET /api/me`, T46): it reads the session row and spends nothing. */
 function apiRequests(page: Page): string[] {
   const seen: string[] = [];
   page.on("request", (req) => {
     const url = new URL(req.url());
-    if (url.pathname.startsWith("/api/")) seen.push(`${req.method()} ${url.pathname}`);
+    if (url.pathname.startsWith("/api/") && url.pathname !== "/api/me") {
+      seen.push(`${req.method()} ${url.pathname}`);
+    }
   });
   return seen;
 }

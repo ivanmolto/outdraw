@@ -28,6 +28,8 @@ export type SeedOut = Schema<"SeedOut">;
 export type SeedsOut = Schema<"SeedsOut">;
 /** One seed's whole page in one read (`GET /seeds/{slug}/page`). */
 export type SeedPageOut = Schema<"SeedPageOut">;
+/** An anonymous session and its stored plan (`POST /sessions`, `GET /sessions/{id}`). */
+export type SessionOut = Schema<"SessionOut">;
 
 /** What the UI may branch on; never a backend message, URL or stack trace. */
 /** The agent's 400 body: `field` is the dotted path of the first invalid field. */

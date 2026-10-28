@@ -20,6 +20,7 @@ import type {
   RunOut,
   SeedPageOut,
   SeedsOut,
+  SessionOut,
   VenueId,
   VenueHolds,
   VenueOut,
@@ -48,6 +49,7 @@ export type {
   RunOut,
   SeedPageOut,
   SeedsOut,
+  SessionOut,
   VenueId,
   VenueOut,
 };
@@ -228,6 +230,9 @@ const seg = encodeURIComponent;
 // --- endpoints --------------------------------------------------------------------------
 
 export const agent = {
+  /** A new anonymous session on the free plan (T46). */
+  createSession: () => call<SessionOut>("POST", "/sessions"),
+  getSession: (id: string) => call<SessionOut>("GET", `/sessions/${seg(id)}`),
   upsertVenue: (body: VenueUpsert) => call<VenueId>("POST", "/venues", body),
   getVenue: (id: string) => call<VenueOut>("GET", `/venues/${seg(id)}`),
   getHolds: (id: string) => call<VenueHolds>("GET", `/venues/${seg(id)}/holds`),

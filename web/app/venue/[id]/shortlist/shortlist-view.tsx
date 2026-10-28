@@ -12,6 +12,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { ProBadge, ProGate, ProNote } from "@/src/components/pro";
+import { FREE_SHORTLIST } from "@/src/lib/entitlements";
 import {
   SUB_SCORES,
   SUB_SCORE_LABELS as LABELS,
@@ -116,6 +118,7 @@ function Act({
   change,
   played,
   precision = 2,
+  beyondFree = false,
 }: {
   entry: ShortlistEntry;
   rank: number;
@@ -125,6 +128,8 @@ function Act({
   played?: PlayedHere;
   /** Decimals of the total (see precisionOf). */
   precision?: number;
+  /** The first act past the free plan's top 5: it carries the Pro marker. */
+  beyondFree?: boolean;
 }) {
   const reason = entry.top_reason ?? entry.reason;
   const neutral = new Set(entry.neutral ?? []);
@@ -136,6 +141,11 @@ function Act({
         change?.kind === "entered" ? "border-good border-l-4" : "border-line"
       }`}
     >
+      {beyondFree && (
+        <p className="mb-3 flex items-center gap-2 text-xs font-medium text-ink/60">
+          Beyond the top {FREE_SHORTLIST} <ProBadge />
+        </p>
+      )}
       <div className="flex items-baseline gap-3">
         <span className="display w-6 shrink-0 text-xl text-ink/60" aria-hidden="true">
           {rank}
@@ -321,19 +331,33 @@ export function ShortlistView({
           <ShortlistBrowser venueId={venueId} runId={runId} acts={acts} holds={holds}>
             <CompareToggle runId={runId} qlooNames={result.shortlist.map((e) => e.name)}>
               <ol aria-label="Ranked acts" className="space-y-3">
-                {result.shortlist.map((entry, i) => (
-                  <FilterGate key={entry.entity_id} entityId={entry.entity_id}>
-                    <Act
-                      entry={entry}
-                      rank={i + 1}
-                      runId={runId}
-                      crossDomain={crossDomain}
-                      change={diff?.changes.get(entry.entity_id)}
-                      played={played[entry.entity_id]}
-                      precision={precision[i]}
-                    />
-                  </FilterGate>
-                ))}
+                {result.shortlist.map((entry, i) => {
+                  const act = (
+                    <FilterGate key={entry.entity_id} entityId={entry.entity_id}>
+                      <Act
+                        entry={entry}
+                        rank={i + 1}
+                        runId={runId}
+                        crossDomain={crossDomain}
+                        change={diff?.changes.get(entry.entity_id)}
+                        played={played[entry.entity_id]}
+                        precision={precision[i]}
+                        beyondFree={i === FREE_SHORTLIST}
+                      />
+                    </FilterGate>
+                  );
+                  return i < FREE_SHORTLIST ? (
+                    act
+                  ) : (
+                    <ProGate
+                      key={entry.entity_id}
+                      feature="full_shortlist"
+                      fallback={i === FREE_SHORTLIST ? <ProNote feature="full_shortlist" /> : null}
+                    >
+                      {act}
+                    </ProGate>
+                  );
+                })}
               </ol>
             </CompareToggle>
           </ShortlistBrowser>

@@ -10,6 +10,7 @@
 // sample until the booker goes back to their own shortlist.
 import { useState } from "react";
 
+import { ProNote, useShows } from "@/src/components/pro";
 import { ApiError, api, sampleSeed, type Reason } from "@/src/lib/api-client";
 import type { PlayedHereMap } from "@/src/lib/played-here";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
@@ -58,6 +59,7 @@ export function RefinableRun({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<Reason | null>(null);
   const [sample, setSample] = useState<SeedSlug | null>(null);
+  const history = useShows("run_history");
 
   const run = chain[selected];
   const diff = diffWith(run, chain[selected - 1]);
@@ -130,15 +132,19 @@ export function RefinableRun({
       </div>
       {chain.length > 1 && (
         <div className="mt-8 lg:mt-0">
-          <RunHistory
-            chain={chain}
-            selected={selected}
-            onSelect={(i) => {
-              if (pending) return;
-              setSelected(i);
-              setError(null);
-            }}
-          />
+          {!history ? (
+            <ProNote feature="run_history" />
+          ) : (
+            <RunHistory
+              chain={chain}
+              selected={selected}
+              onSelect={(i) => {
+                if (pending) return;
+                setSelected(i);
+                setError(null);
+              }}
+            />
+          )}
         </div>
       )}
     </div>

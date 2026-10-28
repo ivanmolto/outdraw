@@ -4,7 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 
+import { HackathonStrip } from "@/src/components/hackathon-banner";
 import { NavLinks, PrimaryNav } from "@/src/components/primary-nav";
+import { PlanLoader } from "@/src/components/pro";
 import { THEME_SCRIPT, ThemeToggle } from "@/src/components/theme-toggle";
 import "./globals.css";
 
@@ -124,8 +126,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
       </head>
       <body className="flex min-h-full flex-col bg-paper text-ink">
+        {/* Per request (HACKATHON_MODE at runtime); streams into the static shell. */}
+        <Suspense fallback={null}>
+          <HackathonStrip />
+        </Suspense>
         <Header />
         {children}
+        <PlanLoader />
         <Footer />
       </body>
     </html>

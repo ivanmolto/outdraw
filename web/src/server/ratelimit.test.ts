@@ -16,6 +16,7 @@ import {
   FALLBACK_SEED,
   isAgentWork,
   peekRateLimit,
+  remainingRuns,
   spendRateLimit,
   type Limiter,
 } from "./ratelimit";
@@ -143,6 +144,24 @@ describe("peekRateLimit and spendRateLimit", () => {
 
     vi.setSystemTime(HOUR + 2 * MINUTE);
     expect(await peekRateLimit(brief, limiters)).toBeNull();
+  });
+});
+
+describe("remainingRuns", () => {
+  it("reads the hourly runs left without spending one", async () => {
+    const me = req("/api/me", { method: "GET" });
+    expect(await remainingRuns(me, limiters)).toBe(10);
+    expect(await remainingRuns(me, limiters)).toBe(10);
+    await checkRateLimit(req("/api/runs"), limiters);
+    await checkRateLimit(req("/api/runs"), limiters);
+    expect(await remainingRuns(me, limiters)).toBe(8);
+  });
+
+  it("is null while limits are off or Redis fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const broken: Limiter = { limit: async () => Promise.reject(new Error("redis down")) };
+    expect(await remainingRuns(req("/api/me"), null)).toBeNull();
+    expect(await remainingRuns(req("/api/me"), [broken])).toBeNull();
   });
 });
 

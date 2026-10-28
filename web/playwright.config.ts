@@ -4,6 +4,8 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const WEB_PORT = 3100;
+/** The same build served with HACKATHON_MODE=false, for the free-plan spec. */
+const FREE_PORT = 3102;
 const AGENT_PORT = 8787;
 const REDIS_PORT = 8788;
 const INTERNAL_API_KEY = "e2e-internal-key";
@@ -25,7 +27,17 @@ export default defineConfig({
     toHaveScreenshot: { maxDiffPixelRatio: 0.01 },
   },
   projects: [
-    { name: "mobile", use: { ...devices["Pixel 7"] }, testIgnore: "visual.spec.ts" },
+    {
+      name: "mobile",
+      use: { ...devices["Pixel 7"] },
+      testIgnore: ["visual.spec.ts", "plan-free.spec.ts"],
+    },
+    // Hackathon mode off (T46): the free plan's gates, against the second server.
+    {
+      name: "free",
+      testMatch: "plan-free.spec.ts",
+      use: { ...devices["Pixel 7"], baseURL: `http://localhost:${FREE_PORT}` },
+    },
     // Visual snapshots and the axe check (T43), at scale 1 so a snapshot is CSS pixels.
     {
       name: "visual",
@@ -54,9 +66,24 @@ export default defineConfig({
         INTERNAL_API_KEY,
         UPSTASH_REDIS_REST_URL: `http://127.0.0.1:${REDIS_PORT}`,
         UPSTASH_REDIS_REST_TOKEN,
+        // As deployed for judging (T46): every session Pro, the banner on.
+        HACKATHON_MODE: "true",
       },
       reuseExistingServer: false,
       timeout: 240_000,
+    },
+    {
+      // Started after the build above (servers start in order), from the same .next.
+      command: `npx next start --port ${FREE_PORT}`,
+      url: `http://localhost:${FREE_PORT}/api/health`,
+      env: {
+        AGENT_URL: `http://127.0.0.1:${AGENT_PORT}`,
+        INTERNAL_API_KEY,
+        UPSTASH_REDIS_REST_URL: `http://127.0.0.1:${REDIS_PORT}`,
+        UPSTASH_REDIS_REST_TOKEN,
+        HACKATHON_MODE: "false",
+      },
+      reuseExistingServer: false,
     },
   ],
 });

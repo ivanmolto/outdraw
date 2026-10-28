@@ -8,6 +8,7 @@
 // A second tab holds the act's booking brief (brief.tsx), and the header its pencil hold.
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
+import { ProBadge, ProNote, useShows } from "@/src/components/pro";
 import { Spinner } from "@/src/components/progress";
 import { ApiError, api, reasonText, type Reason } from "@/src/lib/api-client";
 import { usePrecomputed } from "@/src/lib/precomputed";
@@ -459,6 +460,8 @@ function Panel({
   /** Seed runs are read-only: no pencil hold to set. */
   const seed = usePrecomputed(runId) !== null;
   const [tab, setTab] = useState<Tab>("evidence");
+  /** Briefs and outreach are Pro: the tab stays, its panel says so on a free plan. */
+  const briefs = useShows("briefs");
   /** The trail item an evidence link asked for, focused once the Evidence tab is drawn. */
   const [target, setTarget] = useState<string | null>(null);
   const tabRefs = useRef<Record<Tab, HTMLButtonElement | null>>({ evidence: null, brief: null });
@@ -584,11 +587,12 @@ function Panel({
                 tabIndex={tab === key ? 0 : -1}
                 onClick={() => setTab(key)}
                 onKeyDown={onTabKey}
-                className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
+                className={`-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-sm font-medium ${
                   tab === key ? "border-ink text-ink" : "border-transparent text-ink/60"
                 }`}
               >
                 {label}
+                {key === "brief" && <ProBadge decorative />}
               </button>
             ))}
           </div>
@@ -619,6 +623,8 @@ function Panel({
             >
               {tab === "evidence" ? (
                 <Soundcheck data={load.data} crossDomain={crossDomain} />
+              ) : !briefs ? (
+                <ProNote feature="briefs" />
               ) : (
                 <BriefTab
                   runId={runId}
