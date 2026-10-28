@@ -62,9 +62,20 @@ function Includes({ items, dark = false }: { items: readonly string[]; dark?: bo
     <ul className={`mt-6 space-y-2 text-sm ${dark ? "text-house/85" : "text-ink/80"}`}>
       {items.map((item) => (
         <li key={item} className="flex gap-2">
-          <span aria-hidden className={dark ? "text-brand-amber" : "text-ink"}>
-            ✓
-          </span>
+          {/* Drawn, not the ✓ glyph: Geist has none, and the fallback font differs by
+              machine, which moved the visual snapshots between CI and Docker. */}
+          <svg
+            aria-hidden
+            viewBox="0 0 16 16"
+            className={`mt-1 h-3 w-3 shrink-0 ${dark ? "text-brand-amber" : "text-ink"}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M3 8.5l3 3 7-7" />
+          </svg>
           {item}
         </li>
       ))}
