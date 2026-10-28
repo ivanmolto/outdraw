@@ -278,7 +278,12 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Set Plan
+         * @description Set the session's stored plan; 404 for an unknown id. Internal only: the plan flip a
+         *     payment webhook will make once checkout ships.
+         */
+        patch: operations["set_plan_sessions__session_id__patch"];
         trace?: never;
     };
     "/venues": {
@@ -792,6 +797,14 @@ export interface components {
         PencilHold: {
             /** Date */
             date?: string | null;
+        };
+        /** PlanBody */
+        PlanBody: {
+            /**
+             * Plan
+             * @enum {string}
+             */
+            plan: "free" | "pro";
         };
         /** ProfileItem */
         ProfileItem: {
@@ -1594,6 +1607,34 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionOut"];
+                };
+            };
+        };
+    };
+    set_plan_sessions__session_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanBody"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

@@ -2,9 +2,11 @@
 
 `POST /sessions` makes a new row on the free plan and returns its id, which the web sets as
 an httpOnly cookie; `GET /sessions/{id}` reads the plan back (404 for an unknown id, after
-which the web makes a new one). No login, no personal data: the id is random and the row
-holds nothing but the plan. HACKATHON_MODE is the web's concern: it lifts every session to
-Pro in the response, and the stored plan stays what was paid for (T47 flips it).
+which the web makes a new one); `PATCH /sessions/{id}` sets the stored plan. No login, no
+personal data: the id is random and the row holds nothing but the plan. HACKATHON_MODE is
+the web's concern: it lifts every session to Pro in the response, and the stored plan stays
+what was paid for. Nothing flips it today: the PATCH sits behind the internal key, never a
+web route, and is where a payment webhook (Stripe Checkout, on the roadmap) will land.
 """
 
 from __future__ import annotations
@@ -27,9 +29,16 @@ router = APIRouter(prefix="/sessions", dependencies=[Depends(require_internal_ke
 DepsDep = Annotated[Deps, Depends(get_deps)]
 
 
+Plan = Literal["free", "pro"]
+
+
 class SessionOut(BaseModel):
     id: str
-    plan: Literal["free", "pro"]
+    plan: Plan
+
+
+class PlanBody(BaseModel):
+    plan: Plan
 
 
 def new_session_id() -> str:
@@ -54,3 +63,15 @@ async def get_session(session_id: str, deps: DepsDep) -> SessionOut:
     if row is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown session.")
     return SessionOut(id=row.id, plan="pro" if row.plan == "pro" else "free")
+
+
+@router.patch("/{session_id}")
+async def set_plan(session_id: str, body: PlanBody, deps: DepsDep) -> SessionOut:
+    """Set the session's stored plan; 404 for an unknown id. Internal only: the plan flip a
+    payment webhook will make once checkout ships."""
+    async with deps.sessions.begin() as session:
+        row = await session.get(SessionRow, session_id)
+        if row is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Unknown session.")
+        row.plan = body.plan
+    return SessionOut(id=session_id, plan=body.plan)

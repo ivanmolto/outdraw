@@ -1,5 +1,6 @@
-"""`POST /sessions` and `GET /sessions/{id}` (T46): a new session starts free, reads back,
-gets an unguessable id, and an unknown id is a 404.
+"""`POST /sessions`, `GET /sessions/{id}` (T46) and `PATCH /sessions/{id}`: a new session
+starts free, reads back, gets an unguessable id, flips plan on a PATCH, and an unknown id
+is a 404.
 
 Reuses `test_api`'s migrated Postgres.
 """
@@ -46,3 +47,23 @@ def test_stored_pro_plan_reads_back(client: TestClient, db_url: str) -> None:
 
 def test_unknown_session_is_404(client: TestClient) -> None:
     assert client.get("/sessions/ses_nope").status_code == 404
+    assert client.patch("/sessions/ses_nope", json={"plan": "pro"}).status_code == 404
+
+
+def test_patch_flips_the_stored_plan(client: TestClient) -> None:
+    session_id = client.post("/sessions").json()["id"]
+
+    res = client.patch(f"/sessions/{session_id}", json={"plan": "pro"})
+    assert res.status_code == 200, res.text
+    assert res.json() == {"id": session_id, "plan": "pro"}
+    assert client.get(f"/sessions/{session_id}").json()["plan"] == "pro"
+
+    assert client.patch(f"/sessions/{session_id}", json={"plan": "free"}).json()["plan"] == "free"
+    assert client.get(f"/sessions/{session_id}").json()["plan"] == "free"
+
+
+def test_patch_rejects_an_unknown_plan(client: TestClient) -> None:
+    session_id = client.post("/sessions").json()["id"]
+    # The agent answers invalid input with its own 400 (draw/api/inputs.py), not FastAPI's 422.
+    assert client.patch(f"/sessions/{session_id}", json={"plan": "gold"}).status_code == 400
+    assert client.get(f"/sessions/{session_id}").json()["plan"] == "free"

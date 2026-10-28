@@ -1113,6 +1113,23 @@
         "title": "PencilHold",
         "type": "object"
       },
+      "PlanBody": {
+        "properties": {
+          "plan": {
+            "enum": [
+              "free",
+              "pro"
+            ],
+            "title": "Plan",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan"
+        ],
+        "title": "PlanBody",
+        "type": "object"
+      },
       "ProfileItem": {
         "additionalProperties": false,
         "properties": {
@@ -3088,6 +3105,60 @@
           }
         },
         "summary": "Get Session"
+      },
+      "patch": {
+        "description": "Set the session's stored plan; 404 for an unknown id. Internal only: the plan flip a\npayment webhook will make once checkout ships.",
+        "operationId": "set_plan_sessions__session_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Set Plan"
       }
     },
     "/venues": {
