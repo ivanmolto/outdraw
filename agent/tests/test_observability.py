@@ -22,6 +22,7 @@ from draw.observability import (
     bind_run_id,
     configure_logging,
     init_sentry,
+    public_error,
     redact_text,
     scrub_event,
 )
@@ -117,6 +118,21 @@ def test_log_lines_outside_a_request_say_dash(logs: io.StringIO) -> None:
 
 
 # --- Sentry -----------------------------------------------------------------------------
+
+
+def test_public_error_keeps_codes_and_our_own_messages_only() -> None:
+    """What a failed run stores is served by GET /runs/{id}: a harness failure's stderr or a
+    driver's DSN must not be (review T51)."""
+    from draw.qloo.envelope import BudgetExceeded, QlooError
+
+    assert public_error(BudgetExceeded(301, 300, "Qloo")) == "Qloo daily budget exceeded: 301/300"
+    harness = QlooError("harness_failed", recovery="stderr: Error: ENOENT /home/me/.qloo/config")
+    assert public_error(harness) == "Qloo call failed (harness_failed)."
+    assert public_error(ValueError("Evidence trail for 'X' is incomplete: total")) == (
+        "Evidence trail for 'X' is incomplete: total"
+    )
+    assert public_error(ConnectionError("postgres://u:p@db.example/outdraw")) == "ConnectionError"
+    assert public_error(RuntimeError()) == "RuntimeError"
 
 
 def test_sentry_off_without_dsn(monkeypatch: pytest.MonkeyPatch) -> None:

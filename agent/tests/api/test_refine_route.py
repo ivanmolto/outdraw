@@ -29,6 +29,7 @@ from test_api import (  # noqa: F401  (fixtures)
     harness,
     post_run,
     profiled_venue,
+    prompt_constraints,
     scripts,
 )
 
@@ -77,10 +78,13 @@ class Queue:
             )
             match = re.search(r"profile_id (prof_\w+)", prompt)
             assert match, "the stored profile's id is in the prompt"
+            # As a model would: the merged constraints the prompt carries, which the tool
+            # holds to the booker's tier and count (`constraints_json` is what the caller
+            # expects them to be; the prompt is what the run was given).
             return [
                 (
                     "generate_candidates",
-                    {"profile_id": match.group(1), "constraints_json": constraints_json},
+                    {"profile_id": match.group(1), "constraints_json": prompt_constraints(prompt)},
                 )
             ]
 

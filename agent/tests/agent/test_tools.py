@@ -11,12 +11,12 @@ from conftest import FIXTURES_DIR, RouterHarness
 from strands.types.tools import AgentTool, ToolUse
 
 from draw.agent.store import RunStore
-from draw.agent.tools import TOOL_NAMES, DrawTools, dumps
+from draw.agent.tools import TOOL_NAMES, DrawTools, dumps, hold_to_request
 from draw.qloo import exec_client
 from draw.qloo.config import QlooConfig
 from draw.qloo.exec_client import QlooExec
 from draw.ranking.score import WEIGHTS
-from draw.schemas import EntityCandidate, PastShow, ResolvedEntity, VenueInput
+from draw.schemas import Constraints, EntityCandidate, PastShow, ResolvedEntity, VenueInput
 
 MAX_OUTPUT = 2048
 TODAY = dt.date(2026, 10, 20)
@@ -230,6 +230,89 @@ async def test_unknown_ids_and_bad_input_raise_value_errors(
         await tools.gather_signals("run_nope")
     with pytest.raises(ValueError, match="Unknown candidate id"):
         await tools.get_evidence("cand_nope")
+
+
+# --- the model's constraints are held to the booker's request (review T51) -------------
+
+
+REQUESTED = Constraints(
+    include_tags=["jazz", "soul"],
+    exclude_tags=["tribute"],
+    size_tier="emerging",
+    exclude_recent_months=6,
+    max_candidates=20,
+)
+
+
+def asked(**changes: Any) -> Constraints:
+    return REQUESTED.model_copy(update=changes)
+
+
+def test_hold_to_request_fixes_tier_and_count_and_only_lowers_months() -> None:
+    assert hold_to_request(REQUESTED, None) == []
+    assert hold_to_request(REQUESTED, REQUESTED) == []
+    with pytest.raises(ValueError, match="size_tier must stay 'emerging'"):
+        hold_to_request(asked(size_tier="established"), REQUESTED)
+    with pytest.raises(ValueError, match="max_candidates must stay 20"):
+        hold_to_request(asked(max_candidates=50), REQUESTED)
+    with pytest.raises(ValueError, match="may be lowered from 6"):
+        hold_to_request(asked(exclude_recent_months=12), REQUESTED)
+    notes = hold_to_request(asked(exclude_recent_months=0), REQUESTED)
+    assert notes == [
+        "Acts booked in the last 0 months were skipped, not the requested 6, to widen the search."
+    ]
+
+
+def test_hold_to_request_notes_every_tag_change_and_reads_a_urn_as_its_word() -> None:
+    # Resolving a word to its URN is not a change; dropping or adding one is, and is said.
+    resolved = asked(include_tags=["urn:tag:genre:music:jazz", "soul"])
+    assert hold_to_request(resolved, REQUESTED) == []
+    broadened = asked(include_tags=["jazz"], exclude_tags=[])
+    assert hold_to_request(broadened, REQUESTED) == [
+        "Searched without 'soul' from the requested genres.",
+        "Searched without 'tribute' from the requested exclusions.",
+    ]
+    extended = asked(include_tags=["jazz", "soul", "urn:tag:genre:music:neo_soul"])
+    assert hold_to_request(extended, REQUESTED) == [
+        "Added 'neo soul' to the genres from the request."
+    ]
+
+
+async def test_generate_candidates_bounds_the_models_constraints(
+    seeded: tuple[DrawTools, RunStore, str, str], harness: RouterHarness
+) -> None:
+    """The model writes constraints_json, so the request's bounds apply to it too: a tier
+    or count the booker did not ask for is refused, 21 tags is refused before any
+    find_tags call, and a dropped tag reaches the booker as a note."""
+    tools, store, venue_id, _ = seeded
+    store.requested_constraints = Constraints(
+        include_tags=[],
+        exclude_tags=[],
+        size_tier="emerging",
+        exclude_recent_months=0,
+        max_candidates=20,
+    )
+    profile = await tools.build_crowd_profile(venue_id)
+    profile_id = profile["profile_id"]
+
+    changed_tier = json.loads(CONSTRAINTS) | {"size_tier": "established"}
+    with pytest.raises(ValueError, match="size_tier must stay 'emerging'"):
+        await tools.generate_candidates(profile_id, json.dumps(changed_tier))
+    more = json.loads(CONSTRAINTS) | {"max_candidates": 50}
+    with pytest.raises(ValueError, match="max_candidates must stay 20"):
+        await tools.generate_candidates(profile_id, json.dumps(more))
+    many_tags = json.loads(CONSTRAINTS) | {"include_tags": [f"tag{i}" for i in range(21)]}
+    with pytest.raises(ValueError, match="constraints_json"):
+        await tools.generate_candidates(profile_id, json.dumps(many_tags))
+    assert "find_tags" not in harness.workflows(), "refused before any tag was resolved"
+
+    store.requested_constraints = store.requested_constraints.model_copy(
+        update={"include_tags": ["jazz", "funk"]}
+    )
+    broadened = json.loads(CONSTRAINTS) | {"include_tags": []}
+    out = await tools.generate_candidates(profile_id, json.dumps(broadened))
+    assert out["notes"][0] == "Searched without 'jazz', 'funk' from the requested genres."
+    assert out["count"] > 0
 
 
 # --- as Strands tools ----------------------------------------------------------------

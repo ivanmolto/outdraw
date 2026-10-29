@@ -75,6 +75,10 @@ class RunStore:
     results: dict[str, QlooResult] = field(default_factory=dict)
     """The observed results themselves (request shape, summary, counts) for the walkthrough.
     They never leave the process: the model sees `QlooCallRecord`s, the API the recordings."""
+    requested_constraints: Constraints | None = None
+    """The booker's constraints as the request carried them. `generate_candidates` holds the
+    model to them: the size tier and the candidate count are fixed, tags and the recency
+    window may only be read from the message or broadened, and every change is noted."""
 
     # --- seeding (done by the API layer before the agent runs) -------------------------
 

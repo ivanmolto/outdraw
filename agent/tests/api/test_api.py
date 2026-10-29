@@ -133,13 +133,27 @@ class Scripts:
     def _generate(self, results: Results) -> Turn:
         match = re.search(r"profile_id (prof_\w+)", self.prompt())
         assert match, "the stored profile's id is in the prompt"
-        constraints = CONSTRAINTS.model_dump_json()
+        # The fake server resolves no tag word, so this model leaves the words out (a
+        # broadening the tool allows and notes) and keeps the tier, count and months.
+        constraints = prompt_constraints(self.prompt(), tags=False)
         return [
             (
                 "generate_candidates",
                 {"profile_id": match.group(1), "constraints_json": constraints},
             )
         ]
+
+
+def prompt_constraints(prompt: str, *, tags: bool = True) -> str:
+    """The request's constraints as the prompt carries them: what a model passes on to
+    `generate_candidates`, which holds it to the booker's size tier and candidate count.
+    With `tags=False` the tag words are left out, as a model may when none resolves."""
+    match = re.search(r"Constraints JSON: (\{.*?\})\n", prompt)
+    assert match, "the constraints are in the prompt"
+    if tags:
+        return match.group(1)
+    loaded = json.loads(match.group(1))
+    return json.dumps({**loaded, "include_tags": [], "exclude_tags": []})
 
 
 def _latest(results: Results, key: str) -> Any:
@@ -470,6 +484,31 @@ def test_run_blocked_at_the_daily_cap(client: TestClient) -> None:
     assert res.status_code == 429
     assert res.json()["reason"] == "budget" and res.json()["what"] == "Qloo"
     assert client.get("/limits").json()["qloo"] == {"used": 300, "cap": 300, "remaining": 0}
+
+
+def test_run_crossing_the_cap_midway_is_a_429_with_a_seed(
+    client: TestClient, scripts: Scripts
+) -> None:
+    """The guard before the run passes one call short of the cap; the second Qloo call of
+    the run is refused, and the run answers like the guard would: 429 `budget` with a
+    fallback seed, not a stored error the web shows as a bug of ours (review T51)."""
+    venue_id = profiled_venue(client)
+    deps = client.app.state.deps  # type: ignore[attr-defined]
+    counter = deps.gateways.counter
+    asyncio.run(counter.reserve(299 - asyncio.run(counter.used())))
+    scripts.turns = [
+        [
+            ("find_tags", {"query": "jazz", "limit": 5}),
+            ("find_tags", {"query": "soul", "limit": 5}),
+        ],
+        "should never be asked: the run stopped",
+    ]
+    res = post_run(client, venue_id)
+    assert res.status_code == 429, res.text
+    body = res.json()
+    assert body["reason"] == "budget" and body["what"] == "Qloo" and body["fallback_seed"]
+    assert scripts.models[-1].turn == 1, "the model is not asked again once the cap is spent"
+    assert client.get("/limits").json()["qloo"]["remaining"] == 0
 
 
 def test_run_returns_ask_on_needs_input(client: TestClient, scripts: Scripts) -> None:

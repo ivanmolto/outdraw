@@ -164,7 +164,9 @@ def test_paraphrased_requests_share_one_set_of_qloo_calls(
         {"include_tags": ["metal"]},
         {"exclude_tags": ["tribute"]},
         {"max_candidates": 10},
-        {"size_tier": "established"},
+        # Not a tier change: the fixture pool is all emerging, so an established request
+        # finds nothing now that the model is held to the booker's tier.
+        {"exclude_recent_months": 24},
     ],
 )
 def test_unrelated_request_misses(

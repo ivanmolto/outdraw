@@ -42,9 +42,30 @@ __all__ = [
     "init_sentry",
     "is_new_run_id",
     "is_run_id",
+    "public_error",
     "redact_text",
     "scrub_event",
 ]
+
+
+def public_error(exc: BaseException) -> str:
+    """What a failed run stores (and `GET /runs/{id}` serves) about its exception.
+
+    Only messages Outdraw wrote itself pass whole: a budget stop and a tool's own
+    `ValueError` (an incomplete trail, an unknown id). A Qloo error is reduced to its code,
+    since a harness failure quotes the process's stderr in `recovery`; anything else (a
+    driver, the model SDK) is named by its class, as a DSN or a hostname may be in its text.
+    """
+    from draw.qloo.envelope import BudgetExceeded, QlooError  # no import cycle at load
+
+    if isinstance(exc, BudgetExceeded):
+        return str(exc)
+    if isinstance(exc, QlooError):
+        return f"Qloo call failed ({exc.code})."
+    if type(exc) is ValueError and str(exc):
+        return str(exc)
+    return type(exc).__name__
+
 
 RUN_ID_HEADER: Final = "X-Draw-Run-Id"
 RUN_ID_PATTERN: Final = re.compile(r"^(run|req)_[a-z0-9_-]{4,64}$")

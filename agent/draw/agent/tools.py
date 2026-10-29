@@ -29,6 +29,7 @@ from strands.types.tools import AgentTool
 from draw.agent import brief as brief_mod
 from draw.agent.brief import BriefAct, BriefContext, BriefOut
 from draw.agent.store import Run, RunStore, new_id
+from draw.api.inputs import ConstraintsBody
 from draw.profile import crowd, resolve
 from draw.qloo.budget import DailyCounter
 from draw.qloo.exec_client import QlooExec
@@ -44,7 +45,7 @@ from draw.ranking.rank import RankedCandidate, rank
 from draw.ranking.score import WEIGHTS
 from draw.schemas import Constraints, CrowdProfile, DataQuality, EvidenceTrail
 
-__all__ = ["DrawTools", "TOOL_NAMES"]
+__all__ = ["DrawTools", "TOOL_NAMES", "hold_to_request"]
 
 TOOL_NAMES: Final = (
     "confirm_entity",
@@ -73,6 +74,67 @@ def _names(items: Sequence[Any], n: int = TOP_ITEMS) -> list[str]:
 
 def _r(value: float | None) -> float | None:
     return None if value is None else round(value, 4)
+
+
+def _tag_word(tag: str) -> str:
+    """A tag as a booker reads it: the word itself, or a URN's last segment as words."""
+    word = tag.strip()
+    if word.startswith(candidates_mod.TAG_PREFIX):
+        word = word.rsplit(":", 1)[-1].replace("_", " ").replace("-", " ")
+    return word.casefold()
+
+
+def _same_tag(tag: str, word: str) -> bool:
+    """Whether `tag` searches for the requested `word`: the word itself, or a URN naming it
+    (`jazz` ↔ `urn:tag:genre:music:jazz`), which is how the model resolves a word."""
+    return _tag_word(tag) == _tag_word(word)
+
+
+def hold_to_request(asked: Constraints, requested: Constraints | None) -> list[str]:
+    """Check the constraints the model wrote against the booker's request.
+
+    The model parses the message into constraints (a genre word becomes a tag, a thin result
+    is broadened once), but it never gets to change what the booker fixed: the size tier and
+    the candidate count must match, and the recency window may only be shortened. A
+    violation raises `ValueError` (the tool result tells the model what to keep); every tag
+    the model dropped or added is returned as a note for the booker.
+    """
+    if requested is None:
+        return []
+    if asked.size_tier != requested.size_tier:
+        raise ValueError(
+            f"size_tier must stay {requested.size_tier!r} as the booker asked, not "
+            f"{asked.size_tier!r}; only tags and exclude_recent_months may change."
+        )
+    if asked.max_candidates != requested.max_candidates:
+        raise ValueError(
+            f"max_candidates must stay {requested.max_candidates} as the booker asked, not "
+            f"{asked.max_candidates}; only tags and exclude_recent_months may change."
+        )
+    if asked.exclude_recent_months > requested.exclude_recent_months:
+        raise ValueError(
+            f"exclude_recent_months may be lowered from {requested.exclude_recent_months} "
+            f"to broaden, not raised to {asked.exclude_recent_months}."
+        )
+    notes: list[str] = []
+    for kind, before, after in (
+        ("genres", requested.include_tags, asked.include_tags),
+        ("exclusions", requested.exclude_tags, asked.exclude_tags),
+    ):
+        dropped = [w for w in before if not any(_same_tag(t, w) for t in after)]
+        added = [t for t in after if not any(_same_tag(t, w) for w in before)]
+        if dropped:
+            words = ", ".join(repr(w) for w in dropped)
+            notes.append(f"Searched without {words} from the requested {kind}.")
+        if added:
+            words = ", ".join(repr(_tag_word(t)) for t in added)
+            notes.append(f"Added {words} to the {kind} from the request.")
+    if asked.exclude_recent_months < requested.exclude_recent_months:
+        notes.append(
+            f"Acts booked in the last {asked.exclude_recent_months} months were skipped, not "
+            f"the requested {requested.exclude_recent_months}, to widen the search."
+        )
+    return notes
 
 
 class DrawTools:
@@ -177,7 +239,9 @@ class DrawTools:
 
         Starts a run. If `count` is 0, `reason` says what to change (usually broaden tags);
         broaden once, then report. `unresolved_tags` lists tag words the user must choose
-        a candidate for before the run can go on.
+        a candidate for before the run can go on. The booker's size_tier and max_candidates
+        are fixed and exclude_recent_months may only be lowered; tags you drop or add are
+        reported to the booker in `notes`.
 
         Args:
             profile_id: The crowd profile id from build_crowd_profile.
@@ -191,9 +255,13 @@ class DrawTools:
         venue_id = self.store.profile_venue[profile_id]
         venue = self.store.venue(venue_id)
         try:
-            constraints = Constraints.model_validate_json(constraints_json)
+            # The request's bounds (tag count and length, months, candidates), not only the
+            # schema's: the model writes this JSON, so it is user input too.
+            bounded = ConstraintsBody.model_validate_json(constraints_json)
         except ValidationError as exc:
             raise ValueError(f"constraints_json is not a valid Constraints object: {exc}") from None
+        constraints = Constraints.model_validate(bounded.model_dump())
+        held = hold_to_request(constraints, self.store.requested_constraints)
         region = crowd.venue_region(venue)
         booked = candidates_mod.last_booked(venue, self.store.acts_for(venue_id))
         result = await candidates_mod.generate_candidates(
@@ -214,7 +282,7 @@ class DrawTools:
             "count": len(result.candidates),
             "candidates_quality": result.candidates_quality,
             "reason": result.reason,
-            "notes": result.notes,
+            "notes": [*held, *result.notes],
             "unresolved_tags": [
                 {"query": t.query, "candidates": [c.entity_id for c in t.candidates[:5]]}
                 for t in result.unresolved_tags

@@ -68,7 +68,8 @@ from draw.api.live import live_call, live_run
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
 from draw.embed import semantic_cache, tag_map
-from draw.observability import RUN_ID_HEADER, bind_run_id, is_new_run_id
+from draw.observability import RUN_ID_HEADER, bind_run_id, is_new_run_id, public_error
+from draw.qloo.envelope import BudgetExceeded
 from draw.qloo.exec_client import QlooExec
 from draw.ranking.score import WEIGHTS, SourceLabel, SubScore, band_of, source_labels
 from draw.schemas import (
@@ -429,13 +430,19 @@ async def _execute_run(
             )
             candidates = await _candidates(result, qloo, run_id)
             _log_run(result, qloo)
+            if result.budget_what is not None:
+                # A cap crossed midway: the same 429 with a fallback seed as the guard
+                # before the run, not a stored error the web would show as a bug of ours.
+                raise await _budget_exceeded(deps, result.budget_what)
     except Exception as exc:
         log.warning("run_failed error=%s", type(exc).__name__)
         async with deps.sessions.begin() as session:
             row = await session.get(RunRow, run_id)
             assert row is not None
             row.status = "error"
-            row.result = {"error": str(exc) or type(exc).__name__}
+            # What is stored is served by GET /runs/{id}: a code, never the message (a
+            # harness failure quotes its stderr, a driver error its DSN).
+            row.result = {"error": public_error(exc)}
         raise
 
     stored = {
@@ -459,6 +466,15 @@ async def _execute_run(
         out = await read_run(session, run_id)
         assert out is not None
         return out
+
+
+async def _budget_exceeded(deps: Deps, what: str) -> BudgetExceeded:
+    """The `BudgetExceeded` for the cap the run crossed, with today's counter read back."""
+    if what == "LLM token":
+        return BudgetExceeded(await deps.llm_counter.used(), deps.llm_cap, what)
+    return BudgetExceeded(
+        await deps.gateways.counter.used(), deps.gateways.config.daily_cap, "Qloo"
+    )
 
 
 def _log_run(result: AgentResult, qloo: QlooExec) -> None:
