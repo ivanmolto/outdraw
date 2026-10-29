@@ -24,6 +24,7 @@ from draw.schemas import Constraints, PastShow, SizeTier, VenueInput
 
 __all__ = [
     "LIMITS",
+    "AnswerBody",
     "ConfirmBody",
     "ConstraintsBody",
     "InvalidInput",
@@ -122,6 +123,16 @@ class RefineBody(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
     message: Message
+
+
+class AnswerBody(BaseModel):
+    """`POST /runs/{id}/answer`: the Qloo tag the booker chose for a word the run asked about."""
+
+    model_config = ConfigDict(extra="forbid")
+    for_input: Query
+    """The word, as the ask's candidate carries it in `for_input`."""
+    entity_id: Id
+    """The chosen candidate's `id` (a tag URN)."""
 
 
 class InvalidInput(BaseModel):

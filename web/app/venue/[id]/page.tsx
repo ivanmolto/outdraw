@@ -27,7 +27,11 @@ export default async function VenuePage({ params }: PageProps<"/venue/[id]">) {
     if (err.reason === "not_found") notFound();
     return (
       <Shell>
-        <ErrorState reason={err.reason} retryHref={`/venue/${encodeURIComponent(id)}`} />
+        <ErrorState
+          reason={err.reason}
+          details={{ venueId: id, code: err.code, retryable: err.retryable }}
+          retryHref={`/venue/${encodeURIComponent(id)}`}
+        />
       </Shell>
     );
   }

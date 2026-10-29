@@ -69,6 +69,13 @@ export const SUB_SCORE_LABELS: Record<SubScore, string> = {
 
 /** How a refined run came from its parent: the booker's message and the agent's
  * one-sentence explanation of what changed. */
+/** One answer to a tag ask: the Qloo tag `id` named `name`, for the word `forInput`. */
+export interface AskChoice {
+  forInput: string;
+  id: string;
+  name: string;
+}
+
 export interface RunLineage {
   parentRunId: string | null;
   refinement: { message: string; explanation: string } | null;
@@ -79,7 +86,7 @@ export interface RunLineage {
 export type ParsedRun = RunLineage &
   (
     | ({ kind: "shortlist"; runId: string } & ShortlistResult)
-    | { kind: "ask"; runId: string; question: string; options: string[] }
+    | { kind: "ask"; runId: string; question: string; options: string[]; choices: AskChoice[] }
     /** `empty`: the agent finished its turn without ranking because its search left no
      * act (its `notes` say why); otherwise something broke (a crash, the step cap). */
     | { kind: "error"; runId: string; empty: boolean; notes: string[] }
@@ -105,7 +112,14 @@ export function parseRun(run: RunOut): ParsedRun {
     const options = result.ask.candidates.flatMap((c) =>
       typeof c.name === "string" ? [c.name] : [],
     );
-    return { kind: "ask", runId, question: result.ask.question, options, ...lineage };
+    // A tag ask names the word each candidate stands for; an act ask does not, and is
+    // answered on the venue's confirm step instead.
+    const choices = result.ask.candidates.flatMap((c) =>
+      typeof c.for_input === "string" && typeof c.id === "string" && typeof c.name === "string"
+        ? [{ forInput: c.for_input, id: c.id, name: c.name }]
+        : [],
+    );
+    return { kind: "ask", runId, question: result.ask.question, options, choices, ...lineage };
   }
   if (run.status === "ok" && result.shortlist) {
     return {

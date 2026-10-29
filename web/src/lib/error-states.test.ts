@@ -12,9 +12,37 @@ const REASONS: Reason[] = [
   "invalid_input",
   "not_found",
   "conflict",
+  "qloo_error",
   "unavailable",
   "unknown",
 ];
+
+describe("qloo_error", () => {
+  it("names our own setup for a key or harness failure and sends to a demo, no retry", () => {
+    const state = errorState("qloo_error", { code: "QLOO_AUTH", retryable: false, venueId: "ven_1" });
+    expect(state.message).toContain("This is on our side");
+    expect(state.retryable).toBe(false);
+    expect(state.link?.href).toMatch(/^\/v\//);
+  });
+
+  it("offers a retry only when the body says the call can succeed later", () => {
+    const later = errorState("qloo_error", { code: "harness_timeout", retryable: true, venueId: "ven_1" });
+    expect(later.message).toContain("Try again in a moment");
+    expect(later.retryable).toBe(true);
+    expect(later.link).toEqual({ label: "Back to crowd profile", href: "/venue/ven_1" });
+
+    const plain = errorState("qloo_error", { code: "QLOO_HTTP", retryable: false });
+    expect(plain.message).toBe(reasonText("qloo_error"));
+    expect(plain.retryable).toBe(false);
+    expect(plain.link).toEqual({ label: "Back to the start", href: "/" });
+  });
+
+  it("never shows the code or Qloo's recovery text", () => {
+    const state = errorState("qloo_error", { code: "harness_failed", retryable: false });
+    expect(state.message).not.toContain("harness_failed");
+    expect(state.title).not.toContain("harness_failed");
+  });
+});
 
 describe("errorState", () => {
   it.each(REASONS)("gives %s a title, a message and a next action", (reason) => {

@@ -106,6 +106,51 @@ describe("refinable run", () => {
     expect(runs[1].textContent).toContain("Moved the size tier from mid to emerging");
   });
 
+  it("answers a tag ask with a click and renders the run it starts", async () => {
+    const askRun: RunOut = {
+      ...parent,
+      run_id: "run_ask",
+      status: "ask",
+      result: {
+        ask: {
+          question: "Which Qloo tag is meant for 'soul'?",
+          candidates: [
+            { for_input: "soul", id: "urn:tag:genre:music:soul", name: "Soul", type: "urn:tag" },
+          ],
+        },
+        data_quality: "partial",
+      },
+    };
+    const answered: RunOut = {
+      ...refined,
+      run_id: "run_answered",
+      parent_run_id: "run_ask",
+      result: {
+        ...refined.result!,
+        refinement: { message: "Use 'Soul' for 'soul'", delta: {}, explanation: "Searched with the Qloo tag 'Soul'." },
+      },
+    };
+    const calls = fakeApi([[/\/api\/runs\/run_ask\/answer$/, Response.json(answered)]]);
+    vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
+    render(<RefinableRun venueId="ven_fixture" venueName="Synthetic Room" chain={[parseRun(askRun)]} />);
+    const user = userEvent.setup();
+
+    const choices = within(screen.getByRole("list", { name: "Choices" }));
+    await user.click(choices.getByRole("button", { name: /^Soul/ }));
+
+    expect(await screen.findByText("Emerging Fixture Quartet")).toBeTruthy();
+    expect(calls).toEqual([
+      {
+        method: "POST",
+        url: "/api/runs/run_ask/answer",
+        body: { for_input: "soul", entity_id: "urn:tag:genre:music:soul" },
+      },
+    ]);
+    const runs = within(history()).getAllByRole("button");
+    expect(runs).toHaveLength(2);
+    expect(runs[1].textContent).toContain("Use 'Soul' for 'soul'");
+  });
+
   it("chains three successive refinements, each to the run before it", async () => {
     const calls = fakeApi([
       [REFINE("run_fixture"), Response.json(refined)],

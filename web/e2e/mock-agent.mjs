@@ -80,8 +80,17 @@ const REFUSALS = {
 /** The status runs and refinements are refused with, or null to run them. */
 let refuseWith = null;
 
-/** How the whole agent fails ("crash" | "down"), or null when it works. */
+/** How the whole agent fails ("crash" | "down" | "qloo"), or null when it works. */
 let failMode = null;
+/** The agent's 502 for a refused Qloo key: code, retryable and the harness's recovery. */
+const QLOO_AUTH_BODY = {
+  detail: "Qloo call failed.",
+  error: {
+    code: "QLOO_AUTH",
+    retryable: false,
+    recovery: "Run qloo setup --qloo or set QLOO_API_KEY (config: /home/app/.qloo/config).",
+  },
+};
 /** A crashed route's body: what an unhandled exception in FastAPI leaks when debug is on. */
 const crashBody = (path) => ({
   detail: "Internal Server Error",
@@ -285,13 +294,59 @@ async function route(method, path, body) {
       { id: VENUE_ID, venue, resolutions: [], profile: profiled ? venueFixture.profile : null },
     ];
   }
-  const isRun = method === "POST" && (path === "/runs" || /^\/runs\/[^/]+\/refine$/.test(path));
+  const isRun =
+    method === "POST" && (path === "/runs" || /^\/runs\/[^/]+\/(refine|answer)$/.test(path));
   // Refused before any work, as agent/draw/api/live.py does: nothing stored, nothing spent.
   if (isRun && refuseWith) return [refuseWith, REFUSALS[refuseWith]];
   if (method === "POST" && path === "/runs") {
     spend(1, 1);
     await sleep(RUN_DELAY_MS);
+    // The word "ambiguous" matches several Qloo tags: the run stops to ask, as the agent
+    // does for an unresolved tag word (candidates with `for_input`).
+    if ((body.constraints?.include_tags ?? []).includes("ambiguous")) {
+      const run = {
+        ...runFixture,
+        run_id: `run_ask_${runs.size}`,
+        venue_id: body.venue_id,
+        constraints: body.constraints,
+        status: "ask",
+        result: {
+          shortlist: [],
+          notes: [],
+          data_quality: "partial",
+          ask: {
+            question: "Which Qloo tag is meant for 'ambiguous'?",
+            candidates: [
+              { for_input: "ambiguous", id: "urn:tag:genre:music:ambiguous_rock", name: "Ambiguous Rock", type: "urn:tag:genre:music" },
+              { for_input: "ambiguous", id: "urn:tag:genre:music:ambiguous_pop", name: "Ambiguous Pop", type: "urn:tag:genre:music" },
+            ],
+          },
+        },
+      };
+      runs.set(run.run_id, run);
+      return [200, run];
+    }
     const run = { ...runFixture, venue_id: body.venue_id, constraints: body.constraints };
+    runs.set(run.run_id, run);
+    return [200, run];
+  }
+  const answering = method === "POST" && /^\/runs\/([^/]+)\/answer$/.exec(path);
+  if (answering) {
+    const parent = runs.get(decodeURIComponent(answering[1]));
+    if (!parent) return [404, { detail: "Unknown run." }];
+    const choice = (parent.result?.ask?.candidates ?? []).find(
+      (c) => c.for_input === body.for_input && c.id === body.entity_id,
+    );
+    if (!parent.result?.ask) return [422, { detail: "This run did not stop to ask." }];
+    if (!choice) return [404, { detail: "Not one of the choices this run asked for." }];
+    spend(1, 1);
+    await sleep(RUN_DELAY_MS);
+    const run = refine(parent, `Use '${choice.name}' for '${choice.for_input}'`);
+    run.constraints = {
+      ...parent.constraints,
+      include_tags: parent.constraints.include_tags.map((w) => (w === choice.for_input ? choice.id : w)),
+    };
+    run.result.notes = [`Searched with the Qloo tag '${choice.name}' you chose for '${choice.for_input}'.`];
     runs.set(run.run_id, run);
     return [200, run];
   }
@@ -430,7 +485,7 @@ createServer(async (req, res) => {
     return send(200, { status: refuseWith });
   }
   if (url.pathname === "/__fail") {
-    failMode = body?.mode === "crash" || body?.mode === "down" ? body.mode : null;
+    failMode = ["crash", "down", "qloo"].includes(body?.mode) ? body.mode : null;
     return send(200, { mode: failMode });
   }
   if (failMode === "down") return req.socket.destroy();
@@ -438,6 +493,9 @@ createServer(async (req, res) => {
 
   // A crashed call is not recorded: other specs count the agent's real reads.
   if (failMode === "crash") return send(500, crashBody(url.pathname));
+  // "qloo": the agent's own 502 for a Qloo call that failed (draw/main.py's handler), with
+  // the recovery text the real harness writes, which must never reach a browser.
+  if (failMode === "qloo") return send(502, QLOO_AUTH_BODY);
   requests.push({ method: req.method, path: url.pathname, body });
   const [status, data] = await route(req.method, url.pathname, body);
   send(status, data);

@@ -144,13 +144,29 @@ describe("POST /api/venues/[id]/resolve", () => {
     expect(sent[0]).toMatchObject({ method: "POST", url: `${AGENT_URL}/venues/ven_1/resolve` });
   });
 
-  it("maps a Qloo failure (502) to unavailable", async () => {
+  it("maps a Qloo failure (502) to qloo_error with its code, never the recovery text", async () => {
     fakeAgent(
       Response.json(
-        { detail: "Qloo call failed.", error: { code: "QLOO_AUTH", retryable: false } },
+        {
+          detail: "Qloo call failed.",
+          error: {
+            code: "QLOO_AUTH",
+            retryable: false,
+            recovery: "Run qloo setup; config at /home/app/.qloo/config",
+          },
+        },
         { status: 502 },
       ),
     );
+
+    const res = await resolve(jsonRequest({}), ctx({ id: "ven_1" }));
+
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ reason: "qloo_error", code: "QLOO_AUTH", retryable: false });
+  });
+
+  it("keeps a bare 502 (a gateway's, not the agent's) as unavailable", async () => {
+    fakeAgent(new Response("Bad Gateway", { status: 502 }));
 
     const res = await resolve(jsonRequest({}), ctx({ id: "ven_1" }));
 

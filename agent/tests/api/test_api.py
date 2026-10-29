@@ -126,16 +126,20 @@ class Scripts:
     def prompt(self) -> str:
         return "".join(str(b.get("text", "")) for b in self.models[-1].requests[0][0]["content"])
 
-    def pipeline(self) -> None:
+    tags = False
+    """Whether the scripted model passes the request's tag words on (see `_generate`)."""
+
+    def pipeline(self, *, tags: bool = False) -> None:
         """generate (on the stored profile) → score_and_rank → the final JSON."""
+        self.tags = tags
         self.turns = [self._generate, _rank, _answer]
 
     def _generate(self, results: Results) -> Turn:
         match = re.search(r"profile_id (prof_\w+)", self.prompt())
         assert match, "the stored profile's id is in the prompt"
-        # The fake server resolves no tag word, so this model leaves the words out (a
-        # broadening the tool allows and notes) and keeps the tier, count and months.
-        constraints = prompt_constraints(self.prompt(), tags=False)
+        # The fake server resolves no tag word, so by default this model leaves the words
+        # out (a broadening the tool allows and notes) and keeps the tier, count and months.
+        constraints = prompt_constraints(self.prompt(), tags=self.tags)
         return [
             (
                 "generate_candidates",
@@ -263,8 +267,17 @@ def profiled_venue(client: TestClient) -> str:
     return venue_id
 
 
-def post_run(client: TestClient, venue_id: str, message: str = "Thursday jazz.") -> Any:
-    body = {"venue_id": venue_id, "constraints": CONSTRAINTS.model_dump(), "message": message}
+def post_run(
+    client: TestClient,
+    venue_id: str,
+    message: str = "Thursday jazz.",
+    constraints: dict[str, Any] | None = None,
+) -> Any:
+    body = {
+        "venue_id": venue_id,
+        "constraints": constraints or CONSTRAINTS.model_dump(),
+        "message": message,
+    }
     return client.post("/runs", json=body)
 
 
@@ -525,6 +538,70 @@ def test_run_returns_ask_on_needs_input(client: TestClient, scripts: Scripts) ->
     assert ask["question"] and len(ask["candidates"]) == 2
     assert run["result"]["shortlist"] == [], "RunResult always carries the key; an ask has none"
     assert client.get(f"/runs/{run['run_id']}").json()["status"] == "ask"
+
+
+def test_answering_a_tag_ask_reruns_with_the_chosen_tag(
+    client: TestClient, scripts: Scripts
+) -> None:
+    """A word that matches no tag exactly stops the run with an ask naming the tag
+    candidates; choosing one re-runs under the parent's constraints with the tag URN in the
+    word's place, chained to the parent, with no model parse (review T51)."""
+    venue_id = profiled_venue(client)
+    scripts.pipeline(tags=True)
+    asked = post_run(
+        client,
+        venue_id,
+        constraints={**CONSTRAINTS.model_dump(), "include_tags": ["something else"]},
+    ).json()
+    assert asked["status"] == "ask", asked
+    choice = asked["result"]["ask"]["candidates"][0]
+    assert choice["for_input"] == "something else" and choice["id"].startswith("urn:tag:")
+
+    models = len(scripts.models)
+    res = client.post(
+        f"/runs/{asked['run_id']}/answer",
+        json={"for_input": "something else", "entity_id": choice["id"]},
+    )
+    assert res.status_code == 200, res.text
+    run = res.json()
+    assert run["status"] == "ok" and run["parent_run_id"] == asked["run_id"]
+    assert run["constraints"]["include_tags"] == [choice["id"]]
+    assert run["result"]["shortlist"]
+    assert len(scripts.models) == models + 1, "one agent run, no parse call"
+    assert run["result"]["notes"][0] == (
+        f"Searched with the Qloo tag {choice['name']!r} you chose for 'something else'."
+    )
+    assert run["result"]["refinement"]["message"] == f"Use {choice['name']!r} for 'something else'"
+
+    wrong = client.post(
+        f"/runs/{asked['run_id']}/answer",
+        json={"for_input": "something else", "entity_id": "urn:tag:genre:music:nope"},
+    )
+    assert wrong.status_code == 404
+    ranked = client.post(
+        f"/runs/{run['run_id']}/answer",
+        json={"for_input": "something else", "entity_id": choice["id"]},
+    )
+    assert ranked.status_code == 422, "a run that ranked has nothing to answer"
+    assert (
+        client.post("/runs/run_nope/answer", json={"for_input": "x", "entity_id": "y"}).status_code
+        == 404
+    )
+
+
+def test_an_entity_ask_cannot_be_answered_here(client: TestClient, scripts: Scripts) -> None:
+    venue_id = profiled_venue(client)
+    scripts.turns = [
+        [("describe", {"entity": "Blue Note Jazz Club", "type": "place"})],
+        "should never be asked",
+    ]
+    asked = post_run(client, venue_id).json()
+    assert asked["status"] == "ask"
+    choice = asked["result"]["ask"]["candidates"][0]
+    res = client.post(
+        f"/runs/{asked['run_id']}/answer", json={"for_input": "x", "entity_id": choice["id"]}
+    )
+    assert res.status_code == 422 and "crowd profile" in res.json()["detail"]
 
 
 def test_evidence_and_calls(client: TestClient, scripts: Scripts) -> None:

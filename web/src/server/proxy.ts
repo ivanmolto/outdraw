@@ -27,6 +27,9 @@ export interface ErrorBody {
   /** The plan that ran out of runs today and its daily allowance, for plan_limit. */
   plan?: Plan;
   runs_per_day?: number;
+  /** The Qloo error code and whether a retry can help, for qloo_error. */
+  code?: string;
+  retryable?: boolean;
 }
 
 export function fail(status: number, body: ErrorBody): Response {
@@ -95,6 +98,7 @@ export async function proxy<T>(fn: () => Promise<T | Response>, status = 200): P
         ...(agentErr.pending && { pending: agentErr.pending }),
         ...(agentErr.fallbackSeed && { fallback_seed: agentErr.fallbackSeed }),
         ...(agentErr.field && { field: agentErr.field }),
+        ...(agentErr.code && { code: agentErr.code, retryable: agentErr.retryable === true }),
       });
     }
     console.error("api proxy failed:", err);

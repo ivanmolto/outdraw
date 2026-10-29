@@ -29,6 +29,7 @@ import type { CrowdProfile } from "@/types/schemas";
 import { isSeedSlug } from "@/src/lib/seeds";
 import { RUN_ID_HEADER, logLine, newRunId, runIdFor } from "./observability";
 import type {
+  AnswerInput,
   ConfirmInput,
   PencilInput,
   RefineInput,
@@ -66,6 +67,7 @@ const REASONS: ReadonlySet<string> = new Set<Reason>([
   "busy",
   "live_mode_off",
   "plan_limit",
+  "qloo_error",
   "unavailable",
   "unknown",
 ]);
@@ -90,10 +92,16 @@ export class AgentError extends Error {
     readonly fallbackSeed?: string,
     /** Dotted path of the field the agent refused, for invalid_input. */
     readonly field?: string,
+    /** The Qloo error code (`QLOO_AUTH`, `harness_timeout`…) for qloo_error. */
+    readonly code?: string,
+    /** Whether the same Qloo call can succeed a moment later, for qloo_error. */
+    readonly retryable?: boolean,
   ) {
     super(`agent ${status}: ${reason}`);
     this.name = "AgentError";
-    this.digest = `${DIGEST};${status};${reason}`;
+    // The Qloo code and retry flag ride in the digest too, so they survive a cache boundary.
+    this.digest =
+      `${DIGEST};${status};${reason}` + (code ? `;${code};${retryable ? 1 : 0}` : "");
   }
 }
 
@@ -104,9 +112,18 @@ export function agentError(err: unknown): AgentError | null {
   if (typeof err !== "object" || err === null || !("digest" in err)) return null;
   const { digest } = err as { digest?: unknown };
   if (typeof digest !== "string") return null;
-  const [tag, status, reason] = digest.split(";");
+  const [tag, status, reason, code, retry] = digest.split(";");
   if (tag !== DIGEST || !/^\d{3}$/.test(status ?? "") || !REASONS.has(reason ?? "")) return null;
-  return new AgentError(Number(status), reason as Reason);
+  const qlooCode = code && /^[A-Za-z0-9_]{1,40}$/.test(code) ? code : undefined;
+  return new AgentError(
+    Number(status),
+    reason as Reason,
+    undefined,
+    undefined,
+    undefined,
+    qlooCode,
+    qlooCode ? retry === "1" : undefined,
+  );
 }
 
 function toAgentError(status: number, body: unknown): AgentError {
@@ -134,7 +151,22 @@ function toAgentError(status: number, body: unknown): AgentError {
     }
     case 429:
       return new AgentError(429, "budget", undefined, seed);
-    case 502:
+    case 502: {
+      // The agent's own 502 names the Qloo error; a gateway's bare 502 does not.
+      const qloo = obj.error as { code?: unknown; retryable?: unknown } | undefined;
+      if (typeof qloo?.code === "string" && /^[A-Za-z0-9_]{1,40}$/.test(qloo.code)) {
+        return new AgentError(
+          502,
+          "qloo_error",
+          undefined,
+          undefined,
+          undefined,
+          qloo.code,
+          qloo.retryable === true,
+        );
+      }
+      return new AgentError(503, "unavailable");
+    }
     case 503:
     case 504:
       return new AgentError(503, "unavailable");
@@ -250,6 +282,9 @@ export const agent = {
   /** A new run chained to `id`: one parse call, then a whole agent loop. */
   refineRun: (id: string, body: RefineInput) =>
     call<RunOut>("POST", `/runs/${seg(id)}/refine`, body, SLOW_TIMEOUT_MS, newRunId("run")),
+  /** A new run chained to the ask run `id`, with the chosen tag; no parse call. */
+  answerRun: (id: string, body: AnswerInput) =>
+    call<RunOut>("POST", `/runs/${seg(id)}/answer`, body, SLOW_TIMEOUT_MS, newRunId("run")),
   getEvidence: (runId: string, entityId: string) =>
     call<CandidateEvidence>("GET", `/runs/${seg(runId)}/candidates/${seg(entityId)}/evidence`),
   setPencil: (runId: string, entityId: string, body: PencilInput) =>

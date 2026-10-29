@@ -1,6 +1,31 @@
 {
   "components": {
     "schemas": {
+      "AnswerBody": {
+        "additionalProperties": false,
+        "description": "`POST /runs/{id}/answer`: the Qloo tag the booker chose for a word the run asked about.",
+        "properties": {
+          "entity_id": {
+            "maxLength": 128,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9:._-]+$",
+            "title": "Entity Id",
+            "type": "string"
+          },
+          "for_input": {
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "For Input",
+            "type": "string"
+          }
+        },
+        "required": [
+          "for_input",
+          "entity_id"
+        ],
+        "title": "AnswerBody",
+        "type": "object"
+      },
       "AskOut": {
         "properties": {
           "candidates": {
@@ -2550,6 +2575,75 @@
           }
         },
         "summary": "Get Run"
+      }
+    },
+    "/runs/{run_id}/answer": {
+      "post": {
+        "description": "A new run under the parent's constraints with the chosen Qloo tag in place of the\nword the parent stopped to ask about.\n\n404 for an unknown run or a choice the ask did not offer; 422 when the run did not ask,\nor asked about an act (confirm it on the venue instead). No model parse: the tag goes\nstraight into the constraints. The re-run is a normal agent run with every cap of\n`POST /runs`, and refused like one with `LIVE_MODE=off`.",
+        "operationId": "answer_run_runs__run_id__answer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-Draw-Internal-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Draw-Internal-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvalidInput"
+                }
+              }
+            },
+            "description": "Input out of bounds."
+          },
+          "422": {
+            "description": "The run asked no such choice (or asked about an act)."
+          }
+        },
+        "summary": "Answer Run"
       }
     },
     "/runs/{run_id}/calls": {

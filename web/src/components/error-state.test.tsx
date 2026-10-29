@@ -20,6 +20,7 @@ describe("ErrorState", () => {
     ["not_found", "That venue no longer exists", "Set up a venue"],
     ["conflict", "Confirm every Qloo match", "Confirm the matches"],
     ["unavailable", "Can't reach Outdraw right now", "Back to the start"],
+    ["qloo_error", "Qloo couldn't answer this request", "Back to the start"],
     ["unknown", "Something went wrong on our side", "Back to the start"],
   ])("%s: a message and a next action", (reason, message, link) => {
     render(<ErrorState reason={reason} />);

@@ -57,13 +57,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from draw.agent.agent import AgentResult, run_venue_agent
 from draw.agent.brief import BriefAct, BriefContext, BriefOut, draft_brief
 from draw.agent.compare import CompareOut, llm_only_shortlist
-from draw.agent.refine import ConstraintsDelta, explain, merge, parse_delta, refine_request
+from draw.agent.refine import (
+    ConstraintsDelta,
+    answer,
+    explain,
+    merge,
+    parse_delta,
+    refine_request,
+    shortlist_change,
+)
 from draw.agent.store import new_id
 from draw.agent.tools import DrawTools
 from draw.api.auth import require_internal_key
 from draw.api.deps import Deps, get_deps
 from draw.api.etag import conditional
-from draw.api.inputs import INVALID_INPUT, RefineBody, RunBody
+from draw.api.inputs import INVALID_INPUT, AnswerBody, RefineBody, RunBody
 from draw.api.live import live_call, live_run
 from draw.api.venues import load_resolutions, load_venue
 from draw.db.models import CandidateRow, CrowdProfileRow, QlooCallRow, RunRow
@@ -680,6 +688,76 @@ async def _refine(run_id: str, body: RefineBody, deps: Deps, new_run_id: str) ->
         refine_request(body.message, delta, before),
         parent_run_id=run_id,
         finish=finish,
+    )
+
+
+@router.post(
+    "/{run_id}/answer",
+    responses={422: {"description": "The run asked no such choice (or asked about an act)."}},
+)
+async def answer_run(
+    run_id: str, body: AnswerBody, request: Request, response: Response, deps: DepsDep
+) -> RunOut:
+    """A new run under the parent's constraints with the chosen Qloo tag in place of the
+    word the parent stopped to ask about.
+
+    404 for an unknown run or a choice the ask did not offer; 422 when the run did not ask,
+    or asked about an act (confirm it on the venue instead). No model parse: the tag goes
+    straight into the constraints. The re-run is a normal agent run with every cap of
+    `POST /runs`, and refused like one with `LIVE_MODE=off`.
+    """
+    async with live_run(deps, run_id=run_id):
+        return await _answer(run_id, body, deps, await _new_run_id(deps, request, response))
+
+
+def _ask_choice(result: dict[str, Any] | None, body: AnswerBody) -> dict[str, Any]:
+    """The candidate the booker chose, from the stored ask; the refusals otherwise."""
+    ask = (result or {}).get("ask")
+    candidates = [c for c in (ask.get("candidates") if isinstance(ask, dict) else []) or []]
+    rows = [c for c in candidates if isinstance(c, dict)]
+    if not rows:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "This run did not stop to ask; refine it instead.",
+        )
+    if not any(c.get("for_input") for c in rows):
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            "This run asked which act was meant; confirm it on the venue's crowd profile.",
+        )
+    for c in rows:
+        if c.get("for_input") == body.for_input and c.get("id") == body.entity_id:
+            return c
+    raise HTTPException(status.HTTP_404_NOT_FOUND, "Not one of the choices this run asked for.")
+
+
+async def _answer(run_id: str, body: AnswerBody, deps: Deps, new_run_id: str) -> RunOut:
+    async with deps.sessions() as session:
+        parent = await session.get(RunRow, run_id)
+        if parent is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
+        target = await venue_for_run(session, parent.venue_id)
+    choice = _ask_choice(parent.result, body)
+    name = str(choice.get("name") or body.entity_id)
+    previous = Constraints.model_validate(parent.constraints)
+    chosen = answer(previous, body.for_input, body.entity_id)
+    lead = f"Searched with the Qloo tag {name!r} you chose for {body.for_input!r}"
+
+    def finish(stored: dict[str, Any]) -> dict[str, Any]:
+        refinement = Refinement(
+            message=f"Use {name!r} for {body.for_input!r}",
+            delta=ConstraintsDelta(),
+            explanation=f"{lead}; {shortlist_change([], _shortlist_names(stored))}.",
+        )
+        notes = [f"{lead}.", *(stored.get("notes") or [])]
+        return {**stored, "notes": notes, "refinement": refinement.model_dump(mode="json")}
+
+    message = (
+        f"The booker chose the Qloo tag {name!r} for the word {body.for_input!r}. The "
+        "constraints JSON already carries that tag; run the pipeline on it as given."
+    )
+    return await execute_run(
+        deps, new_run_id, target, chosen, message, parent_run_id=run_id, finish=finish
     )
 
 

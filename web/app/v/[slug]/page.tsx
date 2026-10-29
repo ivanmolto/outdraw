@@ -43,7 +43,11 @@ export default async function DemoVenuePage({ params }: PageProps<"/v/[slug]">) 
     if (!agentErr) throw err;
     return (
       <Shell>
-        <ErrorState reason={agentErr.reason} retryHref={`/v/${encodeURIComponent(slug)}`} />
+        <ErrorState
+          reason={agentErr.reason}
+          details={{ code: agentErr.code, retryable: agentErr.retryable }}
+          retryHref={`/v/${encodeURIComponent(slug)}`}
+        />
       </Shell>
     );
   }

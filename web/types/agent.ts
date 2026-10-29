@@ -43,5 +43,8 @@ export type Reason =
   | "busy"
   | "live_mode_off"
   | "plan_limit"
+  /** A Qloo call failed (the agent's 502 with `error.code`); `code` and `retryable` ride
+   * along in the body, never Qloo's `recovery` text. */
+  | "qloo_error"
   | "unavailable"
   | "unknown";

@@ -59,11 +59,13 @@ __all__ = [
     "MAX_TAGS",
     "ConstraintsDelta",
     "DeltaParse",
+    "answer",
     "explain",
     "merge",
     "normalise",
     "parse_delta",
     "refine_request",
+    "shortlist_change",
     "tier_for",
 ]
 
@@ -389,16 +391,37 @@ def explain(
         lead = f"kept the constraints and re-ran the search noting {_list(delta.hints)}"
     else:
         lead = "kept the constraints and re-ran the search"
+    return f"{lead[0].upper()}{lead[1:]}; {shortlist_change(before, after)}."
 
+
+def shortlist_change(before: Sequence[str], after: Sequence[str]) -> str:
+    """What moved between two shortlists, as the explanation's second half."""
     entered = [n for n in after if n not in before]
     left = [n for n in before if n not in after]
     if not after:
-        tail = "no act survived the search"
-    elif not entered and not left:
-        tail = "the shortlist is unchanged"
-    else:
-        tail = f"{_plural(len(entered), 'act')} entered the shortlist and {len(left)} left"
-    return f"{lead[0].upper()}{lead[1:]}; {tail}."
+        return "no act survived the search"
+    if not entered and not left:
+        return "the shortlist is unchanged"
+    return f"{_plural(len(entered), 'act')} entered the shortlist and {len(left)} left"
+
+
+# --- answering an ask ----------------------------------------------------------------------
+
+
+def answer(previous: Constraints, word: str, tag: str) -> Constraints:
+    """`previous` with the Qloo tag `tag` in place of the word the run asked about.
+
+    The word is replaced where it stands (include or exclude list, case-insensitive); a word
+    the model had read from the message, which is in neither list, is added to
+    `include_tags`. A tag URN passes through the candidate search untouched, so the re-run
+    needs no model parse and asks about that word no more.
+    """
+    key = word.casefold()
+    include = [tag if w.casefold() == key else w for w in previous.include_tags]
+    exclude = [tag if w.casefold() == key else w for w in previous.exclude_tags]
+    if tag not in include and tag not in exclude:
+        include = [*include[: MAX_TAGS - 1], tag]
+    return previous.model_copy(update={"include_tags": include, "exclude_tags": exclude})
 
 
 def _join(parts: Sequence[str]) -> str:

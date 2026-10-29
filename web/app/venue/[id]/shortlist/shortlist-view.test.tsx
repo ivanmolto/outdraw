@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { defaultConstraints, parseRun, type ShortlistResult } from "@/src/lib/run-result";
 import type { RunOut } from "@/types/agent";
@@ -164,6 +165,39 @@ describe("run outcome", () => {
     const alert = screen.getByRole("alert");
     expect(alert.textContent).toContain("Which Ambiguous Band did you mean?");
     expect(within(alert).getAllByRole("listitem")).toHaveLength(2);
+    // An act ask is answered on the venue's confirm step, not here.
+    expect(within(alert).queryAllByRole("button")).toHaveLength(0);
+    expect(alert.textContent).toContain("Confirm which act you meant on the crowd profile");
+  });
+
+  it("offers a tag ask's candidates as choices that answer it", async () => {
+    const onAnswer = vi.fn();
+    const askRun: RunOut = {
+      ...run,
+      status: "ask",
+      result: {
+        ask: {
+          question: "Which Qloo tag is meant for 'soul'?",
+          candidates: [
+            { for_input: "soul", id: "urn:tag:genre:music:soul", name: "Soul", type: "urn:tag" },
+            { for_input: "soul", id: "urn:tag:genre:music:neo_soul", name: "Neo Soul", type: "urn:tag" },
+          ],
+        },
+        data_quality: "partial",
+      },
+    };
+    render(
+      <RunOutcome venueId="ven_fixture" venueName="Synthetic Room" run={parseRun(askRun)} onAnswer={onAnswer} />,
+    );
+
+    const choices = within(screen.getByRole("list", { name: "Choices" })).getAllByRole("button");
+    expect(choices.map((b) => b.textContent)).toEqual(["Soul for soul", "Neo Soul for soul"]);
+    await userEvent.click(choices[1]);
+    expect(onAnswer).toHaveBeenCalledWith({
+      forInput: "soul",
+      id: "urn:tag:genre:music:neo_soul",
+      name: "Neo Soul",
+    });
   });
 
   it("shows an empty search as such, with the agent's notes, not as a fault", () => {

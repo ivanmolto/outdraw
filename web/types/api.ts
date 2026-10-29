@@ -76,6 +76,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/runs/{run_id}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Answer Run
+         * @description A new run under the parent's constraints with the chosen Qloo tag in place of the
+         *     word the parent stopped to ask about.
+         *
+         *     404 for an unknown run or a choice the ask did not offer; 422 when the run did not ask,
+         *     or asked about an act (confirm it on the venue instead). No model parse: the tag goes
+         *     straight into the constraints. The re-run is a normal agent run with every cap of
+         *     `POST /runs`, and refused like one with `LIVE_MODE=off`.
+         */
+        post: operations["answer_run_runs__run_id__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/runs/{run_id}/calls": {
         parameters: {
             query?: never;
@@ -412,6 +438,16 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AnswerBody
+         * @description `POST /runs/{id}/answer`: the Qloo tag the booker chose for a word the run asked about.
+         */
+        AnswerBody: {
+            /** Entity Id */
+            entity_id: string;
+            /** For Input */
+            for_input: string;
+        };
         /** AskOut */
         AskOut: {
             /** Candidates */
@@ -1308,6 +1344,50 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["InvalidInput"];
                 };
+            };
+        };
+    };
+    answer_run_runs__run_id__answer_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Draw-Internal-Key"?: string | null;
+            };
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description Input out of bounds. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvalidInput"];
+                };
+            };
+            /** @description The run asked no such choice (or asked about an act). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

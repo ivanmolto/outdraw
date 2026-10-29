@@ -15,7 +15,14 @@ import type {
 import type { CrowdProfile } from "@/types/schemas";
 import { PLANS, type Plan } from "./entitlements";
 import { SAMPLED, reasonText, type ErrorDetails } from "./error-states";
-import type { ConfirmInput, PencilInput, RefineInput, RunInput, VenueUpsert } from "./schemas";
+import type {
+  AnswerInput,
+  ConfirmInput,
+  PencilInput,
+  RefineInput,
+  RunInput,
+  VenueUpsert,
+} from "./schemas";
 import { FALLBACK_SEED, isSeedSlug, type SeedSlug } from "./seeds";
 import type { PlayedHereMap } from "./played-here";
 import type { Precomputed } from "./precomputed";
@@ -36,6 +43,9 @@ export class ApiError extends Error {
     /** The plan that ran out of runs today and its allowance, for plan_limit. */
     readonly plan?: Plan,
     readonly runsPerDay?: number,
+    /** The Qloo error code and whether a retry can help, for qloo_error. */
+    readonly code?: string,
+    readonly retryable?: boolean,
   ) {
     super(reason);
     this.name = "ApiError";
@@ -50,8 +60,8 @@ export function reasonMessage(err: unknown): string {
  * (fetch itself threw) is `unavailable`. */
 export function errorOf(err: unknown): { reason: Reason; details: ErrorDetails } {
   if (!(err instanceof ApiError)) return { reason: "unavailable", details: {} };
-  const { reason, field, pending, fallbackSeed, plan, runsPerDay } = err;
-  return { reason, details: { field, pending, fallbackSeed, plan, runsPerDay } };
+  const { reason, field, pending, fallbackSeed, plan, runsPerDay, code, retryable } = err;
+  return { reason, details: { field, pending, fallbackSeed, plan, runsPerDay, code, retryable } };
 }
 
 /** The seed to show instead of `err` (a refusal of live analysis: the web's rate limit,
@@ -93,11 +103,23 @@ async function request<T>(method: "GET" | "POST" | "PATCH", path: string, body?:
       fallback_seed?: unknown;
       plan?: unknown;
       runs_per_day?: unknown;
+      code?: unknown;
+      retryable?: unknown;
     };
     const seed = isSeedSlug(err.fallback_seed) ? err.fallback_seed : undefined;
     const plan = PLANS.find((p) => p === err.plan);
     const runsPerDay = typeof err.runs_per_day === "number" ? err.runs_per_day : undefined;
-    throw new ApiError(err.reason ?? "unknown", err.field, err.pending, seed, plan, runsPerDay);
+    const code = typeof err.code === "string" ? err.code : undefined;
+    throw new ApiError(
+      err.reason ?? "unknown",
+      err.field,
+      err.pending,
+      seed,
+      plan,
+      runsPerDay,
+      code,
+      err.retryable === true,
+    );
   }
   return data as T;
 }
@@ -130,4 +152,7 @@ export const api = {
   createRun: (body: RunInput) => post<RunOut>("/api/runs", body),
   refineRun: (runId: string, body: RefineInput) =>
     post<RunOut>(`/api/runs/${seg(runId)}/refine`, body),
+  /** The chosen Qloo tag for a word an ask run stopped at: a new run chained to it. */
+  answerRun: (runId: string, body: AnswerInput) =>
+    post<RunOut>(`/api/runs/${seg(runId)}/answer`, body),
 };

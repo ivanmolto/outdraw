@@ -90,6 +90,9 @@ export const runSchema = z.strictObject({
 /** POST /api/runs/{id}/refine: what to change, in the booker's words. */
 export const refineSchema = z.strictObject({ message: text(LIMITS.message) });
 
+/** POST /api/runs/{id}/answer: the Qloo tag chosen for a word the run asked about. */
+export const answerSchema = z.strictObject({ for_input: text(LIMITS.query), entity_id: id });
+
 /** PATCH /api/runs/{id}/candidates/{entityId}: pencil (or release) a hold on the act, for
  * a night when `date` is given. */
 export const pencilSchema = z.strictObject({
@@ -104,4 +107,5 @@ export type VenueUpsert = z.infer<typeof venueUpsertSchema>;
 export type ConfirmInput = z.infer<typeof confirmSchema>;
 export type RunInput = z.infer<typeof runSchema>;
 export type RefineInput = z.infer<typeof refineSchema>;
+export type AnswerInput = z.infer<typeof answerSchema>;
 export type PencilInput = z.infer<typeof pencilSchema>;

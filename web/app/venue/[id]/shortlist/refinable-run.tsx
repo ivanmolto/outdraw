@@ -13,7 +13,8 @@ import { useState } from "react";
 import { ProNote, useShows } from "@/src/components/pro";
 import { api, errorOf, sampleSeed } from "@/src/lib/api-client";
 import type { PlayedHereMap } from "@/src/lib/played-here";
-import { parseRun, type ParsedRun } from "@/src/lib/run-result";
+import { parseRun, type AskChoice, type ParsedRun } from "@/src/lib/run-result";
+import type { RunOut } from "@/types/agent";
 import type { SeedSlug } from "@/src/lib/seeds";
 import { diffShortlists, type ShortlistDiff } from "@/src/lib/shortlist-diff";
 import type { CrossDomain } from "@/src/lib/soundcheck";
@@ -66,13 +67,13 @@ export function RefinableRun({
   const run = chain[selected];
   const diff = diffWith(run, chain);
 
-  function refine(message: string) {
+  /** A new run from the one on screen: chained under it, shown, and put in the URL. */
+  function chainRun(request: (runId: string) => Promise<RunOut>) {
     if (pending) return;
     const base = selected;
     setPending(true);
     setError(null);
-    api
-      .refineRun(chain[base].runId, { message })
+    request(chain[base].runId)
       .then(parseRun)
       .then(
         (next) => {
@@ -93,6 +94,12 @@ export function RefinableRun({
       )
       .finally(() => setPending(false));
   }
+
+  const refine = (message: string) => chainRun((runId) => api.refineRun(runId, { message }));
+  const answer = (choice: AskChoice) =>
+    chainRun((runId) =>
+      api.answerRun(runId, { for_input: choice.forInput, entity_id: choice.id }),
+    );
 
   if (sample) {
     const back = (
@@ -125,6 +132,8 @@ export function RefinableRun({
           diff={diff}
           played={played}
           profileHref={profileHref}
+          onAnswer={refinable ? answer : undefined}
+          pending={pending}
         >
           {/* Keyed by run: a new run on screen starts with an empty box. */}
           {refinable && (

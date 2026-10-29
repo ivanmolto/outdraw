@@ -7,6 +7,7 @@ import { peekRateLimit, spendRateLimit } from "@/src/server/ratelimit";
 import { checkPlanRun } from "@/src/server/session";
 import { AGENT_URL, KEY, ctx, fakeAgent, jsonRequest } from "@/src/server/test-agent";
 import soundcheck from "../../venue/[id]/shortlist/fixtures/soundcheck.json";
+import { POST as answerRun } from "./[id]/answer/route";
 import { GET as getBrief } from "./[id]/candidates/[entityId]/brief/route";
 import { GET as getEvidence } from "./[id]/candidates/[entityId]/evidence/route";
 import { GET as getSoundcheck } from "./[id]/candidates/[entityId]/soundcheck/route";
@@ -187,6 +188,49 @@ describe("POST /api/runs/[id]/refine", () => {
     fakeAgent(Response.json({ detail: "x" }, { status }));
 
     const res = await refineRun(jsonRequest({ message: "hello" }), ctx({ id: "run_1" }));
+
+    expect(await res.json()).toEqual(out);
+  });
+});
+
+describe("POST /api/runs/[id]/answer", () => {
+  const choice = { for_input: "soul", entity_id: "urn:tag:genre:music:soul" };
+
+  it("forwards the choice to the run's answer route", async () => {
+    const sent = fakeAgent(Response.json({ ...run, run_id: "run_2", parent_run_id: "run_1" }));
+
+    const res = await answerRun(jsonRequest({ ...choice, for_input: " soul " }), ctx({ id: "run_1" }));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ run_id: "run_2", parent_run_id: "run_1" });
+    expect(sent).toEqual([
+      { method: "POST", url: `${AGENT_URL}/runs/run_1/answer`, key: KEY, body: choice },
+    ]);
+    expect(planRun).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [{ for_input: "", entity_id: "urn:tag:x" }, "for_input"],
+    [{ for_input: "soul", entity_id: "not an id" }, "entity_id"],
+    [{ ...choice, extra: 1 }, undefined],
+  ])("rejects %j without calling the agent", async (input, field) => {
+    const sent = fakeAgent();
+
+    const res = await answerRun(jsonRequest(input), ctx({ id: "run_1" }));
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ reason: "invalid_input", ...(field && { field }) });
+    expect(sent).toEqual([]);
+  });
+
+  it.each([
+    [404, { reason: "not_found" }],
+    [422, { reason: "invalid_input" }],
+    [429, { reason: "budget" }],
+  ])("maps backend %i to %j", async (status, out) => {
+    fakeAgent(Response.json({ detail: "x" }, { status }));
+
+    const res = await answerRun(jsonRequest(choice), ctx({ id: "run_1" }));
 
     expect(await res.json()).toEqual(out);
   });

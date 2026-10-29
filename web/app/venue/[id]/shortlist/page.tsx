@@ -68,7 +68,7 @@ export default async function ShortlistPage({
       <Shell>
         <ErrorState
           reason={err.reason}
-          details={{ venueId: id, pending: err.pending }}
+          details={{ venueId: id, pending: err.pending, code: err.code, retryable: err.retryable }}
           retryHref={`/venue/${encodeURIComponent(id)}/shortlist`}
         />
       </Shell>

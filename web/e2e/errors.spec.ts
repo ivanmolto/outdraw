@@ -24,7 +24,7 @@ const RUN = {
   message: "",
 };
 
-const fail = (request: APIRequestContext, mode: "crash" | "down" | null) =>
+const fail = (request: APIRequestContext, mode: "crash" | "down" | "qloo" | null) =>
   request.post(`${AGENT}/__fail`, { data: { mode } });
 
 /** A documentation-range IP unique to this test attempt (other specs use 192.0.2.1-200). */
@@ -75,6 +75,33 @@ test("a crashing agent: the API answers {reason} alone and every page a friendly
   await expect(page.getByRole("link", { name: "Set up your venue" })).toBeVisible();
   await expect(page.getByRole("status")).toContainText("demo venues aren't available");
   expect(await page.content()).not.toMatch(LEAK);
+});
+
+test("a refused Qloo key: the API names qloo_error with its code, the page says it is on our side", async ({
+  page,
+  request,
+}, info) => {
+  await fail(request, "qloo");
+  const headers = { "x-forwarded-for": ipFor(info, 261) };
+
+  const res = await request.post("/api/runs", { data: RUN, headers });
+  expect(res.status()).toBe(502);
+  expect(await res.json()).toEqual({ reason: "qloo_error", code: "QLOO_AUTH", retryable: false });
+
+  await page.setExtraHTTPHeaders(headers);
+  await page.goto(`/venue/${VENUE_ID}`);
+  const alert = page.getByRole("main").getByRole("alert");
+  await expect(alert).toHaveAttribute("data-reason", "qloo_error");
+  await expect(alert.getByText("This is on our side")).toBeVisible();
+  // Not retryable: no "Try again"; a demo stands in instead.
+  await expect(alert.getByRole("link", { name: "Try again" })).toHaveCount(0);
+  await expect(alert.getByRole("link", { name: "See a sample shortlist" })).toBeVisible();
+  // The code travels as data (the API body carries it too); the harness's recovery text,
+  // which names a config path, must not.
+  const content = await page.content();
+  expect(content).not.toMatch(LEAK);
+  expect(content).not.toMatch(/\.qloo\/config|qloo setup/);
+  await expect(alert).not.toContainText("QLOO_AUTH");
 });
 
 test("an unreachable agent: pages say Outdraw can't be reached, and the retry reloads", async ({

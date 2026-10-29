@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 
 import { reasonText } from "@/src/lib/api-client";
 import type { PlayedHereMap } from "@/src/lib/played-here";
-import type { ParsedRun } from "@/src/lib/run-result";
+import type { AskChoice, ParsedRun } from "@/src/lib/run-result";
 import type { ShortlistDiff } from "@/src/lib/shortlist-diff";
 import type { CrossDomain } from "@/src/lib/soundcheck";
 import { ShortlistView } from "./shortlist-view";
@@ -19,6 +19,8 @@ export function RunOutcome({
   diff,
   played,
   profileHref = `/venue/${encodeURIComponent(venueId)}`,
+  onAnswer,
+  pending = false,
   children,
 }: {
   venueId: string;
@@ -28,6 +30,10 @@ export function RunOutcome({
   diff?: ShortlistDiff;
   played?: PlayedHereMap;
   profileHref?: string;
+  /** Answers a tag ask with one of its choices (a new run); absent on a read-only view. */
+  onAnswer?: (choice: AskChoice) => void;
+  /** A run is in flight: the choices are disabled meanwhile. */
+  pending?: boolean;
   children?: ReactNode;
 }) {
   if (run.kind === "shortlist") {
@@ -57,12 +63,36 @@ export function RunOutcome({
         <div role="alert" className="rounded-card border border-line bg-surface p-6">
           <h1 className="display text-2xl">Outdraw needs a choice first</h1>
           <p className="mt-2 text-sm text-ink/70">{run.question}</p>
-          {run.options.length > 0 && (
-            <ul className="mt-2 list-disc pl-5 text-sm text-ink/70">
-              {run.options.map((name) => (
-                <li key={name}>{name}</li>
+          {run.choices.length > 0 ? (
+            // A tag ask: each Qloo tag is a button; the pick re-runs with it, no retyping.
+            <ul aria-label="Choices" className="mt-3 flex flex-wrap gap-2">
+              {run.choices.map((choice) => (
+                <li key={`${choice.forInput}:${choice.id}`}>
+                  <button
+                    type="button"
+                    disabled={!onAnswer || pending}
+                    onClick={() => onAnswer?.(choice)}
+                    className="rounded-full border border-ink/30 px-3 py-1 text-sm text-ink hover:bg-stage hover:text-house disabled:opacity-50"
+                  >
+                    {choice.name}{" "}
+                    <span className="sr-only">for {choice.forInput}</span>
+                  </button>
+                </li>
               ))}
             </ul>
+          ) : (
+            <>
+              {run.options.length > 0 && (
+                <ul className="mt-2 list-disc pl-5 text-sm text-ink/70">
+                  {run.options.map((name) => (
+                    <li key={name}>{name}</li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-3 text-sm text-ink/70">
+                Confirm which act you meant on the crowd profile, then run the shortlist again.
+              </p>
+            </>
           )}
           {back}
         </div>

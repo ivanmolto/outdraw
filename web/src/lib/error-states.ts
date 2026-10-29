@@ -40,6 +40,30 @@ export interface ErrorDetails {
   /** From a 429 plan_limit: the plan that ran out today and its daily allowance. */
   plan?: Plan;
   runsPerDay?: number;
+  /** From a 502 qloo_error: the Qloo error code and whether a retry can help. */
+  code?: string;
+  retryable?: boolean;
+}
+
+/** Qloo error codes that mean Outdraw's own Qloo setup is broken (the key, the harness,
+ * its MCP server): nothing the booker does helps, and a retry would fail the same way. */
+const OUR_QLOO_CODES: ReadonlySet<string> = new Set([
+  "QLOO_AUTH",
+  "harness_missing",
+  "mcp_start_failed",
+  "mcp_not_ready",
+  "mcp_tools_missing",
+  "mcp_not_connected",
+]);
+
+/** The qloo_error message for what the body said: a vetted sentence per case, never
+ * Qloo's own `recovery` text (it can quote a path or a config file). */
+function qlooErrorMessage({ code, retryable }: ErrorDetails): string {
+  if (code && OUR_QLOO_CODES.has(code)) {
+    return "Outdraw's connection to Qloo is not set up right. This is on our side; try a demo venue meanwhile.";
+  }
+  if (retryable) return "Qloo didn't answer in time. Try again in a moment.";
+  return MESSAGES.qloo_error;
 }
 
 const MESSAGES: Record<Reason, string> = {
@@ -50,6 +74,7 @@ const MESSAGES: Record<Reason, string> = {
   busy: "Outdraw is busy with another request. Try again in a moment.",
   live_mode_off: "Live Qloo lookups are switched off right now.",
   plan_limit: "This plan's runs for today are used up. Try again tomorrow.",
+  qloo_error: "Qloo couldn't answer this request.",
   unavailable: "Can't reach Outdraw right now. Check your connection and try again.",
   unknown: "Something went wrong on our side. Try again.",
 };
@@ -62,6 +87,7 @@ const TITLES: Record<Reason, string> = {
   busy: "Outdraw is busy",
   live_mode_off: "Live lookups are paused",
   plan_limit: "Today's runs are used up",
+  qloo_error: "Qloo couldn't answer",
   unavailable: "Can't reach Outdraw",
   unknown: "Something went wrong",
 };
@@ -76,7 +102,8 @@ function planLimitMessage({ plan, runsPerDay }: ErrorDetails): string {
     : `${used} Venue Pro gets ${RUNS_PER_DAY.pro} a day.`;
 }
 
-/** Reasons a retry can clear; the rest need the booker to do something else first. */
+/** Reasons a retry can clear; the rest need the booker to do something else first. A
+ * qloo_error is retryable only when its body says so (`errorState` reads the details). */
 export const RETRYABLE: ReadonlySet<Reason> = new Set<Reason>(["busy", "unavailable", "unknown"]);
 
 /** Refusals of live analysis: a precomputed demo stands in. */
@@ -106,6 +133,12 @@ function nextLink(reason: Reason, details: ErrorDetails): NextLink | null {
       return { label: "Confirm the matches", href: "/venue/new" };
     case "invalid_input":
       return { label: "Edit the venue", href: "/venue/new" };
+    case "qloo_error":
+      // Our setup is broken: a demo stands in, as for a refusal. Otherwise, the way back.
+      if (details.code && OUR_QLOO_CODES.has(details.code)) return sampleLink(FALLBACK_SEED);
+      return details.venueId
+        ? { label: "Back to crowd profile", href: `/venue/${encodeURIComponent(details.venueId)}` }
+        : { label: "Back to the start", href: "/" };
     default:
       return details.venueId
         ? { label: "Back to crowd profile", href: `/venue/${encodeURIComponent(details.venueId)}` }
@@ -119,14 +152,16 @@ export function errorState(reason: Reason, details: ErrorDetails = {}): ErrorSta
   const message =
     reason === "plan_limit"
       ? planLimitMessage(details)
-      : field
-        ? `${MESSAGES[reason]} The field refused was ${field}.`
-        : MESSAGES[reason];
+      : reason === "qloo_error"
+        ? qlooErrorMessage(details)
+        : field
+          ? `${MESSAGES[reason]} The field refused was ${field}.`
+          : MESSAGES[reason];
   return {
     reason,
     title: TITLES[reason],
     message,
-    retryable: RETRYABLE.has(reason),
+    retryable: reason === "qloo_error" ? details.retryable === true : RETRYABLE.has(reason),
     link: nextLink(reason, details),
     pending: reason === "conflict" ? (details.pending ?? []) : [],
   };
