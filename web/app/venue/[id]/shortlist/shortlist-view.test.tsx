@@ -166,6 +166,26 @@ describe("run outcome", () => {
     expect(within(alert).getAllByRole("listitem")).toHaveLength(2);
   });
 
+  it("shows an empty search as such, with the agent's notes, not as a fault", () => {
+    outcome({
+      ...run,
+      status: "error",
+      result: {
+        error: "The run ended without score_and_rank: the agent never ranked.",
+        stop_reason: "end_turn",
+        steps: 2,
+        notes: ["All 60 artists Qloo returned were filtered out (60 outside the band)."],
+        data_quality: "ok",
+      },
+    });
+
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toContain("No acts survived that change");
+    expect(alert.textContent).toContain("All 60 artists Qloo returned were filtered out");
+    expect(alert.textContent).toContain("starts again from the last shortlist that ranked");
+    expect(alert.textContent).not.toContain("Something went wrong");
+  });
+
   it("shows a generic failure for an error run or a result with nothing to show", () => {
     outcome({
       ...run,

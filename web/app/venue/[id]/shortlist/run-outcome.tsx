@@ -70,6 +70,27 @@ export function RunOutcome({
       </>
     );
   }
+  if (run.empty) {
+    // The search came back empty, not a fault: the agent's notes say what filtered
+    // everything out, and the next refinement starts from the last run that ranked.
+    return (
+      <>
+        <div role="alert" className="rounded-card border border-line bg-surface p-6">
+          <h1 className="display text-2xl">No acts survived that change</h1>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink/70">
+            {run.notes.map((note) => (
+              <li key={note}>{note}</li>
+            ))}
+          </ul>
+          <p className="mt-3 text-sm text-ink/70">
+            Ask for something else below; it starts again from the last shortlist that ranked.
+          </p>
+          {back}
+        </div>
+        {children}
+      </>
+    );
+  }
   return (
     <>
       <div role="alert" className="rounded-card border border-line bg-surface p-6">

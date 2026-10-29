@@ -22,10 +22,12 @@ import { RunHistory } from "./run-history";
 import { RunOutcome } from "./run-outcome";
 import { SampleFallback } from "./sample-fallback";
 
-/** The diff of `run` against `parent`, when both are shortlists and `parent` is its own. */
-function diffWith(run: ParsedRun, parent: ParsedRun | undefined): ShortlistDiff | undefined {
+/** The diff of `run` against its parent in `chain`, when both are shortlists. The parent
+ * is not always the run before it: a refinement of a run that asked or ranked nothing
+ * chains to the last run that ranked. */
+function diffWith(run: ParsedRun, chain: readonly ParsedRun[]): ShortlistDiff | undefined {
+  const parent = chain.find((r) => r.runId === run.parentRunId);
   if (run.kind !== "shortlist" || parent?.kind !== "shortlist") return undefined;
-  if (run.parentRunId !== parent.runId) return undefined;
   return diffShortlists(parent.shortlist, run.shortlist);
 }
 
@@ -62,7 +64,7 @@ export function RefinableRun({
   const history = useShows("run_history");
 
   const run = chain[selected];
-  const diff = diffWith(run, chain[selected - 1]);
+  const diff = diffWith(run, chain);
 
   function refine(message: string) {
     if (pending) return;
@@ -126,7 +128,13 @@ export function RefinableRun({
         >
           {/* Keyed by run: a new run on screen starts with an empty box. */}
           {refinable && (
-            <RefineBox key={run.runId} pending={pending} error={error} onRefine={refine} />
+            <RefineBox
+              key={run.runId}
+              pending={pending}
+              error={error}
+              sizeTier={run.sizeTier}
+              onRefine={refine}
+            />
           )}
         </RunOutcome>
       </div>

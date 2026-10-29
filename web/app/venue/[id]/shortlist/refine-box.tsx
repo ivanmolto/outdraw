@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Elapsed, Spinner } from "@/src/components/progress";
 import { type Reason } from "@/src/lib/api-client";
 import { errorState, type ErrorDetails } from "@/src/lib/error-states";
+import type { SizeBand } from "@/src/lib/run-result";
 import { LIMITS } from "@/src/lib/schemas";
 
 /** A failed refinement: the reason and what came with it (`errorOf` in api-client.ts). */
@@ -18,13 +19,19 @@ export interface RefineError {
   details: ErrorDetails;
 }
 
-/** Chip label → the message it sends. */
-export const CHIPS = [
-  { label: "More emerging", message: "More emerging acts" },
+/** Chip label → the message it sends. A chip with a `tier` asks for that size tier, so it
+ * is hidden on a run already searching it (the agent would read no change and refuse). */
+export const CHIPS: readonly { label: string; message: string; tier?: SizeBand }[] = [
+  { label: "More emerging", message: "More emerging acts", tier: "emerging" },
   { label: "Younger crowd", message: "Our crowd skews younger" },
   { label: "Exclude tributes", message: "No tribute acts" },
-  { label: "Bigger acts", message: "Bigger acts" },
-] as const;
+  { label: "Bigger acts", message: "Bigger acts", tier: "established" },
+];
+
+/** The chips that can change `sizeTier`'s run. */
+export function chipsFor(sizeTier: SizeBand | undefined) {
+  return CHIPS.filter((chip) => !chip.tier || chip.tier !== sizeTier);
+}
 
 /** The agent's 422 (no change read from the message) arrives as invalid_input; the plan's
  * daily allowance (plan_limit) names the plan and links to the plans. */
@@ -47,10 +54,13 @@ function errorLine({ reason, details }: RefineError) {
 export function RefineBox({
   pending,
   error,
+  sizeTier,
   onRefine,
 }: {
   pending: boolean;
   error: RefineError | null;
+  /** The run's size tier, to leave out the chip that asks for it. */
+  sizeTier?: SizeBand;
   onRefine: (message: string) => void;
 }) {
   const [message, setMessage] = useState("");
@@ -70,7 +80,7 @@ export function RefineBox({
           Refine this shortlist
         </h2>
         <ul aria-label="Suggested refinements" className="mt-2 flex flex-wrap gap-2">
-          {CHIPS.map((chip) => (
+          {chipsFor(sizeTier).map((chip) => (
             <li key={chip.label}>
               <button
                 type="button"

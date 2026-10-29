@@ -47,6 +47,20 @@ function child(run: RunOut, runId: string, message: string): RunOut {
 }
 
 describe("refinable run", () => {
+  it("leaves out the chip asking for the tier the run already searched", () => {
+    // The refined fixture searched the emerging tier: "More emerging" would be no change.
+    render(
+      <RefinableRun venueId="ven_fixture" venueName="Synthetic Room" chain={[parseRun(refined)]} />,
+    );
+
+    const chips = screen.getByRole("list", { name: "Suggested refinements" });
+    expect(within(chips).getAllByRole("button").map((b) => b.textContent)).toEqual([
+      "Younger crowd",
+      "Exclude tributes",
+      "Bigger acts",
+    ]);
+  });
+
   it("shows the chips and no history for a first run", () => {
     setup();
 

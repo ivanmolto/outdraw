@@ -72,13 +72,17 @@ export const SUB_SCORE_LABELS: Record<SubScore, string> = {
 export interface RunLineage {
   parentRunId: string | null;
   refinement: { message: string; explanation: string } | null;
+  /** The size tier the run searched: a chip asking for it again is hidden. */
+  sizeTier: SizeBand;
 }
 
 export type ParsedRun = RunLineage &
   (
     | ({ kind: "shortlist"; runId: string } & ShortlistResult)
     | { kind: "ask"; runId: string; question: string; options: string[] }
-    | { kind: "error"; runId: string }
+    /** `empty`: the agent finished its turn without ranking because its search left no
+     * act (its `notes` say why); otherwise something broke (a crash, the step cap). */
+    | { kind: "error"; runId: string; empty: boolean; notes: string[] }
   );
 
 export function parseRun(run: RunOut): ParsedRun {
@@ -90,8 +94,13 @@ export function parseRun(run: RunOut): ParsedRun {
     refinement: refinement
       ? { message: refinement.message, explanation: refinement.explanation }
       : null,
+    sizeTier: run.constraints.size_tier,
   };
-  if (!result || result.error) return { kind: "error", runId, ...lineage };
+  if (!result || result.error) {
+    const notes = result?.notes ?? [];
+    const empty = result?.stop_reason === "end_turn" && notes.length > 0;
+    return { kind: "error", runId, empty, notes, ...lineage };
+  }
   if (run.status === "ask" && result.ask) {
     const options = result.ask.candidates.flatMap((c) =>
       typeof c.name === "string" ? [c.name] : [],
@@ -112,5 +121,5 @@ export function parseRun(run: RunOut): ParsedRun {
       profile_id: result.profile_id,
     };
   }
-  return { kind: "error", runId, ...lineage };
+  return { kind: "error", runId, empty: false, notes: result.notes ?? [], ...lineage };
 }

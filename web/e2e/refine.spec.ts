@@ -20,7 +20,9 @@ async function seed(request: APIRequestContext): Promise<string> {
       constraints: {
         include_tags: [],
         exclude_tags: [],
-        size_tier: "emerging",
+        // Mid, the 400-cap fixture room's own tier: "More emerging" below is then a change
+        // (on an emerging run that chip is left out, as the agent would read no change).
+        size_tier: "mid",
         exclude_recent_months: 6,
         max_candidates: 40,
       },
