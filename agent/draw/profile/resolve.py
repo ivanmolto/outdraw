@@ -179,9 +179,29 @@ async def _resolve_genre(qloo: QlooExec, query: str) -> ResolvedEntity:
         return _unresolved(query, [])
     rows = result.results if isinstance(result.results, list) else []
     scored = _score_all(query, rows, "urn:tag")
-    # Semantic search returns one hit per tag family (genre:qloo, genre:music, ...), all
-    # with the same name; only the music genre is a booking signal.
-    return _decide(query, scored, prefer=lambda s: s.candidate.type == MUSIC_GENRE_TYPE)
+    # Semantic search returns one hit per tag family (genre:music, genre:qloo, subgenre,
+    # keyword, theme, ...), all with the same name. That is one word in several of Qloo's
+    # taxonomies, not several meanings, so the best family present decides and the booker
+    # is not asked ("tribute" has five such tags and no music genre); only same-named tags
+    # within one family are an ambiguity to confirm.
+    families = {s.candidate.type for s in scored if s.name_matched}
+    best = min(families, key=_tag_family_rank, default=MUSIC_GENRE_TYPE)
+    return _decide(query, scored, prefer=lambda s: s.candidate.type == best)
+
+
+# Tag families as booking signals, best first; a family not listed ranks last.
+TAG_FAMILY_RANK = (
+    MUSIC_GENRE_TYPE,
+    "urn:tag:genre:qloo",
+    "urn:tag:subgenre:music",
+    "urn:tag:subgenre:qloo",
+    "urn:tag:keyword:qloo",
+    "urn:tag:theme:qloo",
+)
+
+
+def _tag_family_rank(family: str) -> int:
+    return TAG_FAMILY_RANK.index(family) if family in TAG_FAMILY_RANK else len(TAG_FAMILY_RANK)
 
 
 def _describe_candidates(result: QlooResult) -> list[Mapping[str, Any]]:

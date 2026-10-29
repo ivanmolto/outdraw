@@ -203,3 +203,35 @@ def test_refined_run_keeps_the_step_cap(client: TestClient, scripts: Scripts) ->
     assert child["result"]["steps"] == MAX_STEPS
     assert child["result"]["stop_reason"] == "step_limit"
     assert child["result"]["refinement"]["explanation"].endswith("no act survived the search.")
+
+
+def test_refining_an_unranked_run_starts_from_its_ranked_ancestor(
+    client: TestClient, scripts: Scripts
+) -> None:
+    # The first run ranks; its refinement runs away and ends in error (no shortlist). A
+    # refinement of that dead end chains to the first run and changes its constraints, not
+    # the dead end's, and says so in a note.
+    first = parent_run(client, scripts)
+    deps = client.app.state.deps  # type: ignore[attr-defined]
+    runaway: list[Any] = [[("find_tags", {"query": "jazz", "limit": 3})]]
+    deps.model_factory = Queue([RECENT_AND_MORE], runaway)
+    try:
+        dead = client.post(f"/runs/{first['run_id']}/refine", json={"message": "last year"})
+    finally:
+        deps.model_factory = scripts
+    dead_end = dead.json()
+    assert dead_end["status"] == "error" and dead_end["constraints"]["max_candidates"] == 30
+
+    forty = json.dumps({"max_candidates": 40})
+    res, _ = refine(client, scripts, dead_end, "make it 40 acts", forty)
+    assert res.status_code == 200, res.text
+    child = res.json()
+    assert child["status"] == "ok"
+    assert child["parent_run_id"] == first["run_id"]
+    assert child["constraints"] == {**first["constraints"], "max_candidates": 40}
+    assert any(
+        n.startswith("Refined from the last run that ranked") for n in child["result"]["notes"]
+    )
+    assert child["result"]["refinement"]["explanation"].startswith(
+        "Considered up to 40 candidates;"
+    )

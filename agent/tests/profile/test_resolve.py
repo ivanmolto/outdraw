@@ -221,6 +221,36 @@ async def test_genre_word_uses_find_tags_and_picks_music_genre(client: Client) -
     assert len(resolved.candidates) == len(env["results"])
 
 
+async def test_same_word_across_tag_families_picks_the_best_family(client: Client) -> None:
+    # Qloo's real answer for "tribute": one tag per family, all named Tribute, none a music
+    # genre. One word, not five meanings: the subgenre decides and nothing is asked.
+    env = fixture("find_tags", "jazz")
+    env["results"] = [
+        {"id": f"urn:tag:{f}:qloo:tribute", "name": "Tribute", "type": f"urn:tag:{f}:qloo"}
+        for f in ("theme", "keyword", "subgenre", "artist", "genre")
+    ]
+    resolved = await resolve_entity("tribute", "genre", qloo=client(env))
+
+    assert resolved.confirmed is True
+    assert resolved.entity_id == "urn:tag:genre:qloo:tribute"
+    assert resolved.candidates[0].entity_id == "urn:tag:genre:qloo:tribute"
+    assert len(resolved.candidates) == 5
+
+
+async def test_same_word_twice_in_one_family_still_asks(client: Client) -> None:
+    env = fixture("find_tags", "jazz")
+    env["results"] = [
+        {"id": "urn:tag:genre:qloo:tribute", "name": "Tribute", "type": "urn:tag:genre:qloo"},
+        {"id": "urn:tag:genre:qloo:tribute-2", "name": "Tribute", "type": "urn:tag:genre:qloo"},
+        {"id": "urn:tag:theme:qloo:tribute", "name": "Tribute", "type": "urn:tag:theme:qloo"},
+    ]
+    resolved = await resolve_entity("tribute", "genre", qloo=client(env))
+
+    assert resolved.confirmed is False
+    assert resolved.entity_id is None
+    assert len(resolved.candidates) == 3
+
+
 async def test_gateway_errors_propagate(client: Client) -> None:
     env = fixture("find_tags", "empty_query")
     with pytest.raises(QlooError):

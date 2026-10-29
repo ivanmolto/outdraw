@@ -591,12 +591,32 @@ async def refine_run(
         return await _refine(run_id, body, deps, await _new_run_id(deps, request, response))
 
 
+async def _ranked_ancestor(session: AsyncSession, run_id: str) -> tuple[RunRow, int]:
+    """The run a refinement of `run_id` starts from: `run_id` itself when it ranked, else
+    its nearest ancestor that did, with how many runs were passed over.
+
+    A run that stopped to ask or ranked nothing has no shortlist to change, and its
+    constraints carry whatever stopped it (an unresolved tag, a tier the room cannot
+    fill), so a refinement chained to it would stop the same way. Starting from the last
+    ranked run lets the booker move on; a chain with no ranked run refines `run_id`.
+    """
+    parent = await session.get(RunRow, run_id)
+    if parent is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
+    row, passed = parent, 0
+    while row.status != "ok" and row.parent_run_id:
+        older = await session.get(RunRow, row.parent_run_id)
+        if older is None:
+            break
+        row, passed = older, passed + 1
+    return (row, passed) if row.status == "ok" else (parent, 0)
+
+
 async def _refine(run_id: str, body: RefineBody, deps: Deps, new_run_id: str) -> RunOut:
     async with deps.sessions() as session:
-        parent = await session.get(RunRow, run_id)
-        if parent is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown run {run_id!r}.")
+        parent, passed = await _ranked_ancestor(session, run_id)
         target = await venue_for_run(session, parent.venue_id)
+    run_id = parent.id
     previous = Constraints.model_validate(parent.constraints)
     before = _shortlist_names(parent.result)
 
@@ -627,7 +647,14 @@ async def _refine(run_id: str, body: RefineBody, deps: Deps, new_run_id: str) ->
             explanation=explain(delta, previous, merged, before, _shortlist_names(stored)),
             token_usage=parsed.token_usage,
         )
-        return {**stored, "refinement": refinement.model_dump(mode="json")}
+        notes = list(stored.get("notes") or [])
+        if passed:
+            runs = "run" if passed == 1 else "runs"
+            notes.append(
+                f"Refined from the last run that ranked: the {passed} {runs} since asked a "
+                "question or ranked nothing, so their changes are not carried over."
+            )
+        return {**stored, "notes": notes, "refinement": refinement.model_dump(mode="json")}
 
     return await execute_run(
         deps,
