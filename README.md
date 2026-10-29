@@ -41,8 +41,9 @@ calls and the `qloo mcp` server for the agent's tool calls. `/web` never calls Q
 
 ## Setup from a clean machine
 
-Requirements: Node 22.19+, [uv](https://docs.astral.sh/uv/), Docker (the API tests and the
-cache audit start a throwaway Postgres), and a Postgres with pgvector for the agent
+Requirements: Node 22.19+, [uv](https://docs.astral.sh/uv/), Docker (the API and database
+tests and the cache audit start a throwaway Postgres; without Docker those tests skip
+locally and only CI runs them), and a Postgres with pgvector for the agent
 (`docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=outdraw pgvector/pgvector:pg18` works).
 
 ```bash
@@ -133,7 +134,8 @@ a one-line comment; copy it to `.env.local` (gitignored) and fill in what you ha
 - **Internal**: `INTERNAL_API_KEY` is the shared secret between web and agent
   (`openssl rand -hex 32`, same value on both).
 - **Optional**: Upstash Redis (rate limits and daily caps), Sentry, Telegram alerts. Each is
-  off when unset; without `DATABASE_URL` the agent uses an in-memory cache.
+  off when unset. `DATABASE_URL` is not optional: without it the agent starts, `/health`
+  answers, and every other route answers 503.
 
 A gitleaks pre-commit hook and CI job scan the full history with a rule for the Qloo key
 format. Qloo response data stays out of the repo: recordings are gitignored.
