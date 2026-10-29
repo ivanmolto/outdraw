@@ -1,10 +1,12 @@
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { peekRateLimit, spendRateLimit } from "@/src/server/ratelimit";
 import { checkPlanRun } from "@/src/server/session";
 import { AGENT_URL, KEY, ctx, fakeAgent, jsonRequest } from "@/src/server/test-agent";
 import soundcheck from "../../venue/[id]/shortlist/fixtures/soundcheck.json";
-import { GET as getCalls } from "./[id]/calls/route";
 import { GET as getBrief } from "./[id]/candidates/[entityId]/brief/route";
 import { GET as getEvidence } from "./[id]/candidates/[entityId]/evidence/route";
 import { GET as getSoundcheck } from "./[id]/candidates/[entityId]/soundcheck/route";
@@ -345,14 +347,11 @@ describe("GET /api/runs/[id]/compare", () => {
   });
 });
 
-describe("GET /api/runs/[id]/calls", () => {
-  it("forwards to the agent", async () => {
-    const sent = fakeAgent(Response.json([]));
-
-    const res = await getCalls(jsonRequest({}), ctx({ id: "run_1" }));
-
-    expect(await res.json()).toEqual([]);
-    expect(sent[0]).toMatchObject({ method: "GET", url: `${AGENT_URL}/runs/run_1/calls` });
+describe("the recorded Qloo calls", () => {
+  it("have no browser-facing route: envelopes stay server-side (Qloo's terms)", () => {
+    // The Soundcheck route reads them on the server and sends summaries only.
+    const route = fileURLToPath(new URL("./[id]/calls/route.ts", import.meta.url));
+    expect(existsSync(route)).toBe(false);
   });
 });
 

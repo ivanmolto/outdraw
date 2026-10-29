@@ -101,6 +101,22 @@ function Branch({
 
 const value2 = (v: number) => v.toFixed(2);
 
+/** A score number as the trail holds it: up to four decimals (the agent rounds every
+ * sub-score, affinity and total to four), trailing zeros dropped, so 0.92 stays 0.92 and
+ * 0.9641 is not shown as 0.96 next to an "adds" that was computed from 0.9641. */
+export const value4 = (v: number) => String(Number(v.toFixed(4)));
+
+/** Each sub-score's contribution as the panel prints it, and whether those printed lines
+ * add up to the printed total (they can miss it by a unit in the last place). */
+export function contributions(
+  subs: readonly { value: number; weight: number }[],
+  total: number,
+): { adds: string[]; sum: string; exact: boolean } {
+  const adds = subs.map(({ value, weight }) => value4(weight * value));
+  const sum = value4(adds.reduce((acc, a) => acc + Number(a), 0));
+  return { adds, sum, exact: sum === value4(total) };
+}
+
 /** The panel's content for a loaded trail. No fetching: the tests render it from a fixture. */
 export function Soundcheck({
   data,
@@ -112,6 +128,13 @@ export function Soundcheck({
   const { trail, summaries } = data;
   const neutral = new Set(trail.neutral);
   const subs = SUB_SCORES.filter((name) => trail.sub_scores[name] != null);
+  const printed = contributions(
+    subs.map((name) => ({
+      value: trail.sub_scores[name] as number,
+      weight: trail.weights[name] ?? 0,
+    })),
+    trail.total,
+  );
   const region = trail.inputs.find((i) => i.ref === "region");
   const strip: { list: keyof CrossDomain; kind: string; item: CrossDomainItem }[] = (
     [
@@ -203,7 +226,7 @@ export function Soundcheck({
                     evRef={sub ? REF.affinity(sub) : undefined}
                   >
                     <span className="text-ink">{sub ? SUB_SCORE_LABELS[sub] : "Affinity"}</span>{" "}
-                    <span className="font-mono">{value2(affinity.value)}</span>
+                    <span className="font-mono">{value4(affinity.value)}</span>
                     {workflow && <span className="text-ink/50"> from {workflow}</span>}
                   </Item>
                 );
@@ -214,12 +237,13 @@ export function Soundcheck({
 
         <Branch title="Score breakdown" open>
           <ul aria-label="Score breakdown">
-            {subs.map((name) => (
+            {subs.map((name, i) => (
               <Breakdown
                 key={name}
                 name={name}
                 value={trail.sub_scores[name] as number}
                 weight={trail.weights[name] ?? 0}
+                adds={printed.adds[i] ?? "0"}
                 neutral={neutral.has(name)}
                 source={labelOf(trail, name)}
                 weightSource={labelOf(trail, REF.weight(name))}
@@ -228,9 +252,15 @@ export function Soundcheck({
             <Item source={labelOf(trail, REF.total)} evRef={REF.total}>
               <span className="font-semibold text-ink">Total</span>{" "}
               <span data-testid="trail-total" className="font-mono">
-                {trail.total.toFixed(3)}
+                {value4(trail.total)}
               </span>
               <span className="text-ink/50"> = Σ weight × sub-score</span>
+              {!printed.exact && (
+                <span data-testid="rounding-note" className="block text-xs text-ink/50">
+                  The lines above are rounded to four decimals and add up to {printed.sum};
+                  the total is computed before rounding.
+                </span>
+              )}
             </Item>
           </ul>
         </Branch>
@@ -284,6 +314,7 @@ function Breakdown({
   name,
   value,
   weight,
+  adds,
   neutral,
   source,
   weightSource,
@@ -291,6 +322,8 @@ function Breakdown({
   name: SubScore;
   value: number;
   weight: number;
+  /** `weight × value` as printed (see `contributions`). */
+  adds: string;
   neutral: boolean;
   source: SourceLabel | undefined;
   weightSource: SourceLabel | undefined;
@@ -310,7 +343,7 @@ function Breakdown({
               no Qloo signal, neutral {formatNeutral(value)}
             </span>
           ) : (
-            <span className="font-mono">{value2(value)}</span>
+            <span className="font-mono">{value4(value)}</span>
           )}
         </div>
         <Provenance source={source} />
@@ -321,7 +354,7 @@ function Breakdown({
       >
         <span>
           weight <span className="font-mono">{value2(weight)}</span> → adds{" "}
-          <span className="font-mono">{(weight * value).toFixed(3)}</span>
+          <span className="font-mono">{adds}</span>
         </span>
         <Provenance source={weightSource} />
       </div>

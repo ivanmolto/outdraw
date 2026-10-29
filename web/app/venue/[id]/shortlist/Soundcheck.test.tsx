@@ -69,7 +69,7 @@ describe("Soundcheck panel", () => {
     expect(items("Affinities").map((a) => a.textContent?.replace(/Qloo$/, ""))).toEqual([
       "Crowd affinity 0.92 from recommend",
       "Past fit 0.81 from compare_audiences",
-      "Local heat 0.70 from where_popular",
+      "Local heat 0.7 from where_popular",
     ]);
 
     const breakdown = items("Score breakdown");
@@ -92,6 +92,34 @@ describe("Soundcheck panel", () => {
       "RegionNew York, United StatesOutdraw",
       "Local heat0.70Qloo",
     ]);
+  });
+
+  it("prints sub-scores at the trail's precision so each 'adds' line reproduces by hand", () => {
+    // 0.9641 × 0.35 = 0.3374: shown as 0.96 the line could not be checked against the trail.
+    const trail = {
+      ...data.trail,
+      sub_scores: { ...data.trail.sub_scores, crowd_affinity: 0.9641 },
+      total: 0.8644,
+    };
+    setup({ ...data, trail });
+
+    const breakdown = items("Score breakdown");
+    expect(breakdown[0].textContent).toContain("Crowd affinity 0.9641");
+    expect(breakdown[0].textContent).toContain("weight 0.35 → adds 0.3374");
+    expect(screen.getByTestId("trail-total").textContent).toBe("0.8644");
+    expect(screen.queryByTestId("rounding-note")).toBeNull();
+  });
+
+  it("says so when the rounded lines miss the total by a unit in the last place", () => {
+    const trail = {
+      ...data.trail,
+      sub_scores: { ...data.trail.sub_scores, crowd_affinity: 0.9641 },
+      total: 0.8645,
+    };
+    setup({ ...data, trail });
+
+    expect(screen.getByTestId("trail-total").textContent).toBe("0.8645");
+    expect(screen.getByTestId("rounding-note").textContent).toContain("add up to 0.8644");
   });
 
   it("puts a Qloo or Outdraw label from source_labels on every item", () => {
