@@ -237,6 +237,25 @@ async def test_momentum_is_direction_normalised(routed: Callable[..., RouterHarn
     assert flat == pytest.approx(0.5)
 
 
+async def test_flat_trend_series_are_said_so_in_the_notes(
+    routed: Callable[..., RouterHarness],
+) -> None:
+    """The hackathon key's `trends` repeats one static percentile per week, so every act
+    scores 0.5: the run says momentum tells nothing apart rather than presenting a constant
+    as a measured signal (review T51). A moving series leaves no such note."""
+    routed(trends=lambda ids: trends_for(ids, slope=0.0))
+    flat = await run(candidates(3))
+    assert all(s.momentum.value == pytest.approx(0.5) for s in flat.by_id.values())
+    assert [n for n in flat.notes if "momentum does not tell acts apart" in n] == [
+        "Qloo's trend data was flat for every act checked over the last 6 months, so momentum "
+        "does not tell acts apart here."
+    ]
+
+    routed(trends=lambda ids: trends_for(ids, slope=0.4))
+    moving = await run(candidates(3))
+    assert not any("momentum does not tell" in n for n in moving.notes)
+
+
 async def test_entity_missing_from_series_is_none(routed: Callable[..., RouterHarness]) -> None:
     routed(trends=lambda ids: trends_for(ids[:1]))
     result = await run(candidates(2))

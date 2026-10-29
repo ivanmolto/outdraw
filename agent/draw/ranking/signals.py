@@ -244,8 +244,23 @@ def local_heat_of(result: QlooResult) -> float | None:
 
 def momentum_of(result: QlooResult) -> dict[str, float]:
     """Per entity, the percentile change over the window mapped to [0, 1]; absent = no data."""
+    return {entity_id: value for entity_id, (value, _) in _series_of(result).items()}
+
+
+def flat_series(result: QlooResult) -> set[str]:
+    """The entities whose series never moved: every point carries the same percentile.
+
+    On the hackathon key `trends` answers with one static percentile repeated per week (the
+    velocity and delta fields are 0 too), so a flat series is the common case, and momentum
+    is then 0.5 for every act. The run says so in its notes instead of presenting that
+    constant as a measured difference between acts.
+    """
+    return {entity_id for entity_id, (_, flat) in _series_of(result).items() if flat}
+
+
+def _series_of(result: QlooResult) -> dict[str, tuple[float, bool]]:
     series = getattr(result, "series", None)
-    out: dict[str, float] = {}
+    out: dict[str, tuple[float, bool]] = {}
     if not isinstance(series, list):
         return out
     for item in series:
@@ -271,7 +286,8 @@ def momentum_of(result: QlooResult) -> dict[str, float]:
         if len(dated) < 2:
             continue
         delta = dated[-1][1] - dated[0][1]  # in [-1, 1]
-        out[entity_id] = min(1.0, max(0.0, 0.5 + delta / 2))
+        flat = len({v for _, v in dated}) == 1
+        out[entity_id] = (min(1.0, max(0.0, 0.5 + delta / 2)), flat)
     return out
 
 
@@ -371,12 +387,21 @@ async def gather_signals(
         return SignalValue(parsed, outcome.call_id, outcome.status)
 
     momentum: dict[str, SignalValue] = {}
+    flat: set[str] = set()
     for batch, outcome in zip(batches, trend_outcomes, strict=True):
         parsed = momentum_of(outcome.result) if outcome.status == "ok" and outcome.result else {}
+        if outcome.status == "ok" and outcome.result:
+            flat |= flat_series(outcome.result)
         for c in batch:
             momentum[c.entity_id] = SignalValue(
                 parsed.get(c.entity_id), outcome.call_id, outcome.status
             )
+    measured = {e for e, v in momentum.items() if v.value is not None}
+    if measured and measured <= flat:
+        notes.append(
+            f"Qloo's trend data was flat for every act checked over the last "
+            f"{TRENDS_WINDOW_MONTHS} months, so momentum does not tell acts apart here."
+        )
 
     def genres(outcome: _Outcome | None) -> tuple[str, ...]:
         if outcome is None or outcome.status != "ok" or not outcome.result:

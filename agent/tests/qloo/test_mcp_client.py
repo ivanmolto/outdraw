@@ -215,6 +215,13 @@ async def test_tools_keep_workflow_names_and_server_schemas() -> None:
         fail_payload = json.loads(failed["content"][0]["text"])
         assert fail_payload["status"] == "error" and fail_payload["error"]["code"] == "mcp_failed"
 
+        # `ok` with no rows is the harness's `empty`; the model is told to branch on `empty`.
+        none = await collect(by_name["find_tags"], query="nonsense", semantic=False)
+        assert none["status"] == "success", "no results is an outcome, not a tool failure"
+        empty_payload = json.loads(none["content"][0]["text"])
+        assert empty_payload["status"] == "empty" and empty_payload["result_count"] == 0
+        assert empty_payload["summary"]
+
 
 async def test_every_tool_output_stays_compact() -> None:
     calls: dict[str, dict[str, Any]] = {

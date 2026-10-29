@@ -45,6 +45,7 @@ from strands.types.tools import AgentTool, ToolResult, ToolSpec, ToolUse
 
 from draw.qloo.config import QlooConfig
 from draw.qloo.envelope import (
+    QlooEmpty,
     QlooEnvelope,
     QlooError,
     QlooGatewayError,
@@ -424,7 +425,12 @@ def compact_envelope(
         out["error"] = {k: _clip(v) for k, v in data["error"].items() if k != "layer"}
 
     if error is not None:
-        if isinstance(error, QlooError):
+        if isinstance(error, QlooEmpty):
+            # The harness answers `ok` with no rows (README); the model branches on `empty`.
+            out["status"] = "empty"
+            if not out.get("summary"):
+                out["summary"] = str(error)
+        elif isinstance(error, QlooError):
             out["status"] = "error"
             out.setdefault(
                 "error",
