@@ -54,8 +54,17 @@ test("the 4th run in a minute gets 429 and never reaches the agent", async ({ re
   const res = await request.post("/api/runs", { data: RUN, headers });
 
   expect(res.status()).toBe(429);
-  expect(await res.json()).toEqual({ reason: "busy", fallback_seed: "nola-jazz" });
-  expect(Number(res.headers()["retry-after"])).toBeGreaterThan(0);
+  const retryAfter = Number(res.headers()["retry-after"]);
+  expect(retryAfter).toBeGreaterThan(0);
+  expect(retryAfter).toBeLessThanOrEqual(60);
+  // The body names the window that tripped and the same wait as the header.
+  expect(await res.json()).toEqual({
+    reason: "busy",
+    fallback_seed: "nola-jazz",
+    limit: "burst",
+    runs: 3,
+    retry_after: retryAfter,
+  });
   expect(await agentRuns(request)).toBe(before);
 
   // Another visitor is unaffected, and so are pages and reads for the limited one.
@@ -88,6 +97,10 @@ test("a limited visitor sees the default seed's sample on the shortlist", async 
 
   expect((await limited).status()).toBe(429);
   await expect(page.getByText("Live analysis is busy, here's a sample")).toBeVisible();
+  // The 4th run in the minute: the banner says so, with the wait, not "try again in a moment".
+  await expect(
+    page.getByText(/That's 3 live runs inside a minute\. Try again in \d+ seconds?\./),
+  ).toBeVisible();
   // The web's own limit runs before the venue is known: the default seed, Synthetic Room 1.
   await expect(page.getByRole("heading", { name: "Synthetic Room 1", exact: true })).toBeVisible();
   await expect(page.getByRole("main").getByRole("alert")).toHaveCount(0);

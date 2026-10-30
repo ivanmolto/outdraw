@@ -62,7 +62,18 @@ describe("checkRateLimit", () => {
     const res = await run();
 
     expect(res?.status).toBe(429);
-    expect(await res?.json()).toEqual({ reason: "busy", fallback_seed: FALLBACK_SEED });
+    // The body names the window and the real wait, the same seconds as Retry-After, so the
+    // UI can say "10 runs this hour, try again in N minutes" instead of "busy".
+    const body = await res?.json();
+    expect(body).toEqual({
+      reason: "busy",
+      fallback_seed: FALLBACK_SEED,
+      limit: "hourly",
+      runs: 10,
+      retry_after: Number(res?.headers.get("retry-after")),
+    });
+    expect(body.retry_after).toBeGreaterThan(0);
+    expect(body.retry_after).toBeLessThanOrEqual(60 * 60);
   });
 
   it("caps a burst at 3 a minute without spending the hourly allowance", async () => {
@@ -136,6 +147,9 @@ describe("peekRateLimit and spendRateLimit", () => {
     expect(await res?.json()).toEqual({
       reason: "busy",
       fallback_seed: FALLBACK_SEED,
+      limit: "burst",
+      runs: 3,
+      retry_after: Number(res?.headers.get("retry-after")),
     });
     expect(Number(res?.headers.get("retry-after"))).toBeGreaterThan(0);
     expect(used()).toEqual([3]);

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 
 import { ErrorState } from "@/src/components/error-state";
 import { Elapsed, Spinner } from "@/src/components/progress";
-import { api, errorOf, sampleSeed, type Reason } from "@/src/lib/api-client";
+import { api, errorOf, refusalNote, sampleSeed, type Reason } from "@/src/lib/api-client";
 import type { ErrorDetails } from "@/src/lib/error-states";
 import type { PlayedHereMap } from "@/src/lib/played-here";
 import { parseRun, type ParsedRun } from "@/src/lib/run-result";
@@ -23,7 +23,7 @@ import { SampleFallback } from "./sample-fallback";
 type State =
   | { name: "running" }
   | { name: "done"; run: ParsedRun }
-  | { name: "sample"; slug: SeedSlug }
+  | { name: "sample"; slug: SeedSlug; note: string | null; details: ErrorDetails }
   | { name: "failed"; reason: Reason; details: ErrorDetails };
 
 /** In-flight runs by venue: Strict Mode mounts effects twice, and a run costs Qloo quota. */
@@ -64,7 +64,11 @@ export function RunShortlist({ venueId, venueName, constraints, crossDomain, pla
       (err: unknown) => {
         if (!active) return;
         const slug = sampleSeed(err);
-        setState(slug ? { name: "sample", slug } : { name: "failed", ...errorOf(err) });
+        setState(
+          slug
+            ? { name: "sample", slug, note: refusalNote(err), details: errorOf(err).details }
+            : { name: "failed", ...errorOf(err) },
+        );
       },
     );
     return () => {
@@ -104,12 +108,13 @@ export function RunShortlist({ venueId, venueName, constraints, crossDomain, pla
     return (
       <SampleFallback
         slug={state.slug}
+        note={state.note}
         action={
           <button type="button" onClick={retry} className="font-medium underline">
             Try a live run again
           </button>
         }
-        fallback={failed("busy", { fallbackSeed: state.slug })}
+        fallback={failed("busy", { ...state.details, fallbackSeed: state.slug })}
       />
     );
   }

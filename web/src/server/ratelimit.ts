@@ -23,6 +23,11 @@ export const LIMITS = {
   hourly: { tokens: 10, window: "1 h" },
 } as const;
 
+export type LimitName = keyof typeof LIMITS;
+
+/** The order `createLimiters` returns them in: burst first, so a burst never spends hourly. */
+const LIMIT_ORDER: readonly LimitName[] = ["burst", "hourly"];
+
 /** Runs a session gets in a sliding day, per plan: both under the per-IP hourly cap and
  * the agent's daily budget, so a plan never buys past the global caps. */
 export const PLAN_LIMITS: Record<Plan, { tokens: number; window: "1 d" }> = {
@@ -56,7 +61,7 @@ export interface Limiter {
 
 /** The burst and hourly limiters over `redis`, burst first so a burst never spends hourly. */
 export function createLimiters(redis: Redis): Limiter[] {
-  return (["burst", "hourly"] as const).map(
+  return LIMIT_ORDER.map(
     (name) =>
       new Ratelimit({
         redis,
@@ -105,16 +110,28 @@ const defaultPlanLimiters = (): PlanLimiters | null => defaults()?.plan ?? null;
 
 export type BusyBody = ErrorBody & Required<Pick<ErrorBody, "fallback_seed">>;
 
+/** Seconds until `reset`, at least 1: the Retry-After header. */
+function secondsUntil(reset: number): number {
+  return Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+}
+
 function refuse(body: ErrorBody, reset: number): Response {
-  const retryAfter = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
   return Response.json(body, {
     status: 429,
-    headers: { "retry-after": String(retryAfter) },
+    headers: { "retry-after": String(secondsUntil(reset)) },
   });
 }
 
-function busy(reset: number): Response {
-  const body: BusyBody = { reason: "busy", fallback_seed: FALLBACK_SEED };
+/** The IP limit's 429: which window tripped and the real wait, so the UI can say "10 runs
+ * this hour, try again in 12 minutes" instead of "busy, try again in a moment". */
+function busy(limit: LimitName, reset: number): Response {
+  const body: BusyBody = {
+    reason: "busy",
+    fallback_seed: FALLBACK_SEED,
+    limit,
+    runs: LIMITS[limit].tokens,
+    retry_after: secondsUntil(reset),
+  };
   return refuse(body, reset);
 }
 
@@ -124,9 +141,9 @@ function busy(reset: number): Response {
 async function enforce(req: Request, limiters: Limiter[], rate: number): Promise<Response | null> {
   const ip = clientIp(req.headers);
   try {
-    for (const limiter of limiters) {
+    for (const [i, limiter] of limiters.entries()) {
       const { success, remaining, reset } = await limiter.limit(ip, { rate });
-      if (rate > 0 ? !success : remaining <= 0) return busy(reset);
+      if (rate > 0 ? !success : remaining <= 0) return busy(LIMIT_ORDER[i] ?? "hourly", reset);
     }
   } catch (err) {
     // Fail open: a Redis outage must not take the site down.

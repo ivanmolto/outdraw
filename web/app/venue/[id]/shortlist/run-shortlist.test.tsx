@@ -100,6 +100,28 @@ describe("refused run", () => {
     expect(calls.map((c) => c.url)).toEqual(["/api/runs", "/api/seeds/brooklyn-indie"]);
   });
 
+  it("says which IP window tripped and the wait when the refusal is the web's own limit", async () => {
+    fakeApi([
+      [
+        /\/api\/runs$/,
+        Response.json(
+          { reason: "busy", fallback_seed: "brooklyn-indie", limit: "hourly", runs: 10, retry_after: 700 },
+          { status: 429 },
+        ),
+      ],
+      [/\/api\/seeds\/brooklyn-indie$/, Response.json(seedSample("brooklyn-indie"))],
+    ]);
+    setup();
+
+    const banner = await screen.findByRole("status", { name: "Sample shortlist" });
+    expect(banner.textContent).toContain("Live analysis is busy, here's a sample");
+    expect(banner.textContent).toContain(
+      "You've reached 10 live runs this hour. Try again in 12 minutes, or open a demo venue.",
+    );
+    expect(banner.textContent).toContain("Meanwhile, this is the precomputed shortlist");
+    expect(banner.textContent).not.toContain("Outdraw can't run a live analysis right now");
+  });
+
   it("falls back to the default seed when none is named, and retries live", async () => {
     const calls = fakeApi([
       [/\/api\/runs$/, Response.json({ reason: "busy" }, { status: 429 })],
@@ -137,5 +159,19 @@ describe("refused run", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Outdraw is busy with another request");
     expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+  });
+
+  it("keeps the window and the wait in the error when the sample can't be read either", async () => {
+    fakeApi([
+      [
+        /\/api\/runs$/,
+        Response.json({ reason: "busy", limit: "burst", runs: 3, retry_after: 40 }, { status: 429 }),
+      ],
+      [/\/api\/seeds\/nola-jazz$/, Response.json({ reason: "unavailable" }, { status: 503 })],
+    ]);
+    setup();
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toContain("That's 3 live runs inside a minute. Try again in 40 seconds.");
   });
 });

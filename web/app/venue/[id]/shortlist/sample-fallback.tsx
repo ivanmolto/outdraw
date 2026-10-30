@@ -33,13 +33,16 @@ function readSample(slug: SeedSlug): Promise<SeedSample> {
 
 interface Props {
   slug: SeedSlug;
+  /** Why live analysis was refused, when the refusal said (the IP window that tripped and
+   * the real wait, `refusalNote`); the banner's generic sentence otherwise. */
+  note?: string | null;
   /** Under the banner text: how to get back to live analysis. */
   action?: ReactNode;
   /** Shown instead when the sample can't be read either. */
   fallback: ReactNode;
 }
 
-export function SampleFallback({ slug, action, fallback }: Props) {
+export function SampleFallback({ slug, note, action, fallback }: Props) {
   const [state, setState] = useState<State>({ name: "loading" });
 
   useEffect(() => {
@@ -72,8 +75,9 @@ export function SampleFallback({ slug, action, fallback }: Props) {
           {SAMPLE_BANNER}
         </p>
         <p className="mt-2 text-ink/70">
-          Outdraw can&apos;t run a live analysis right now, so this is the precomputed shortlist
-          of the demo venue {sample.venueName} ({sample.title}). It made no Qloo or model calls.
+          {note ?? "Outdraw can't run a live analysis right now, so"} {note ? "Meanwhile, " : ""}
+          this is the precomputed shortlist of the demo venue {sample.venueName} ({sample.title}).
+          It made no Qloo or model calls.
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-4">
           {action}
