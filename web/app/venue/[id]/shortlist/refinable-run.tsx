@@ -11,7 +11,7 @@
 import { useState } from "react";
 
 import { ProNote, useShows } from "@/src/components/pro";
-import { api, errorOf, sampleSeed } from "@/src/lib/api-client";
+import { api, errorOf, refusalNote, sampleSeed } from "@/src/lib/api-client";
 import type { PlayedHereMap } from "@/src/lib/played-here";
 import { parseRun, type AskChoice, type ParsedRun } from "@/src/lib/run-result";
 import type { RunOut } from "@/types/agent";
@@ -61,7 +61,7 @@ export function RefinableRun({
   const [selected, setSelected] = useState(initial.length - 1);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<RefineError | null>(null);
-  const [sample, setSample] = useState<SeedSlug | null>(null);
+  const [sample, setSample] = useState<{ slug: SeedSlug; note: string | null } | null>(null);
   const history = useShows("run_history");
 
   const run = chain[selected];
@@ -88,7 +88,7 @@ export function RefinableRun({
         },
         (err: unknown) => {
           const seed = sampleSeed(err);
-          if (seed) setSample(seed);
+          if (seed) setSample({ slug: seed, note: refusalNote(err) });
           else setError(errorOf(err));
         },
       )
@@ -109,11 +109,14 @@ export function RefinableRun({
     );
     return (
       <SampleFallback
-        slug={sample}
+        slug={sample.slug}
+        note={sample.note}
         action={back}
         fallback={
           <div role="alert" className="rounded-card border border-line bg-surface p-6 text-sm">
-            <p className="text-ink/70">Live analysis is busy right now. Try again in a moment.</p>
+            <p className="text-ink/70">
+              {sample.note ?? "Live analysis is busy right now. Try again in a moment."}
+            </p>
             <div className="mt-3">{back}</div>
           </div>
         }

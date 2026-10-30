@@ -14,7 +14,7 @@ import type {
 } from "@/types/agent";
 import type { CrowdProfile } from "@/types/schemas";
 import { PLANS, type Plan } from "./entitlements";
-import { SAMPLED, reasonText, type ErrorDetails } from "./error-states";
+import { SAMPLED, busyNote, reasonText, type ErrorDetails, type LimitName } from "./error-states";
 import type {
   AnswerInput,
   ConfirmInput,
@@ -46,6 +46,10 @@ export class ApiError extends Error {
     /** The Qloo error code and whether a retry can help, for qloo_error. */
     readonly code?: string,
     readonly retryable?: boolean,
+    /** The IP window that tripped, its allowance and the seconds to wait, for busy. */
+    readonly limit?: LimitName,
+    readonly runs?: number,
+    readonly retryAfter?: number,
   ) {
     super(reason);
     this.name = "ApiError";
@@ -61,7 +65,11 @@ export function reasonMessage(err: unknown): string {
 export function errorOf(err: unknown): { reason: Reason; details: ErrorDetails } {
   if (!(err instanceof ApiError)) return { reason: "unavailable", details: {} };
   const { reason, field, pending, fallbackSeed, plan, runsPerDay, code, retryable } = err;
-  return { reason, details: { field, pending, fallbackSeed, plan, runsPerDay, code, retryable } };
+  const { limit, runs, retryAfter } = err;
+  return {
+    reason,
+    details: { field, pending, fallbackSeed, plan, runsPerDay, code, retryable, limit, runs, retryAfter },
+  };
 }
 
 /** The seed to show instead of `err` (a refusal of live analysis: the web's rate limit,
@@ -69,6 +77,14 @@ export function errorOf(err: unknown): { reason: Reason; details: ErrorDetails }
 export function sampleSeed(err: unknown): SeedSlug | null {
   if (!(err instanceof ApiError) || !SAMPLED.has(err.reason)) return null;
   return err.fallbackSeed ?? FALLBACK_SEED;
+}
+
+/** Why live analysis was refused, in the booker's words, when the body says more than
+ * the reason: the IP window that tripped and the real wait. Null when it says nothing
+ * more (a budget or kill-switch refusal, or an older body), and the banner's own text
+ * stands. */
+export function refusalNote(err: unknown): string | null {
+  return err instanceof ApiError ? busyNote(errorOf(err).details) : null;
 }
 
 /** A seed's precomputed shortlist, as `GET /api/seeds/{slug}` serves it. */
@@ -105,20 +121,27 @@ async function request<T>(method: "GET" | "POST" | "PATCH", path: string, body?:
       runs_per_day?: unknown;
       code?: unknown;
       retryable?: unknown;
+      limit?: unknown;
+      runs?: unknown;
+      retry_after?: unknown;
     };
     const seed = isSeedSlug(err.fallback_seed) ? err.fallback_seed : undefined;
     const plan = PLANS.find((p) => p === err.plan);
-    const runsPerDay = typeof err.runs_per_day === "number" ? err.runs_per_day : undefined;
+    const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : undefined);
     const code = typeof err.code === "string" ? err.code : undefined;
+    const limit = err.limit === "burst" || err.limit === "hourly" ? err.limit : undefined;
     throw new ApiError(
       err.reason ?? "unknown",
       err.field,
       err.pending,
       seed,
       plan,
-      runsPerDay,
+      num(err.runs_per_day),
       code,
       err.retryable === true,
+      limit,
+      num(err.runs),
+      num(err.retry_after),
     );
   }
   return data as T;

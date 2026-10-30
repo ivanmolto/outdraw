@@ -235,4 +235,25 @@ describe("refinable run", () => {
     expect(screen.getByRole("heading", { name: "Synthetic Room" })).toBeTruthy();
     expect(screen.getByRole("list", { name: "Suggested refinements" })).toBeTruthy();
   });
+
+  it("names the hour's allowance and the wait when a refinement trips the web's IP limit", async () => {
+    const { user } = setup();
+    fakeApi([
+      [
+        REFINE(parent.run_id),
+        Response.json(
+          { reason: "busy", fallback_seed: "london-comedy", limit: "hourly", runs: 10, retry_after: 1500 },
+          { status: 429 },
+        ),
+      ],
+      [/\/api\/seeds\/london-comedy$/, Response.json(seedSample("london-comedy"))],
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Bigger acts" }));
+
+    const banner = await screen.findByRole("status", { name: "Sample shortlist" });
+    expect(banner.textContent).toContain(
+      "You've reached 10 live runs this hour. Try again in 25 minutes, or open a demo venue.",
+    );
+  });
 });

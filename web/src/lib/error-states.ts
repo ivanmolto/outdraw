@@ -43,6 +43,36 @@ export interface ErrorDetails {
   /** From a 502 qloo_error: the Qloo error code and whether a retry can help. */
   code?: string;
   retryable?: boolean;
+  /** From a 429 busy off the web's own IP limit: the window that tripped, its allowance
+   * and the seconds until it lets a run through. Absent on an agent-side refusal. */
+  limit?: LimitName;
+  runs?: number;
+  retryAfter?: number;
+}
+
+/** The web's per-IP windows (src/server/ratelimit.ts): a burst of runs in a minute, or
+ * the hour's allowance. */
+export type LimitName = "burst" | "hourly";
+
+/** `n` seconds as "N minutes" or "N seconds", rounded up so the wait never reads short. */
+function waitText(seconds: number): string {
+  if (seconds >= 60) {
+    const minutes = Math.ceil(seconds / 60);
+    return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+  }
+  const s = Math.max(1, Math.ceil(seconds));
+  return s === 1 ? "1 second" : `${s} seconds`;
+}
+
+/** What a busy refusal off the IP limit should say, from the body's details; null when
+ * the body names no window (an older body, or a refusal that is not the IP limit's). */
+export function busyNote(details: ErrorDetails): string | null {
+  const { limit, runs, retryAfter } = details;
+  if (!limit || runs == null || retryAfter == null) return null;
+  const wait = waitText(retryAfter);
+  return limit === "hourly"
+    ? `You've reached ${runs} live runs this hour. Try again in ${wait}, or open a demo venue.`
+    : `That's ${runs} live runs inside a minute. Try again in ${wait}.`;
 }
 
 /** Qloo error codes that mean Outdraw's own Qloo setup is broken (the key, the harness,
@@ -154,9 +184,11 @@ export function errorState(reason: Reason, details: ErrorDetails = {}): ErrorSta
       ? planLimitMessage(details)
       : reason === "qloo_error"
         ? qlooErrorMessage(details)
-        : field
-          ? `${MESSAGES[reason]} The field refused was ${field}.`
-          : MESSAGES[reason];
+        : reason === "busy"
+          ? (busyNote(details) ?? MESSAGES.busy)
+          : field
+            ? `${MESSAGES[reason]} The field refused was ${field}.`
+            : MESSAGES[reason];
   return {
     reason,
     title: TITLES[reason],

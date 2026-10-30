@@ -27,6 +27,11 @@ export interface ErrorBody {
   /** The plan that ran out of runs today and its daily allowance, for plan_limit. */
   plan?: Plan;
   runs_per_day?: number;
+  /** For busy from the web's own IP limit: the window that tripped, its allowance, and
+   * the seconds until it lets a run through (the same number as the Retry-After header). */
+  limit?: "burst" | "hourly";
+  runs?: number;
+  retry_after?: number;
   /** The Qloo error code and whether a retry can help, for qloo_error. */
   code?: string;
   retryable?: boolean;

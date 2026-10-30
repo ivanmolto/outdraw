@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Reason } from "@/types/agent";
-import { RETRYABLE, SAMPLED, errorState, reasonText } from "./error-states";
+import { RETRYABLE, SAMPLED, busyNote, errorState, reasonText } from "./error-states";
 
 /** Every reason the proxy routes emit (src/server/proxy.ts), and only those. */
 const REASONS: Reason[] = [
@@ -98,6 +98,33 @@ describe("errorState", () => {
       message: reasonText("plan_limit"),
       link: { href: "/pricing" },
     });
+  });
+
+  it("says which IP window tripped and the real wait for a busy off the rate limit", () => {
+    const hourly = errorState("busy", { limit: "hourly", runs: 10, retryAfter: 700, fallbackSeed: "brooklyn-indie" });
+    expect(hourly.message).toBe(
+      "You've reached 10 live runs this hour. Try again in 12 minutes, or open a demo venue.",
+    );
+    expect(hourly.link).toEqual({ label: "See a sample shortlist", href: "/v/brooklyn-indie" });
+    expect(hourly.retryable).toBe(true);
+
+    expect(errorState("busy", { limit: "hourly", runs: 10, retryAfter: 60 }).message).toContain(
+      "Try again in 1 minute,",
+    );
+    expect(errorState("busy", { limit: "burst", runs: 3, retryAfter: 40 }).message).toBe(
+      "That's 3 live runs inside a minute. Try again in 40 seconds.",
+    );
+    expect(errorState("busy", { limit: "burst", runs: 3, retryAfter: 1 }).message).toContain(
+      "in 1 second.",
+    );
+    // The wait rounds up, never down: 61 seconds is not "1 minute".
+    expect(busyNote({ limit: "hourly", runs: 10, retryAfter: 61 })).toContain("2 minutes");
+
+    // An agent-side refusal, or an older body, names no window: the plain message stands.
+    expect(errorState("busy").message).toBe(reasonText("busy"));
+    expect(errorState("busy", { fallbackSeed: "nola-jazz" }).message).toBe(reasonText("busy"));
+    expect(busyNote({ limit: "hourly", runs: 10 })).toBeNull();
+    expect(busyNote({ retryAfter: 30 })).toBeNull();
   });
 
   it("points an outage back at the venue when one is known, else home", () => {
