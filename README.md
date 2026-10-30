@@ -1,6 +1,13 @@
 # Outdraw
 
 [![ci](https://github.com/ivanmolto/outdraw/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ivanmolto/outdraw/actions/workflows/ci.yml)
+[![Qloo Agentic Hackathon](https://img.shields.io/badge/Qloo_Agentic_Hackathon-2026-F5B400?labelColor=0E0F14)](https://qloo.devpost.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F6F4EE?labelColor=0E0F14)](LICENSE)
+
+**Live at [outdraw.live](https://outdraw.live)**, no login. The three demo venues are precomputed
+and spend nothing; "Set up a venue" runs the full flow against Qloo.
+
+![Outdraw landing page: the top of the Brooklyn demo shortlist with its six sub-scores](assets/readme/landing.png)
 
 Outdraw ([outdraw.live](https://outdraw.live)) is a booking agent for live-music venues and
 promoters. Give it a venue, its capacity and a few past shows that sold well, and it works out
@@ -14,7 +21,28 @@ Streaming numbers measure global popularity, not whether this room will sell. A 
 asked "who should a jazz bar in NYC book?" invents plausible names. Outdraw's answers come
 from Qloo affinity data and every pick opens a Soundcheck panel: the chain from inputs to
 Qloo calls to score, each number labelled as Qloo data or Outdraw's interpretation. The model
-parses constraints, explains and drafts; it never ranks. Built for the Qloo Agentic Hackathon.
+parses constraints, explains and drafts; it never ranks.
+
+## What it does
+
+- **Crowd profile.** Six Qloo calls turn the venue's confirmed past acts and location into
+  who the room's crowd is: related artists, genre tags, and the places, films and brands that
+  audience skews toward. Sell-through on past shows weights which acts anchor the profile.
+- **Ranked shortlist.** Qloo recommends acts for that crowd in the venue's region; a
+  deterministic score (`agent/draw/ranking/score.py`, weights shown in the UI) orders them.
+  The model never ranks.
+- **Soundcheck.** Every pick opens an evidence panel: the inputs, the exact Qloo calls with
+  their arguments and status, the affinities each returned, and the score breakdown, each line
+  labelled Qloo data or Outdraw's interpretation.
+- **With Qloo / LLM only.** A toggle shows the same question answered by the model alone, with
+  no tools and no Qloo data, beside Outdraw's scored list.
+- **Refine.** "More emerging", "no tribute acts", "Thursday crowd skews younger": the agent
+  parses the request into constraints, re-runs, and the shortlist shows what moved.
+- **Book.** A brief per act with a night format from Qloo's age skew, a support act chosen by
+  audience overlap, local partners, a draft outreach email, a pencil hold, and a CSV or hold
+  summary for the booking tool the venue already uses.
+
+![Soundcheck panel: why this act, the inputs and the Qloo calls behind the score](assets/readme/soundcheck.png)
 
 ## Architecture
 
@@ -38,6 +66,16 @@ calls and the `qloo mcp` server for the agent's tool calls. `/web` never calls Q
 - `agent/` — Python 3.12, FastAPI, Strands Agents SDK, deployed on Render (`render.yaml`).
 - `shared/` — JSON Schemas, input limits and the OpenAPI contract; generated into both
   packages by `npm run gen:schemas` and `npm run gen:api` (CI fails on drift).
+
+| Area | Technology |
+| --- | --- |
+| Qloo | `@qloo/qloo-harness` 0.1.26, pinned: `qloo exec` workflows and the `qloo mcp` stdio server |
+| Agent | Python 3.12, FastAPI, Strands Agents SDK, Pydantic, SQLAlchemy + Alembic |
+| Model | Claude Haiku 5.5 through Strands' Anthropic provider; `effort`, not sampling |
+| Web | Next.js 16 (App Router), React, TypeScript, Tailwind v4 |
+| Data | Postgres with pgvector (venues, runs, cached envelopes, private call log); Upstash Redis (rate limits, daily caps) |
+| Tests | pytest, vitest, Playwright, visual snapshots; ruff, eslint, mypy strict, tsc |
+| Ops | Docker, GitHub Actions, Render (agent), Vercel (web), Sentry and Telegram alerts (optional) |
 
 ## Setup from a clean machine
 
@@ -125,7 +163,21 @@ and saved venues keep working. Set it in the Render dashboard, not in `render.ya
 ## Bring your own keys
 
 Outdraw ships without credentials. Every variable is in `.env.example` with a placeholder and
-a one-line comment; copy it to `.env.local` (gitignored) and fill in what you have.
+a one-line comment; copy it to `.env.local` (gitignored) and fill in what you have. The
+minimum to run the whole flow locally:
+
+```bash
+# .env.local
+INTERNAL_API_KEY=...                              # openssl rand -hex 32; same value on web and agent
+ANTHROPIC_API_KEY=...
+ANTHROPIC_MODEL=claude-haiku-5-5
+QLOO_API_KEY=...                                  # or `qloo setup --qloo`; never the --api-key flag
+QLOO_BASE_URL=https://hackathon.api.qloo.com
+QLOO_TRUSTED_BASE_URL=https://hackathon.api.qloo.com
+DATABASE_URL=postgresql://postgres:outdraw@localhost:5432/postgres
+AGENT_URL=http://localhost:8000
+LIVE_MODE=on
+```
 
 - **Qloo**: request a hackathon key on [qloo.devpost.com](https://qloo.devpost.com). Set it
   with `qloo setup --qloo` or export `QLOO_API_KEY`; never the `--api-key` flag, which lands
@@ -154,8 +206,7 @@ format. Qloo response data stays out of the repo: recordings are gitignored.
 
 The score (`agent/draw/ranking/score.py`) weighs crowd affinity 0.35, past fit 0.20, local
 heat 0.20, novelty 0.10, size fit 0.10 and momentum 0.05; a missing Qloo sub-score falls back
-to the run's median and is labelled "no Qloo signal". Input shapes that work on the real key
-are recorded in `docs/decisions/001-qloo-workflows.md`.
+to the run's median and is labelled "no Qloo signal".
 
 **Walkthrough**: `docs/walkthrough-nyc-jazz.md` lists every Qloo call of a run in order, the
 request shape, what the envelope said and how it fed the score, redacted. Regenerate it from
@@ -178,3 +229,11 @@ trail) and flags partial or degraded envelopes. The key never reaches a prompt o
   for this crowd, not absolute fame.
 - The artist side and live Opendate/Gigwell/Prism integrations are not built; the export is
   a CSV or pencil-hold summary.
+
+## Acknowledgments
+
+- **Qloo**, for the taste graph, the hackathon harness and the Agentic Hackathon.
+- **Strands Agents**, FastAPI, Next.js and the rest of the open-source stack above.
+
+Outdraw is not affiliated with Qloo. Affinity is not ticket sales: every pick is a likely draw
+with its evidence, never a guarantee.

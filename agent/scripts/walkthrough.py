@@ -274,7 +274,8 @@ def render(export: RunExport, *, secret: str | None = None) -> str:
         )
     lines += [
         "",
-        "Q = `qloo`, D = `draw`. Weights: "
+        "Q = `qloo` (the number came out of a Qloo envelope), D = `draw` (Outdraw computed "
+        "or templated it). Weights: "
         + ", ".join(f"{n} {w:.2f}" for n, w in WEIGHTS.items())
         + ".",
         "",

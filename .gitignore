@@ -1,4 +1,5 @@
-docs/
+docs/*
+!docs/walkthrough-nyc-jazz.md
 
 # secrets
 .env*
