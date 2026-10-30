@@ -13,7 +13,6 @@ export const PRO_FEATURES = {
   briefs: "Booking briefs and outreach",
   exports: "Exports to your booking tool",
   run_history: "Run history",
-  artist_routing: "Artist routing",
 } as const;
 
 export type ProFeature = keyof typeof PRO_FEATURES;

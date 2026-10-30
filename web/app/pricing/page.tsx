@@ -52,6 +52,10 @@ const ROADMAP = [
     title: "Billing",
     body: "Change your card, download invoices and cancel any time.",
   },
+  {
+    title: "Artist routing",
+    body: "The same crowd data from the act's side: the cities and rooms where an artist would draw, as a route with outreach drafts.",
+  },
 ] as const;
 
 const CTA =
@@ -188,7 +192,8 @@ export function Pricing({ note, action }: { note: React.ReactNode; action: React
             What&apos;s next
           </h2>
           <p className="mt-2 text-sm text-ink/70">
-            Paying for Pro is on the roadmap. Nothing is charged today.
+            Paying for Pro is on the roadmap, and so is the artist side. Nothing is charged
+            today.
           </p>
           <ol className="mt-6 list-decimal space-y-4 pl-6 marker:font-semibold marker:text-ink/60">
             {ROADMAP.map((step) => (

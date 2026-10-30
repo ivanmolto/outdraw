@@ -50,15 +50,8 @@ describe("hackathon mode off", () => {
   });
 });
 
-it("lists the six Pro features", () => {
-  expect(FEATURES).toEqual([
-    "multi_venue",
-    "full_shortlist",
-    "briefs",
-    "exports",
-    "run_history",
-    "artist_routing",
-  ]);
+it("lists the five Pro features; artist routing is on the roadmap, not a feature", () => {
+  expect(FEATURES).toEqual(["multi_venue", "full_shortlist", "briefs", "exports", "run_history"]);
 });
 
 it("shows everything while the plan is unknown, so nothing blocks on the read", () => {

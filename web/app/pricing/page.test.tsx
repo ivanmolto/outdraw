@@ -28,8 +28,16 @@ describe("the pricing page", () => {
   it("puts paying for Pro on the roadmap, in plain words, with nothing to pay with today", () => {
     render(<Pricing note={null} action={null} />);
     expect(screen.getByRole("heading", { name: "What's next" })).toBeTruthy();
-    expect(screen.getByText(/Paying for Pro is on the roadmap\. Nothing is charged today\./)).toBeTruthy();
+    expect(
+      screen.getByText(/Paying for Pro is on the roadmap, and so is the artist side\. Nothing is charged today\./),
+    ).toBeTruthy();
     expect(screen.getByText(/Upgrade to Venue Pro with a card, through Stripe\./)).toBeTruthy();
+    // Artist routing is not built: it is a roadmap step, never a Pro feature on the card.
+    expect(screen.getByRole("heading", { name: "Artist routing" })).toBeTruthy();
+    const pro = within(screen.getByRole("list", { name: "Plans" }))
+      .getByRole("heading", { name: /Venue Pro/ })
+      .closest("li")!;
+    expect(within(pro).queryByText("Artist routing")).toBeNull();
     // Build notes stay in docs/tasks.md, not on the page.
     expect(screen.queryByText(/test mode|webhook|live keys/i)).toBeNull();
     expect(screen.queryByRole("button", { name: /Upgrade|Checkout|Subscribe/ })).toBeNull();
